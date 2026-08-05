@@ -1,0 +1,26 @@
+-- Phase 62 course upgrade
+ALTER TABLE courses ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0;
+ALTER TABLE courses ADD COLUMN pay_url VARCHAR(500) NULL;
+ALTER TABLE courses ADD COLUMN course_image VARCHAR(500) NULL;
+ALTER TABLE courses ADD COLUMN class_time VARCHAR(160) NULL;
+ALTER TABLE courses ADD COLUMN class_days VARCHAR(160) NULL;
+ALTER TABLE courses ADD COLUMN total_tests INT NOT NULL DEFAULT 0;
+ALTER TABLE courses ADD COLUMN lessons_count INT NOT NULL DEFAULT 0;
+ALTER TABLE courses ADD COLUMN course_details TEXT NULL;
+ALTER TABLE courses ADD COLUMN outcomes TEXT NULL;
+ALTER TABLE courses ADD COLUMN includes_text TEXT NULL;
+ALTER TABLE testimonials ADD COLUMN student_image VARCHAR(500) NULL;
+ALTER TABLE testimonials ADD COLUMN rating TINYINT NOT NULL DEFAULT 5;
+CREATE TABLE IF NOT EXISTS course_variants (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  course_id INT UNSIGNED NOT NULL,
+  variant_title VARCHAR(180) NOT NULL,
+  price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  class_time VARCHAR(160) NULL,
+  class_days VARCHAR(160) NULL,
+  total_tests INT NOT NULL DEFAULT 0,
+  details TEXT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_course_variants_course (course_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

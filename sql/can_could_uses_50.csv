@@ -1,0 +1,51 @@
+﻿key,col1_correct_answer,col2_question_or_hindi,col3_example,col4_hindi_example,col5_variation,type_tag,notes,sort_order
+Can ability,I can speak English.,मैं अंग्रेजी बोल सकता हूँ।,I can speak English.,मैं अंग्रेजी बोल सकता हूँ।,I am able to speak English.,simple,can ability,1
+Can drive,He can drive a car.,वह कार चला सकता है।,He can drive a car.,वह कार चला सकता है।,He is able to drive.,simple,can ability,2
+Can help,She can help you.,वह तुम्हारी मदद कर सकती है।,She can help you.,वह तुम्हारी मदद कर सकती है।,She is able to help you.,simple,can ability,3
+Can not,I cannot come today.,मैं आज नहीं आ सकता।,I cannot come today.,मैं आज नहीं आ सकता।,I can't come today.,negative,can negative,4
+Can question,Can you help me?,क्या तुम मेरी मदद कर सकते हो?,Can you help me?,क्या तुम मेरी मदद कर सकते हो?,Could you help me?,interrogative,can question,5
+What can,What can I do?,मैं क्या कर सकता हूँ?,What can I do?,मैं क्या कर सकता हूँ?,What should I do?,wh_question,can wh,6
+Could polite,Could you repeat it?,क्या आप इसे दोहरा सकते हैं?,Could you repeat it?,क्या आप इसे दोहरा सकते हैं?,Can you repeat it?,interrogative,could polite,7
+Could past,I could swim when I was young.,जब मैं छोटा था तब मैं तैर सकता था।,I could swim when I was young.,जब मैं छोटा था तब मैं तैर सकता था।,I was able to swim.,simple,could past ability,8
+Could not,He could not answer.,वह जवाब नहीं दे सका।,He could not answer.,वह जवाब नहीं दे सका।,He couldn't answer.,negative,could negative,9
+Could question,Could she understand you?,क्या वह तुम्हें समझ सकी?,Could she understand you?,क्या वह तुम्हें समझ सकी?,Was she able to understand you?,interrogative,could question,10
+Can practice 1,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,,simple,can/could daily practice,11
+Can practice 2,You can do this work.,तुम यह काम कर सकते हो।,You can do this work.,तुम यह काम कर सकते हो।,,simple,can/could daily practice,12
+Can practice 3,We can start now.,हम अब शुरू कर सकते हैं।,We can start now.,हम अब शुरू कर सकते हैं।,,simple,can/could daily practice,13
+Can practice 4,They can come tomorrow.,वे कल आ सकते हैं।,They can come tomorrow.,वे कल आ सकते हैं।,,simple,can/could daily practice,14
+Can practice 5,He can speak well.,वह अच्छा बोल सकता है।,He can speak well.,वह अच्छा बोल सकता है।,,simple,can/could daily practice,15
+Can practice 6,She can teach grammar.,ग्रामर पढ़ा सकती है।,She can teach grammar.,ग्रामर पढ़ा सकती है।,,simple,can/could daily practice,16
+Could practice 7,I could read fast earlier.,पहले तेज पढ़ सकता था।,I could read fast earlier.,पहले तेज पढ़ सकता था।,,simple,can/could daily practice,17
+Could practice 8,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,,simple,can/could daily practice,18
+Can practice 9,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,,simple,can/could daily practice,19
+Can practice 10,You can do this work.,तुम यह काम कर सकते हो।,You can do this work.,तुम यह काम कर सकते हो।,,simple,can/could daily practice,20
+Can practice 11,We can start now.,हम अब शुरू कर सकते हैं।,We can start now.,हम अब शुरू कर सकते हैं।,,simple,can/could daily practice,21
+Can practice 12,They can come tomorrow.,वे कल आ सकते हैं।,They can come tomorrow.,वे कल आ सकते हैं।,,simple,can/could daily practice,22
+Can practice 13,He can speak well.,वह अच्छा बोल सकता है।,He can speak well.,वह अच्छा बोल सकता है।,,simple,can/could daily practice,23
+Can practice 14,She can teach grammar.,ग्रामर पढ़ा सकती है।,She can teach grammar.,ग्रामर पढ़ा सकती है।,,simple,can/could daily practice,24
+Could practice 15,I could read fast earlier.,पहले तेज पढ़ सकता था।,I could read fast earlier.,पहले तेज पढ़ सकता था।,,simple,can/could daily practice,25
+Could practice 16,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,,simple,can/could daily practice,26
+Can practice 17,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,,simple,can/could daily practice,27
+Can practice 18,You can do this work.,तुम यह काम कर सकते हो।,You can do this work.,तुम यह काम कर सकते हो।,,simple,can/could daily practice,28
+Can practice 19,We can start now.,हम अब शुरू कर सकते हैं।,We can start now.,हम अब शुरू कर सकते हैं।,,simple,can/could daily practice,29
+Can practice 20,They can come tomorrow.,वे कल आ सकते हैं।,They can come tomorrow.,वे कल आ सकते हैं।,,simple,can/could daily practice,30
+Can practice 21,He can speak well.,वह अच्छा बोल सकता है।,He can speak well.,वह अच्छा बोल सकता है।,,simple,can/could daily practice,31
+Can practice 22,She can teach grammar.,ग्रामर पढ़ा सकती है।,She can teach grammar.,ग्रामर पढ़ा सकती है।,,simple,can/could daily practice,32
+Could practice 23,I could read fast earlier.,पहले तेज पढ़ सकता था।,I could read fast earlier.,पहले तेज पढ़ सकता था।,,simple,can/could daily practice,33
+Could practice 24,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,,simple,can/could daily practice,34
+Can practice 25,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,,simple,can/could daily practice,35
+Can practice 26,You can do this work.,तुम यह काम कर सकते हो।,You can do this work.,तुम यह काम कर सकते हो।,,simple,can/could daily practice,36
+Can practice 27,We can start now.,हम अब शुरू कर सकते हैं।,We can start now.,हम अब शुरू कर सकते हैं।,,simple,can/could daily practice,37
+Can practice 28,They can come tomorrow.,वे कल आ सकते हैं।,They can come tomorrow.,वे कल आ सकते हैं।,,simple,can/could daily practice,38
+Can practice 29,He can speak well.,वह अच्छा बोल सकता है।,He can speak well.,वह अच्छा बोल सकता है।,,simple,can/could daily practice,39
+Can practice 30,She can teach grammar.,ग्रामर पढ़ा सकती है।,She can teach grammar.,ग्रामर पढ़ा सकती है।,,simple,can/could daily practice,40
+Could practice 31,I could read fast earlier.,पहले तेज पढ़ सकता था।,I could read fast earlier.,पहले तेज पढ़ सकता था।,,simple,can/could daily practice,41
+Could practice 32,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,,simple,can/could daily practice,42
+Can practice 33,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,I can learn English.,मैं अंग्रेजी सीख सकता हूँ।,,simple,can/could daily practice,43
+Can practice 34,You can do this work.,तुम यह काम कर सकते हो।,You can do this work.,तुम यह काम कर सकते हो।,,simple,can/could daily practice,44
+Can practice 35,We can start now.,हम अब शुरू कर सकते हैं।,We can start now.,हम अब शुरू कर सकते हैं।,,simple,can/could daily practice,45
+Can practice 36,They can come tomorrow.,वे कल आ सकते हैं।,They can come tomorrow.,वे कल आ सकते हैं।,,simple,can/could daily practice,46
+Can practice 37,He can speak well.,वह अच्छा बोल सकता है।,He can speak well.,वह अच्छा बोल सकता है।,,simple,can/could daily practice,47
+Can practice 38,She can teach grammar.,ग्रामर पढ़ा सकती है।,She can teach grammar.,ग्रामर पढ़ा सकती है।,,simple,can/could daily practice,48
+Could practice 39,I could read fast earlier.,पहले तेज पढ़ सकता था।,I could read fast earlier.,पहले तेज पढ़ सकता था।,,simple,can/could daily practice,49
+Could practice 40,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,We could finish it yesterday.,कल इसे खत्म कर सकते थे।,,simple,can/could daily practice,50

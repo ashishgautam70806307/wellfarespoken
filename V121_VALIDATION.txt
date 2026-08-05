@@ -1,0 +1,25 @@
+Well Fare Professional UI V121 - Final Validation
+================================================
+
+PHP files linted: 65
+PHP syntax failures: 0
+JavaScript syntax output lines: 0
+
+CSS files checked: 2
+CSS parse errors: 0
+Literal local href/src checked: 193
+Missing literal local href/src: 0
+PHP __DIR__ includes checked: 134
+Missing PHP includes: 0
+User-facing root PHP pages: 21
+Pages without V121 loading path: 0
+Obsolete V120 design references: 0
+V121 stylesheet references: 5
+V121 script references: 5
+Service worker assets checked: 9
+Missing service worker assets: 0
+PHP files: 65
+JS files: 3
+CSS files: 2
+
+Browser note: Automated Chromium rendering was not reliable in the build environment; no browser screenshot validation is claimed.

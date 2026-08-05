@@ -1,0 +1,7 @@
+Delete these obsolete Phase 127 frontend assets after Phase 128 files are uploaded:
+
+assets/css/phase127-design-system.css
+assets/css/phase127-design-system.min.css
+assets/js/phase127-ui.js
+
+Do not delete style.css/style.min.css because the admin panel and standalone exam room still use legacy styles.

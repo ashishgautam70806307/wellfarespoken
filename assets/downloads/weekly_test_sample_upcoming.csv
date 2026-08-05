@@ -1,0 +1,4 @@
+﻿question_text,expected_answer,question_type,topic_name,level,marks,option_a,option_b,option_c,option_d
+मैं बाजार नहीं जा सकता।,I cannot go to the market.||I can't go to the market.,hindi_to_english,Can / Cannot,Basic,1,,,,
+Correct: He do not know English.,He does not know English.||He doesn't know English.,correction,Present Simple,Basic,1,,,,
+Choose the correct sentence,They were ready.,mcq,Was / Were,Basic,1,They was ready.,They were ready.,They is ready.,They ready were.

@@ -1,0 +1,511 @@
+/* ======================================================================
+   Phase 126 - Inner-page visual audit and contrast-safe page polish
+   Scope: public pages only. Homepage course cards remain unchanged.
+   ====================================================================== */
+:root{
+  --v126-navy:#041b46;
+  --v126-blue:#0a3675;
+  --v126-gold:#d89a24;
+  --v126-gold-dark:#a86d08;
+  --v126-gold-pale:#fff8e8;
+  --v126-ink:#10213e;
+  --v126-copy:#5d6e88;
+  --v126-line:#dfe7f2;
+  --v126-soft:#f5f8fd;
+  --v126-white:#fff;
+  --v126-shadow:0 16px 40px rgba(4,27,70,.075);
+  --v126-shadow-hover:0 24px 56px rgba(4,27,70,.13);
+  --v126-radius:15px;
+}
+
+/* ---------- Explicit colour contracts: no inherited white-on-white ---------- */
+.wf-site:not(.wf-page-index) :is(
+  .card,.panel-card,.form-box,.auth-card,.about-director-card-v2,
+  .about-mini-card-v2,.contact-info-panel-v2,.contact-mini-card-v2,
+  .course-summary-card,.course-main-copy,.course-visual-mini,.course-variant-card,
+  .outcome-mini,.admission-info-card,.admission-form-card,.today-plan-card,
+  .dashboard-profile-card,.student-progress-ring,.exam-start-box,.exam-student-card,
+  .selected-test-summary,.practice-goal-panel,.practice-progress-card,.ai-simple-tool,
+  .ai-avatar-card,.teacher-chat-card,.result-hero,.result-answer-card,.revision-card,
+  .duo-title-card,.duo-level-card,.duo-panel,.duo-finish-card,.gallery-card,
+  .weekly-winner-card,.exam-history-mini,.exam-login-note,.exam-question-card,
+  .practice-card-main,.practice-single-card,.practice-question-stage,.practice-result-stage
+){
+  color:var(--v126-ink)!important;
+  background:#fff;
+}
+.wf-site:not(.wf-page-index) :is(
+  .card,.panel-card,.form-box,.auth-card,.about-director-card-v2,
+  .about-mini-card-v2,.contact-info-panel-v2,.contact-mini-card-v2,
+  .course-summary-card,.course-main-copy,.course-visual-mini,.course-variant-card,
+  .outcome-mini,.admission-info-card,.admission-form-card,.today-plan-card,
+  .dashboard-profile-card,.student-progress-ring,.exam-start-box,.exam-student-card,
+  .selected-test-summary,.practice-goal-panel,.practice-progress-card,.ai-simple-tool,
+  .ai-avatar-card,.teacher-chat-card,.result-hero,.result-answer-card,.revision-card,
+  .duo-title-card,.duo-level-card,.duo-panel,.duo-finish-card,.gallery-card,
+  .weekly-winner-card,.exam-history-mini,.exam-login-note,.exam-question-card,
+  .practice-card-main,.practice-single-card,.practice-question-stage,.practice-result-stage
+) :is(h1,h2,h3,h4,h5,h6,b,strong,label,summary){color:var(--v126-navy)!important}
+.wf-site:not(.wf-page-index) :is(
+  .card,.panel-card,.form-box,.auth-card,.about-director-card-v2,
+  .about-mini-card-v2,.contact-info-panel-v2,.contact-mini-card-v2,
+  .course-summary-card,.course-main-copy,.course-visual-mini,.course-variant-card,
+  .outcome-mini,.admission-info-card,.admission-form-card,.today-plan-card,
+  .dashboard-profile-card,.student-progress-ring,.exam-start-box,.exam-student-card,
+  .selected-test-summary,.practice-goal-panel,.practice-progress-card,.ai-simple-tool,
+  .ai-avatar-card,.teacher-chat-card,.result-hero,.result-answer-card,.revision-card,
+  .duo-title-card,.duo-level-card,.duo-panel,.duo-finish-card,.gallery-card,
+  .weekly-winner-card,.exam-history-mini,.exam-login-note,.exam-question-card,
+  .practice-card-main,.practice-single-card,.practice-question-stage,.practice-result-stage
+) :is(p,small,.muted,.help){color:var(--v126-copy)!important}
+
+/* Light cards inside a dark generic hero must reset inherited white text. */
+.wf-page-ai-teacher .hero-card,
+.wf-page-free-ai-english-practice .hero-card{
+  color:var(--v126-ink)!important;
+  background:#fff!important;
+}
+.wf-page-ai-teacher .hero-card :is(h1,h2,h3,h4,b,strong),
+.wf-page-free-ai-english-practice .hero-card :is(h1,h2,h3,h4,b,strong){color:var(--v126-navy)!important}
+.wf-page-ai-teacher .hero-card :is(p,small),
+.wf-page-free-ai-english-practice .hero-card :is(p,small){color:var(--v126-copy)!important}
+
+/* ---------- Dark surfaces: force intentional readable text ---------- */
+.wf-site :is(
+  .promise-card-v2,.contact-cta-card-v2,.student-dashboard-hero,.revision-hero,
+  .exam-hero-card,.dark-cta,.wf-footer-cta,.wf-v125-process-hero
+){color:#fff!important}
+.wf-site :is(
+  .promise-card-v2,.contact-cta-card-v2,.student-dashboard-hero,.revision-hero,
+  .exam-hero-card,.dark-cta,.wf-footer-cta,.wf-v125-process-hero
+) :is(h1,h2,h3,h4,h5,b,strong){color:#fff!important}
+.wf-site :is(
+  .promise-card-v2,.contact-cta-card-v2,.student-dashboard-hero,.revision-hero,
+  .exam-hero-card,.dark-cta,.wf-footer-cta,.wf-v125-process-hero
+) :is(p,small,.muted){color:#d5e2f4!important}
+.wf-site :is(.promise-card-v2,.contact-cta-card-v2,.student-dashboard-hero,.revision-hero,.exam-hero-card,.dark-cta) .eyebrow{
+  color:#f2c45f!important;
+}
+
+/* Nested white cards in dark surfaces keep dark copy. */
+.student-dashboard-hero .student-progress-ring,
+.exam-hero-card .weekly-winner-board{
+  color:var(--v126-ink)!important;
+  background:#fff!important;
+}
+.student-dashboard-hero .student-progress-ring :is(h2,h3,b,strong),
+.exam-hero-card .weekly-winner-board :is(h2,h3,b,strong){color:var(--v126-navy)!important}
+.student-dashboard-hero .student-progress-ring :is(p,small,span),
+.exam-hero-card .weekly-winner-board :is(p,small,span){color:var(--v126-copy)!important}
+
+/* ---------- Shared inner page architecture ---------- */
+.wf-site:not(.wf-page-index) .wf-main{
+  background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);
+}
+.wf-site:not(.wf-page-index) .section-title{
+  max-width:780px;
+}
+.wf-site:not(.wf-page-index) .section-title h1,
+.wf-site:not(.wf-page-index) .section-title h2{
+  color:var(--v126-navy)!important;
+  font-size:clamp(1.75rem,3vw,2.8rem)!important;
+  line-height:1.15!important;
+  letter-spacing:-.04em!important;
+}
+.wf-site:not(.wf-page-index) .section-title p{color:var(--v126-copy)!important}
+
+.wf-site:not(.wf-page-index) :is(
+  .about-mini-card-v2,.contact-mini-card-v2,.course-card,.course-variant-card,
+  .outcome-mini,.today-plan-card,.dashboard-profile-card,.weekly-winner-card,
+  .result-answer-card,.revision-card,.gallery-card,.expertise-chip,.wf-journey-card,
+  .grid-3>.card,.grid-4>.card
+){
+  border:1px solid var(--v126-line)!important;
+  border-radius:var(--v126-radius)!important;
+  box-shadow:var(--v126-shadow)!important;
+  transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;
+}
+.wf-site:not(.wf-page-index) :is(
+  .about-mini-card-v2,.contact-mini-card-v2,.course-card,.course-variant-card,
+  .outcome-mini,.today-plan-card,.dashboard-profile-card,.weekly-winner-card,
+  .result-answer-card,.revision-card,.gallery-card,.expertise-chip,.wf-journey-card,
+  .grid-3>.card,.grid-4>.card
+):hover{
+  transform:translateY(-5px);
+  border-color:#cad7e7!important;
+  box-shadow:var(--v126-shadow-hover)!important;
+}
+
+/* Subtle moving wave motif on page-level hero sections. */
+.wf-site:not(.wf-page-index) :is(
+  .about-hero-v2,.contact-hero-v2,.courses-list-hero,.course-detail-clean,
+  .faculty-profile-hero,.student-auth-section,.weekly-exam-page,
+  .weekly-result-page,.revision-room-section,.practice-room-hero,
+  .section-cream.admission-phase96
+){
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 87% 15%,rgba(216,154,36,.105),transparent 20rem),
+    radial-gradient(circle at 5% 86%,rgba(10,54,117,.075),transparent 19rem),
+    linear-gradient(180deg,#fbfdff 0%,#f1f5fb 100%)!important;
+}
+.wf-site:not(.wf-page-index) :is(
+  .about-hero-v2,.contact-hero-v2,.courses-list-hero,.course-detail-clean,
+  .faculty-profile-hero,.student-auth-section,.weekly-result-page,
+  .revision-room-section,.practice-room-hero,.section-cream.admission-phase96
+)::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:-7%;right:-7%;bottom:-70px;
+  height:150px;
+  border:1px solid rgba(216,154,36,.22);
+  border-radius:50%;
+  transform:rotate(-2deg);
+  animation:v126PageWave 9s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+.wf-site:not(.wf-page-index) :is(
+  .about-hero-v2,.contact-hero-v2,.courses-list-hero,.course-detail-clean,
+  .faculty-profile-hero,.student-auth-section,.weekly-result-page,
+  .revision-room-section,.practice-room-hero,.section-cream.admission-phase96
+)::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:5%;top:13%;
+  width:112px;height:112px;
+  opacity:.22;
+  background-image:radial-gradient(circle,var(--v126-gold) 1.5px,transparent 1.7px);
+  background-size:16px 16px;
+  animation:v126DotMove 15s linear infinite;
+  pointer-events:none;
+}
+@keyframes v126PageWave{to{transform:translateX(2.5%) translateY(-8px) rotate(1deg)}}
+@keyframes v126DotMove{to{background-position:32px 16px}}
+
+/* ---------- About page ---------- */
+.wf-page-about .about-hero-grid-v2{align-items:stretch}
+.wf-page-about .about-copy-v2{display:flex;flex-direction:column;justify-content:center;padding:20px 0}
+.wf-page-about .about-copy-v2 h1{color:var(--v126-navy)!important}
+.wf-page-about .about-copy-v2 p{color:var(--v126-copy)!important;max-width:650px}
+.wf-page-about .about-director-card-v2{
+  padding:18px!important;
+  border:1px solid var(--v126-line)!important;
+  border-radius:20px!important;
+  box-shadow:var(--v126-shadow-hover)!important;
+  background:#fff!important;
+}
+.wf-page-about .director-photo-frame-v2{min-height:310px;border-radius:15px;background:linear-gradient(145deg,#edf4fd,#fff6df)}
+.wf-page-about .director-card-content-v2{padding:20px 8px 6px}
+.wf-page-about .director-card-content-v2 small{color:var(--v126-gold-dark)!important}
+.wf-page-about .director-card-content-v2 h2{color:var(--v126-navy)!important}
+.wf-page-about .about-highlight-grid-v2{align-items:stretch}
+.wf-page-about .about-mini-card-v2{position:relative;overflow:hidden;padding:26px!important}
+.wf-page-about .about-mini-card-v2:after{content:"";position:absolute;right:-45px;bottom:-50px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(216,154,36,.13),transparent 68%)}
+.wf-page-about .about-mini-icon-v2{background:linear-gradient(145deg,#041b46,#0a397a)!important;color:#fff!important}
+.wf-page-about .about-mini-card-v2:nth-child(even) .about-mini-icon-v2{background:linear-gradient(145deg,#cb8714,#efb943)!important}
+.wf-page-about .director-large-photo-v2{min-height:430px;border:1px solid var(--v126-line);box-shadow:var(--v126-shadow);background:linear-gradient(145deg,#eef4fc,#fff6df)}
+.wf-page-about .director-detail-copy-v2{background:#fff!important;color:var(--v126-ink)!important;border:1px solid var(--v126-line)!important}
+.wf-page-about .director-detail-copy-v2 h2{color:var(--v126-navy)!important}
+.wf-page-about .director-detail-copy-v2 p{color:var(--v126-copy)!important}
+.wf-page-about .promise-card-v2{position:relative;overflow:hidden;padding:38px!important;background:linear-gradient(135deg,#03142f,#062b62 68%,#0b3d82)!important}
+.wf-page-about .promise-card-v2:after{content:"";position:absolute;left:-8%;right:-8%;bottom:-66px;height:130px;border:1px solid rgba(216,154,36,.35);border-radius:50%;animation:v126PageWave 8s ease-in-out infinite alternate}
+.wf-page-about .promise-points-v2 span{border:1px solid rgba(243,187,70,.28);background:rgba(255,255,255,.07)!important;color:#fff!important}
+
+/* ---------- Contact page ---------- */
+.wf-page-contact .contact-copy-v2{padding:18px 0}
+.wf-page-contact .contact-copy-v2 h1{color:var(--v126-navy)!important}
+.wf-page-contact .contact-copy-v2 p{color:var(--v126-copy)!important;max-width:650px}
+.wf-page-contact .contact-info-panel-v2{padding:28px!important;border:1px solid var(--v126-line)!important;border-radius:20px!important;background:#fff!important}
+.wf-page-contact .contact-info-panel-v2 h2{color:var(--v126-navy)!important}
+.wf-page-contact .contact-info-panel-v2>a,.wf-page-contact .contact-info-panel-v2>div{color:#334b69!important}
+.wf-page-contact .contact-info-panel-v2 i{background:#edf4fd!important;color:var(--v126-blue)!important}
+.wf-page-contact .contact-info-panel-v2>a:nth-of-type(2) i{background:var(--v126-gold-pale)!important;color:var(--v126-gold-dark)!important}
+.wf-page-contact .contact-card-grid-v2{align-items:stretch}
+.wf-page-contact .contact-mini-card-v2{padding:26px!important}
+.wf-page-contact .contact-mini-card-v2>span{background:linear-gradient(145deg,#041b46,#0b3a7c)!important;color:#fff!important}
+.wf-page-contact .contact-mini-card-v2:nth-child(even)>span{background:linear-gradient(145deg,#ca8612,#efb740)!important}
+.wf-page-contact .contact-map-grid-v2{align-items:stretch}
+.wf-page-contact .contact-map-card-v2{background:#fff!important;color:var(--v126-ink)!important;border:1px solid var(--v126-line)!important}
+.wf-page-contact .contact-cta-card-v2{position:relative;overflow:hidden;background:linear-gradient(135deg,#03142f,#07326e)!important;border-radius:18px!important;box-shadow:var(--v126-shadow-hover)!important}
+.wf-page-contact .contact-cta-card-v2:after{content:"";position:absolute;width:280px;height:280px;right:-130px;bottom:-170px;border-radius:50%;border:1px solid rgba(216,154,36,.38);box-shadow:0 0 0 30px rgba(216,154,36,.04)}
+
+/* ---------- Admission page ---------- */
+.wf-page-admission .admission-balanced-wrap{align-items:stretch}
+.wf-page-admission .admission-info-card,.wf-page-admission .form-box{
+  padding:30px!important;border:1px solid var(--v126-line)!important;border-radius:20px!important;background:#fff!important;box-shadow:var(--v126-shadow)!important
+}
+.wf-page-admission .admission-info-card{position:relative;overflow:hidden}
+.wf-page-admission .admission-info-card:after{content:"";position:absolute;right:-85px;top:-90px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(216,154,36,.13),transparent 67%)}
+.wf-page-admission .admission-info-card h1{color:var(--v126-navy)!important}
+.wf-page-admission .admission-info-card>p{color:var(--v126-copy)!important}
+.wf-page-admission .admission-feature-grid article{background:#f7f9fd!important;border:1px solid #e8eef6;padding:15px!important}
+.wf-page-admission .admission-feature-grid article>span{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#edf4fd;color:var(--v126-blue);flex:0 0 42px}
+.wf-page-admission .admission-feature-grid article:nth-child(even)>span{background:var(--v126-gold-pale);color:var(--v126-gold-dark)}
+.wf-page-admission .admission-batch-strip{background:var(--v126-gold-pale)!important;border:1px solid #f1dfb9}
+.wf-page-admission .admission-batch-strip h3,.wf-page-admission .admission-batch-strip strong{color:var(--v126-navy)!important}
+.wf-page-admission .admission-batch-strip span{color:#5c6d84!important}
+.wf-page-admission .form-box h2,.wf-page-admission .form-box h3{color:var(--v126-navy)!important}
+.wf-page-admission .faq-list details{border-color:var(--v126-line);box-shadow:0 8px 24px rgba(4,27,70,.04)}
+
+/* ---------- Courses and course detail ---------- */
+.wf-page-courses .courses-list-hero{text-align:center}
+.wf-page-courses .courses-list-hero .section-title{margin-inline:auto}
+.wf-page-courses .courses-list-hero .section-title h1,
+.wf-page-courses .courses-list-hero .section-title h2{color:var(--v126-navy)!important}
+.wf-page-courses .courses-list-hero .section-title p{color:var(--v126-copy)!important}
+.wf-page-courses .course-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.wf-page-courses .course-card{border:1px solid var(--v126-line)!important;border-radius:16px!important;background:#fff!important;color:var(--v126-ink)!important;overflow:hidden}
+.wf-page-courses .course-image-box{height:220px;background:linear-gradient(145deg,#edf4fd,#fff6df)}
+.wf-page-courses .course-card-body{padding:22px!important}
+.wf-page-courses .course-card h3{color:var(--v126-navy)!important}
+.wf-page-courses .course-card p{color:var(--v126-copy)!important}
+.wf-page-courses .course-price-badge{background:linear-gradient(135deg,#041b46,#0b3a7a)!important;color:#fff!important}
+.wf-page-courses .course-top .pill{background:#edf4fd!important;color:#31557f!important}
+
+.wf-page-course-detail .course-detail-copy{padding:24px 0}
+.wf-page-course-detail .course-detail-copy h1{color:var(--v126-navy)!important}
+.wf-page-course-detail .course-detail-copy p{color:var(--v126-copy)!important}
+.wf-page-course-detail .course-detail-price{color:var(--v126-gold-dark)!important}
+.wf-page-course-detail .course-summary-card{padding:28px!important;border:1px solid var(--v126-line)!important;border-radius:20px!important;background:#fff!important}
+.wf-page-course-detail .summary-icon{background:linear-gradient(145deg,#041b46,#0b3a7a)!important;color:#fff!important}
+.wf-page-course-detail .summary-list>div{color:#3b526f!important}
+.wf-page-course-detail .summary-list b{color:var(--v126-navy)!important}
+.wf-page-course-detail .course-main-copy,.wf-page-course-detail .course-visual-mini{border:1px solid var(--v126-line)!important;border-radius:18px!important}
+.wf-page-course-detail .included-grid>div{background:#f7f9fd!important;color:#36506e!important;border:1px solid #e9eef6}
+.wf-page-course-detail .included-grid>div span{color:var(--v126-gold-dark)!important}
+.wf-page-course-detail .outcome-mini>span{background:var(--v126-gold-pale)!important;color:var(--v126-gold-dark)!important}
+.wf-page-course-detail .variant-price{color:var(--v126-gold-dark)!important}
+
+/* ---------- Faculty profile ---------- */
+.wf-page-faculty-profile .faculty-profile-grid{align-items:center}
+.wf-page-faculty-profile .faculty-profile-photo{min-height:430px;border:1px solid var(--v126-line);box-shadow:var(--v126-shadow);background:linear-gradient(145deg,#edf4fd,#fff6df)}
+.wf-page-faculty-profile .faculty-profile-copy{padding:30px;border:1px solid var(--v126-line);border-radius:20px;background:#fff;box-shadow:var(--v126-shadow)}
+.wf-page-faculty-profile .faculty-profile-copy h1{color:var(--v126-navy)!important}
+.wf-page-faculty-profile .faculty-profile-copy p{color:var(--v126-copy)!important}
+.wf-page-faculty-profile .faculty-profile-pills span{background:#edf4fd!important;color:#2e537e!important}
+.wf-page-faculty-profile .expertise-chip{min-height:58px;display:grid;place-items:center;text-align:center;background:#fff!important;color:var(--v126-navy)!important;padding:14px}
+
+/* ---------- Login / registration ---------- */
+.wf-page-student-auth .auth-grid{align-items:center}
+.wf-page-student-auth .auth-copy{padding:22px 0}
+.wf-page-student-auth .auth-copy h1{color:var(--v126-navy)!important}
+.wf-page-student-auth .auth-copy p{color:var(--v126-copy)!important}
+.wf-page-student-auth .level-mini-list li{background:#edf4fd!important;color:#31557e!important;border:1px solid #e1eaf5}
+.wf-page-student-auth .auth-card{padding:30px!important;border:1px solid var(--v126-line)!important;border-radius:20px!important;background:#fff!important;box-shadow:var(--v126-shadow-hover)!important}
+.wf-page-student-auth .auth-tabs button,.wf-page-student-auth .auth-tabs a{color:var(--v126-navy)!important;background:#edf4fd!important}
+.wf-page-student-auth .auth-tabs .active{background:linear-gradient(135deg,#bd7c0e,#e4ad3d)!important;color:#fff!important}
+
+/* ---------- Student dashboard ---------- */
+.wf-page-student-dashboard .student-dash-section{background:linear-gradient(180deg,#f4f7fc,#fff);padding:52px 0 84px}
+.wf-page-student-dashboard .student-dashboard-hero{position:relative;overflow:hidden;border-radius:22px!important;background:linear-gradient(135deg,#03142f,#062d67 70%,#0b4189)!important}
+.wf-page-student-dashboard .student-dashboard-hero:after{content:"";position:absolute;left:-8%;right:-8%;bottom:-78px;height:140px;border:1px solid rgba(216,154,36,.35);border-radius:50%;animation:v126PageWave 8s ease-in-out infinite alternate}
+.wf-page-student-dashboard .student-welcome-copy{position:relative;z-index:2}
+.wf-page-student-dashboard .student-welcome-copy h1{color:#fff!important}
+.wf-page-student-dashboard .student-welcome-copy p{color:#d6e3f5!important}
+.wf-page-student-dashboard .student-progress-ring{position:relative;z-index:2;border:0!important;box-shadow:0 22px 48px rgba(0,0,0,.18)!important}
+.wf-page-student-dashboard .student-stat-grid .stat{background:#fff!important;color:var(--v126-ink)!important;border:1px solid var(--v126-line)!important}
+.wf-page-student-dashboard .student-stat-grid .stat strong{color:var(--v126-navy)!important}
+.wf-page-student-dashboard .student-stat-grid .stat span{color:var(--v126-copy)!important}
+.wf-page-student-dashboard .section-between h2{color:var(--v126-navy)!important}
+.wf-page-student-dashboard .today-plan-card,
+.wf-page-student-dashboard .dashboard-profile-card,
+.wf-page-student-dashboard .student-dash-cards>.card{border:1px solid var(--v126-line)!important;border-radius:16px!important;background:#fff!important}
+.wf-page-student-dashboard .attempt-row{background:#f7f9fd!important;color:#425a77!important;border:1px solid #e8eef6}
+
+/* ---------- Weekly test, result and revision ---------- */
+.wf-page-weekly-test .weekly-exam-page{padding-top:58px!important}
+.wf-page-weekly-test .exam-hero-card{position:relative;overflow:hidden;border:0!important;border-radius:22px!important;background:linear-gradient(135deg,#03142f,#06306c 70%,#0a4189)!important;box-shadow:var(--v126-shadow-hover)!important}
+.wf-page-weekly-test .exam-hero-card:after{content:"";position:absolute;right:-110px;bottom:-150px;width:300px;height:300px;border-radius:50%;border:1px solid rgba(216,154,36,.35);box-shadow:0 0 0 30px rgba(216,154,36,.04)}
+.wf-page-weekly-test .exam-legend span{background:rgba(255,255,255,.11)!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)}
+.wf-page-weekly-test .weekly-winner-board{background:#fff!important;color:var(--v126-ink)!important;border-radius:16px!important}
+.wf-page-weekly-test .exam-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.wf-page-weekly-test .exam-tab{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:105px;padding:16px;border:1px solid var(--v126-line)!important;border-radius:14px!important;background:#fff!important;color:var(--v126-ink)!important;box-shadow:var(--v126-shadow)}
+.wf-page-weekly-test .exam-tab b{color:var(--v126-navy)!important}
+.wf-page-weekly-test .exam-tab span,.wf-page-weekly-test .exam-tab em{color:var(--v126-copy)!important}
+.wf-page-weekly-test .exam-tab.active{background:linear-gradient(135deg,#041b46,#0a397a)!important;border-color:transparent!important}
+.wf-page-weekly-test .exam-tab.active b,.wf-page-weekly-test .exam-tab.active span,.wf-page-weekly-test .exam-tab.active em{color:#fff!important}
+.wf-page-weekly-test .exam-start-box,.wf-page-weekly-test .exam-side>div{border:1px solid var(--v126-line)!important;border-radius:16px!important;background:#fff!important;color:var(--v126-ink)!important;box-shadow:var(--v126-shadow)}
+.wf-page-weekly-test .exam-start-box h2,.wf-page-weekly-test .exam-start-box h3,.wf-page-weekly-test .exam-side h4{color:var(--v126-navy)!important}
+.wf-page-weekly-test .exam-start-box p,.wf-page-weekly-test .exam-side p,.wf-page-weekly-test .exam-side span{color:var(--v126-copy)!important}
+.wf-page-weekly-test .exam-rule-row>div{background:#f7f9fd!important;border:1px solid #e7edf6;color:#425a78!important}
+
+.wf-page-weekly-result .result-hero{position:relative;overflow:hidden;padding:30px!important;border:1px solid var(--v126-line)!important;border-radius:20px!important;background:linear-gradient(145deg,#fff,#f4f7fc)!important}
+.wf-page-weekly-result .result-hero:after{content:"";position:absolute;right:-65px;top:-70px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(216,154,36,.16),transparent 68%)}
+.wf-page-weekly-result .result-hero h1,.wf-page-weekly-result .result-hero h2{color:var(--v126-navy)!important}
+.wf-page-weekly-result .result-hero p{color:var(--v126-copy)!important}
+.wf-page-weekly-result .result-score{color:var(--v126-gold-dark)!important}
+.wf-page-weekly-result .result-answer-card.ok{border-left:4px solid #1b9b61!important}
+.wf-page-weekly-result .result-answer-card.review{border-left:4px solid var(--v126-gold)!important}
+
+.wf-page-student-revision .revision-hero{position:relative;overflow:hidden;border-radius:22px!important;background:linear-gradient(135deg,#03142f,#06316f)!important}
+.wf-page-student-revision .revision-hero h1,.wf-page-student-revision .revision-hero h2{color:#fff!important}
+.wf-page-student-revision .revision-hero p{color:#d6e3f5!important}
+.wf-page-student-revision .revision-answer-box{background:#f7f9fd!important;color:#405873!important;border:1px solid #e7edf6;border-radius:12px;padding:14px}
+.wf-page-student-revision .revision-answer-box.correct{background:#eafff4!important;color:#167548!important;border-color:#c8eedc}
+
+/* ---------- Practice and AI pages ---------- */
+.wf-page-ai-teacher .hero,
+.wf-page-free-ai-english-practice .hero{
+  background:
+    radial-gradient(circle at 84% 18%,rgba(216,154,36,.18),transparent 22rem),
+    linear-gradient(135deg,#03142f,#06316f 68%,#0b4289)!important;
+}
+.wf-page-ai-teacher .hero h1,.wf-page-free-ai-english-practice .hero h1{color:#fff!important}
+.wf-page-ai-teacher .hero p,.wf-page-free-ai-english-practice .hero p{color:#d7e4f5!important}
+.wf-page-ai-teacher .teacher-visual{background:linear-gradient(145deg,#edf4fd,#fff7e7)!important;color:var(--v126-navy)!important}
+.wf-page-ai-teacher .visual-badge,.wf-page-free-ai-english-practice .practice-ai-badge{background:var(--v126-gold-pale)!important;color:var(--v126-gold-dark)!important}
+.wf-page-ai-teacher .ai-avatar-card,.wf-page-ai-teacher .teacher-chat-card,
+.wf-page-free-ai-english-practice .ai-simple-tool,.wf-page-free-ai-english-practice .ai-tool-box{border:1px solid var(--v126-line)!important;border-radius:18px!important}
+.wf-page-ai-teacher .chat-msg.teacher{color:var(--v126-ink)!important;background:#fff!important}
+.wf-page-ai-teacher .chat-msg.student{color:#fff!important;background:var(--v126-navy)!important}
+
+.wf-page-spoken-materials .practice-room-hero{padding-top:56px!important}
+.wf-page-spoken-materials .practice-room-title-row h1{color:var(--v126-navy)!important}
+.wf-page-spoken-materials .practice-room-title-row p{color:var(--v126-copy)!important}
+.wf-page-spoken-materials .practice-goal-panel,.wf-page-spoken-materials .practice-progress-card{border:1px solid var(--v126-line)!important;border-radius:18px!important}
+.wf-page-spoken-materials .goal-tab{background:#edf4fd!important;color:#31557e!important;border:0!important}
+.wf-page-spoken-materials .goal-tab.active{background:linear-gradient(135deg,#bd7c0e,#e2aa39)!important;color:#fff!important}
+.wf-page-spoken-materials .dark-cta{position:relative;overflow:hidden;background:linear-gradient(135deg,#03142f,#06316f)!important;border-radius:20px!important}
+.wf-page-spoken-materials .dark-cta:after{content:"";position:absolute;left:-7%;right:-7%;bottom:-70px;height:130px;border:1px solid rgba(216,154,36,.35);border-radius:50%;animation:v126PageWave 9s ease-in-out infinite alternate}
+
+/* ---------- Online classes ---------- */
+.wf-page-online-classes .about-copy-v2 h1{color:var(--v126-navy)!important}
+.wf-page-online-classes .about-copy-v2 p{color:var(--v126-copy)!important}
+.wf-page-online-classes .level-mini-list li{background:#edf4fd!important;color:#31557e!important}
+.wf-page-online-classes .wf-online-visual{padding:16px!important;border-radius:20px!important;background:linear-gradient(135deg,#03142f,#06316f)!important;border:1px solid rgba(216,154,36,.45)!important;box-shadow:var(--v126-shadow-hover)!important}
+.wf-page-online-classes .wf-class-window{background:#fff!important;color:var(--v126-ink)!important}
+.wf-page-online-classes .wf-class-window h3{color:var(--v126-navy)!important}
+.wf-page-online-classes .wf-class-window p{color:var(--v126-copy)!important}
+.wf-page-online-classes .wf-journey-grid{gap:26px}
+.wf-page-online-classes .wf-journey-card{padding:24px!important;background:#fff;border:1px solid var(--v126-line)!important;border-radius:16px!important;box-shadow:var(--v126-shadow)!important}
+.wf-page-online-classes .wf-journey-card>i{width:70px;height:70px;margin:0 0 16px;border-width:5px}
+.wf-page-online-classes .grid-3>.card{padding:25px!important;background:#fff!important}
+.wf-page-online-classes .grid-3>.card .icon{background:linear-gradient(145deg,#041b46,#0b3a7a)!important;color:#fff!important}
+.wf-page-online-classes .grid-3>.card:nth-child(even) .icon{background:linear-gradient(145deg,#ca8612,#edb43d)!important}
+
+/* ---------- Gallery ---------- */
+.wf-page-gallery .section-soft:first-of-type{position:relative;overflow:hidden;text-align:center;background:linear-gradient(180deg,#fbfdff,#f1f5fb)!important}
+.wf-page-gallery .section-soft:first-of-type:after{content:"";position:absolute;left:-8%;right:-8%;bottom:-78px;height:140px;border:1px solid rgba(216,154,36,.25);border-radius:50%;animation:v126PageWave 9s ease-in-out infinite alternate}
+.wf-page-gallery .section-soft:first-of-type .section-title{margin-inline:auto}
+.wf-page-gallery .gallery-card{padding:0!important;overflow:hidden;background:#fff!important}
+.wf-page-gallery .gallery-card img{height:260px;transition:transform .35s ease}
+.wf-page-gallery .gallery-card:hover img{transform:scale(1.035)}
+.wf-page-gallery .gallery-card>div{padding:20px 22px!important}
+.wf-page-gallery .gallery-card span{color:var(--v126-gold-dark)!important}
+.wf-page-gallery .gallery-card h3{color:var(--v126-navy)!important}
+
+/* ---------- Learning roadmap ---------- */
+.wf-page-learning-roadmap .duo-roadmap-page,
+.wf-page-roadmap-lesson .duo-lesson-page{background:linear-gradient(180deg,#f3f7fc,#fff)!important}
+.wf-page-learning-roadmap .duo-title-card,
+.wf-page-roadmap-lesson .duo-lesson-header{position:relative;overflow:hidden;background:linear-gradient(135deg,#03142f,#06316f)!important;color:#fff!important;border:0!important}
+.wf-page-learning-roadmap .duo-title-card:after,
+.wf-page-roadmap-lesson .duo-lesson-header:after{content:"";position:absolute;left:-8%;right:-8%;bottom:-75px;height:135px;border:1px solid rgba(216,154,36,.38);border-radius:50%;animation:v126PageWave 8s ease-in-out infinite alternate}
+.wf-page-learning-roadmap .duo-title-card :is(h1,h2,h3,b),
+.wf-page-roadmap-lesson .duo-lesson-header :is(h1,h2,h3,b){color:#fff!important}
+.wf-page-learning-roadmap .duo-title-card p,
+.wf-page-roadmap-lesson .duo-lesson-header p{color:#d6e3f5!important}
+.wf-page-learning-roadmap .duo-start-btn,.wf-page-learning-roadmap .duo-open-btn,
+.wf-page-roadmap-lesson .duo-check-btn{background:linear-gradient(135deg,#bd7c0e,#e4ad3d)!important;color:#fff!important}
+.wf-page-learning-roadmap .duo-level-node{color:var(--v126-blue)!important}
+.wf-page-learning-roadmap .duo-level-card{border:1px solid var(--v126-line)!important}
+.wf-page-learning-roadmap .duo-section-pill{background:var(--v126-navy)!important;color:#fff!important}
+.wf-page-roadmap-lesson .duo-panel{border:1px solid var(--v126-line)!important}
+.wf-page-roadmap-lesson .duo-lesson-tabs button.active{background:linear-gradient(135deg,#bd7c0e,#e4ad3d)!important;color:#fff!important}
+
+/* ---------- Fluid typography and mobile safety ---------- */
+.wf-site:not(.wf-page-index) :is(
+  .about-copy-v2,.contact-copy-v2,.course-detail-copy,.faculty-profile-copy,
+  .auth-copy,.admission-info-card,.practice-room-title-row
+) h1{
+  font-size:clamp(2rem,4vw,3.5rem)!important;
+  line-height:1.08!important;
+  letter-spacing:-.048em!important;
+  text-wrap:balance;
+}
+
+@media (max-width:1080px){
+  .wf-page-courses .course-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wf-page-weekly-test .exam-tabs{grid-template-columns:1fr 1fr}
+}
+
+@media (max-width:767px){
+  .wf-site:not(.wf-page-index) .section{padding:58px 0!important}
+  .wf-site:not(.wf-page-index) :is(
+    .about-copy-v2,.contact-copy-v2,.course-detail-copy,.faculty-profile-copy,
+    .auth-copy,.admission-info-card,.practice-room-title-row
+  ) h1{
+    font-size:clamp(1.72rem,8vw,2.18rem)!important;
+    line-height:1.14!important;
+    letter-spacing:-.04em!important;
+  }
+  .wf-site:not(.wf-page-index) .section-title h1,
+  .wf-site:not(.wf-page-index) .section-title h2{
+    font-size:clamp(1.45rem,6.8vw,1.9rem)!important;
+    line-height:1.18!important;
+  }
+  .wf-site:not(.wf-page-index) p{font-size:.91rem!important;line-height:1.68!important}
+  .wf-page-about .about-director-card-v2,
+  .wf-page-contact .contact-info-panel-v2,
+  .wf-page-admission .admission-info-card,
+  .wf-page-admission .form-box,
+  .wf-page-student-auth .auth-card,
+  .wf-page-course-detail .course-summary-card,
+  .wf-page-faculty-profile .faculty-profile-copy{padding:22px!important;border-radius:16px!important}
+  .wf-page-about .director-large-photo-v2,.wf-page-faculty-profile .faculty-profile-photo{min-height:330px}
+  .wf-page-about .promise-card-v2,.wf-page-contact .contact-cta-card-v2{display:block!important;padding:25px!important}
+  .wf-page-about .promise-points-v2{margin-top:20px}
+  .wf-page-courses .course-card-grid{grid-template-columns:1fr}
+  .wf-page-courses .course-image-box{height:220px}
+  .wf-page-weekly-test .exam-tabs{grid-template-columns:1fr}
+  .wf-page-weekly-test .exam-tab{min-height:92px}
+  .wf-page-weekly-test .exam-hero-card{padding:24px!important}
+  .wf-page-student-dashboard .student-dashboard-hero{padding:24px!important}
+  .wf-page-online-classes .wf-journey-grid{grid-template-columns:1fr!important}
+  .wf-page-online-classes .wf-journey-card{display:grid!important;grid-template-columns:64px 1fr;text-align:left!important;column-gap:14px}
+  .wf-page-online-classes .wf-journey-card>i{grid-row:1/4;width:60px;height:60px;margin:0}
+  .wf-page-online-classes .wf-journey-card h3,.wf-page-online-classes .wf-journey-card p{grid-column:2}
+  .wf-page-gallery .gallery-card img{height:230px}
+  .wf-page-learning-roadmap .duo-level{grid-template-columns:70px 1fr!important}
+  .wf-page-learning-roadmap .duo-level-node{width:62px!important;height:62px!important;border-width:5px!important}
+}
+
+@media (max-width:420px){
+  .wf-site:not(.wf-page-index) :is(
+    .about-copy-v2,.contact-copy-v2,.course-detail-copy,.faculty-profile-copy,
+    .auth-copy,.admission-info-card,.practice-room-title-row
+  ) h1{font-size:1.72rem!important}
+  .wf-page-about .about-action-row-v2,
+  .wf-page-contact .contact-action-row-v2,
+  .wf-page-course-detail .course-action-row,
+  .wf-page-faculty-profile .faculty-profile-actions,
+  .wf-page-student-dashboard .student-hero-actions{
+    display:grid!important;grid-template-columns:1fr!important
+  }
+  .wf-page-about .about-action-row-v2 .btn,
+  .wf-page-contact .contact-action-row-v2 .btn,
+  .wf-page-course-detail .course-action-row .btn,
+  .wf-page-faculty-profile .faculty-profile-actions .btn,
+  .wf-page-student-dashboard .student-hero-actions .btn{width:100%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .wf-site:not(.wf-page-index) :is(
+    .about-hero-v2,.contact-hero-v2,.courses-list-hero,.course-detail-clean,
+    .faculty-profile-hero,.student-auth-section,.weekly-result-page,
+    .revision-room-section,.practice-room-hero,.section-cream.admission-phase96
+  )::before,
+  .wf-site:not(.wf-page-index) :is(
+    .about-hero-v2,.contact-hero-v2,.courses-list-hero,.course-detail-clean,
+    .faculty-profile-hero,.student-auth-section,.weekly-result-page,
+    .revision-room-section,.practice-room-hero,.section-cream.admission-phase96
+  )::after,
+  .wf-page-about .promise-card-v2:after,
+  .wf-page-student-dashboard .student-dashboard-hero:after,
+  .wf-page-spoken-materials .dark-cta:after,
+  .wf-page-gallery .section-soft:first-of-type:after,
+  .wf-page-learning-roadmap .duo-title-card:after,
+  .wf-page-roadmap-lesson .duo-lesson-header:after{animation:none!important}
+}

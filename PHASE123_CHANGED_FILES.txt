@@ -1,0 +1,44 @@
+Phase 123 changed/new files
+
+- .env.example
+- .htaccess
+- DELETE_OLD_FILES.txt
+- PHASE123_CHANGED_FILES.txt
+- PHASE123_TEST_CHECKLIST.md
+- README_PHASE123_PRO_UI_PERFORMANCE.md
+- about.php
+- admin/_footer.php
+- admin/_header.php
+- admin/faculty.php
+- admin/gallery.php
+- admin/hero-banners.php
+- admin/login.php
+- admission.php
+- assets/css/README.md
+- assets/css/phase123-roadmap.css
+- assets/css/phase123-roadmap.min.css
+- assets/css/phase123-shell.css
+- assets/css/phase123-shell.min.css
+- assets/css/phase123-test-center.css
+- assets/css/phase123-test-center.min.css
+- assets/css/phase123-ui-core.css
+- assets/css/phase123-ui-core.min.css
+- assets/css/style.min.css
+- course-detail.php
+- courses.php
+- faculty-profile.php
+- gallery.php
+- includes/config.php
+- includes/footer.php
+- includes/functions.php
+- includes/header.php
+- index.php
+- learning-roadmap.php
+- spoken-materials.php
+- student-revision.php
+- sw.js
+- weekly-exam-room.php
+- weekly-test.php
+
+Delete after upgrade if still present:
+- assets/css/phase122-test-center.css

@@ -1,0 +1,4 @@
+﻿question_text,expected_answer,question_type,topic_name,level,marks,option_a,option_b,option_c,option_d
+मैं रोज अंग्रेजी बोलता हूँ।,I speak English every day.||I speak English daily.,hindi_to_english,Present Simple,Beginner,1,,,,
+Correct: She go to class every day.,She goes to class every day.,correction,Present Simple,Beginner,1,,,,
+Choose correct sentence,I have a book.,mcq,Has / Have,Beginner,1,I has a book.,I have a book.,I am have a book.,I having a book.

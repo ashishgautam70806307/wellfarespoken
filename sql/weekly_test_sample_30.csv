@@ -1,0 +1,31 @@
+question_text,expected_answer,question_type,topic_name,level,marks,option_a,option_b,option_c,option_d
+मैं रोज अंग्रेजी बोलता हूँ।,I speak English every day.,hindi_to_english,Present Simple,Beginner,1,,,,
+मैं अभी पढ़ रहा हूँ।,I am studying now.,hindi_to_english,Present Continuous,Beginner,1,,,,
+वह स्कूल नहीं जाता है।,He does not go to school.,hindi_to_english,Present Simple Negative,Beginner,1,,,,
+क्या तुम अंग्रेजी बोल सकते हो?,Can you speak English?,hindi_to_english,Can,Beginner,1,,,,
+मुझे आज जाना है।,I have to go today.,hindi_to_english,Have to,Beginner,1,,,,
+मैंने अपना काम पूरा कर लिया है।,I have completed my work.,hindi_to_english,Present Perfect,Basic,1,,,,
+वह कल दिल्ली गया था।,He went to Delhi yesterday.,hindi_to_english,Past Simple,Basic,1,,,,
+तुम्हें रोज अभ्यास करना चाहिए।,You should practise every day.,hindi_to_english,Should,Basic,1,,,,
+मैं आपसे बात करना चाहता हूँ।,I want to talk to you.,hindi_to_english,Want to,Beginner,1,,,,
+वे आने वाले हैं।,They are about to come.,hindi_to_english,About to,Basic,1,,,,
+I can help you.,मैं आपकी मदद कर सकता/सकती हूँ।,english_to_hindi,Can,Beginner,1,,,,
+She has a book.,उसके पास एक किताब है।,english_to_hindi,Has,Beginner,1,,,,
+We were busy yesterday.,हम कल व्यस्त थे।,english_to_hindi,Was Were,Basic,1,,,,
+You should speak slowly.,आपको धीरे बोलना चाहिए।,english_to_hindi,Should,Basic,1,,,,
+I am going to learn English.,मैं अंग्रेजी सीखने जा रहा/रही हूँ।,english_to_hindi,Going to,Basic,1,,,,
+Correct: He go to market every day.,He goes to the market every day.,correction,Present Simple,Basic,1,,,,
+Correct: I has a pen.,I have a pen.,correction,Has Have,Beginner,1,,,,
+Correct: She are happy.,She is happy.,correction,Is Am Are,Beginner,1,,,,
+Correct: They was ready.,They were ready.,correction,Was Were,Basic,1,,,,
+Correct: I am go to school.,I am going to school.,correction,Present Continuous,Beginner,1,,,,
+Choose the correct sentence.,I am ready.,mcq,Is Am Are,Beginner,1,I is ready.,I am ready.,I are ready.,I be ready.
+Choose the correct sentence.,He has a car.,mcq,Has Have,Beginner,1,He have a car.,He has a car.,He having a car.,He had car now.
+Choose the correct sentence.,Can you help me?,mcq,Can,Beginner,1,Can you help me?,Can you helps me?,Do can you help me?,You can helps me?
+Choose the correct sentence.,I went to school yesterday.,mcq,Past Simple,Basic,1,I go to school yesterday.,I went to school yesterday.,I gone to school yesterday.,I goes to school yesterday.
+Choose the correct sentence.,She will call you.,mcq,Will,Basic,1,She will calls you.,She will call you.,She wills call you.,She call will you.
+Write one sentence using "should".,You should practise daily.,short_answer,Should,Basic,1,,,,
+Write one sentence using "want to".,I want to improve my English.,short_answer,Want to,Beginner,1,,,,
+Translate: क्या वह आ सकता है?,Can he come?,hindi_to_english,Can Question,Beginner,1,,,,
+Translate: तुम कहाँ जा रहे हो?,Where are you going?,hindi_to_english,WH Question,Beginner,1,,,,
+Translate: तुम क्यों पढ़ना चाहते हो?,Why do you want to study?,hindi_to_english,Double Interrogative,Basic,1,,,,

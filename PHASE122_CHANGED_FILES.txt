@@ -1,0 +1,59 @@
+PHASE 122 - CHANGED / NEW FILES
+
+Root
+- .env.example (new)
+- .gitignore (new)
+- .htaccess
+- sw.js
+- student-auth.php
+- student-dashboard.php
+- student-logout.php
+- weekly-test.php
+- weekly-test-api.php
+- weekly-exam-room.php
+- weekly-result.php
+- README_PHASE122_DEPLOY.md (new)
+- PHASE122_CHANGED_FILES.txt (new)
+- PHASE122_TEST_CHECKLIST.md (new)
+
+Includes
+- includes/config.php
+- includes/db.php
+- includes/functions.php
+- includes/header.php
+
+Admin
+- admin/_header.php
+- admin/login.php
+- admin/logout.php
+- admin/enquiries.php
+- admin/roadmap.php
+- admin/system-check.php
+- admin/testimonials.php
+
+Assets
+- assets/css/phase122-test-center.css (new)
+- assets/uploads/.htaccess (new)
+- assets/uploads/index.html (new)
+- assets/uploads/banners/.htaccess (new)
+- assets/uploads/banners/index.html (new)
+- assets/uploads/brand/.htaccess (new)
+- assets/uploads/brand/index.html (new)
+- assets/uploads/courses/.htaccess
+- assets/uploads/courses/index.html (new)
+- assets/uploads/gallery/.htaccess
+- assets/uploads/gallery/index.html (new)
+- assets/uploads/materials/.htaccess (new)
+- assets/uploads/materials/index.html (new)
+- assets/uploads/materials/notes/.htaccess (new)
+- assets/uploads/materials/notes/index.html (new)
+
+Storage
+- storage/.htaccess (new)
+- storage/index.html (new)
+- storage/rate-limits/.htaccess (new)
+- storage/rate-limits/index.html (new)
+
+Removed from deploy package
+- free-ai-english-practice.php.bak
+- spoken_phase121_materials_icon_table_ui_fix.zip

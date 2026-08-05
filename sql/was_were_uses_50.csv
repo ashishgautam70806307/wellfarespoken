@@ -1,0 +1,51 @@
+﻿key,col1_correct_answer,col2_question_or_hindi,col3_example,col4_hindi_example,col5_variation,type_tag,notes,sort_order
+Was I,I was at home.,मैं घर पर था।,I was at home.,मैं घर पर था।,I was home.,simple,was/were past state,1
+Was he,He was busy yesterday.,वह कल व्यस्त था।,He was busy yesterday.,वह कल व्यस्त था।,He was busy.,simple,was/were past state,2
+Was she,She was happy.,वह खुश थी।,She was happy.,वह खुश थी।,She was very happy.,simple,was/were past state,3
+Were you,You were late.,तुम देर से आए थे।,You were late.,तुम देर से आए थे।,You were late today.,simple,was/were past state,4
+Were we,We were ready.,हम तैयार थे।,We were ready.,हम तैयार थे।,We were prepared.,simple,was/were past state,5
+Were they,They were outside.,वे बाहर थे।,They were outside.,वे बाहर थे।,They were out.,simple,was/were past state,6
+Was negative,I was not tired.,मैं थका हुआ नहीं था।,I was not tired.,मैं थका हुआ नहीं था।,I wasn't tired.,negative,was/were negative,7
+Were negative,They were not ready.,वे तैयार नहीं थे।,They were not ready.,वे तैयार नहीं थे।,They weren't ready.,negative,was/were negative,8
+Was question,Was he present?,क्या वह उपस्थित था?,Was he present?,क्या वह उपस्थित था?,Was he there?,interrogative,was/were question,9
+Were question,Were you busy?,क्या तुम व्यस्त थे?,Were you busy?,क्या तुम व्यस्त थे?,Were you occupied?,interrogative,was/were question,10
+Where was,Where was he?,वह कहाँ था?,Where was he?,वह कहाँ था?,Where was he present?,wh_question,was/were wh,11
+Why were,Why were you late?,तुम देर से क्यों आए थे?,Why were you late?,तुम देर से क्यों आए थे?,Why were you delayed?,wh_question,was/were wh,12
+Was practice 1,I was at school.,मैं स्कूल में था।,I was at school.,मैं स्कूल में था।,,simple,was/were daily practice,13
+Was practice 2,He was in the market.,वह बाजार में था।,He was in the market.,वह बाजार में था।,,simple,was/were daily practice,14
+Was practice 3,She was in the class.,वह क्लास में थी।,She was in the class.,वह क्लास में थी।,,simple,was/were daily practice,15
+Was practice 4,It was very easy.,यह बहुत आसान था।,It was very easy.,यह बहुत आसान था।,,simple,was/were daily practice,16
+Were practice 5,You were in the office.,तुम ऑफिस में थे।,You were in the office.,तुम ऑफिस में थे।,,simple,was/were daily practice,17
+Were practice 6,We were at the station.,हम स्टेशन पर थे।,We were at the station.,हम स्टेशन पर थे।,,simple,was/were daily practice,18
+Were practice 7,They were in the room.,वे कमरे में थे।,They were in the room.,वे कमरे में थे।,,simple,was/were daily practice,19
+Were practice 8,The students were ready.,छात्र तैयार थे।,The students were ready.,छात्र तैयार थे।,,simple,was/were daily practice,20
+Was practice 9,I was at school.,मैं स्कूल में था।,I was at school.,मैं स्कूल में था।,,simple,was/were daily practice,21
+Was practice 10,He was in the market.,वह बाजार में था।,He was in the market.,वह बाजार में था।,,simple,was/were daily practice,22
+Was practice 11,She was in the class.,वह क्लास में थी।,She was in the class.,वह क्लास में थी।,,simple,was/were daily practice,23
+Was practice 12,It was very easy.,यह बहुत आसान था।,It was very easy.,यह बहुत आसान था।,,simple,was/were daily practice,24
+Were practice 13,You were in the office.,तुम ऑफिस में थे।,You were in the office.,तुम ऑफिस में थे।,,simple,was/were daily practice,25
+Were practice 14,We were at the station.,हम स्टेशन पर थे।,We were at the station.,हम स्टेशन पर थे।,,simple,was/were daily practice,26
+Were practice 15,They were in the room.,वे कमरे में थे।,They were in the room.,वे कमरे में थे।,,simple,was/were daily practice,27
+Were practice 16,The students were ready.,छात्र तैयार थे।,The students were ready.,छात्र तैयार थे।,,simple,was/were daily practice,28
+Was practice 17,I was at school.,मैं स्कूल में था।,I was at school.,मैं स्कूल में था।,,simple,was/were daily practice,29
+Was practice 18,He was in the market.,वह बाजार में था।,He was in the market.,वह बाजार में था।,,simple,was/were daily practice,30
+Was practice 19,She was in the class.,वह क्लास में थी।,She was in the class.,वह क्लास में थी।,,simple,was/were daily practice,31
+Was practice 20,It was very easy.,यह बहुत आसान था।,It was very easy.,यह बहुत आसान था।,,simple,was/were daily practice,32
+Were practice 21,You were in the office.,तुम ऑफिस में थे।,You were in the office.,तुम ऑफिस में थे।,,simple,was/were daily practice,33
+Were practice 22,We were at the station.,हम स्टेशन पर थे।,We were at the station.,हम स्टेशन पर थे।,,simple,was/were daily practice,34
+Were practice 23,They were in the room.,वे कमरे में थे।,They were in the room.,वे कमरे में थे।,,simple,was/were daily practice,35
+Were practice 24,The students were ready.,छात्र तैयार थे।,The students were ready.,छात्र तैयार थे।,,simple,was/were daily practice,36
+Was practice 25,I was at school.,मैं स्कूल में था।,I was at school.,मैं स्कूल में था।,,simple,was/were daily practice,37
+Was practice 26,He was in the market.,वह बाजार में था।,He was in the market.,वह बाजार में था।,,simple,was/were daily practice,38
+Was practice 27,She was in the class.,वह क्लास में थी।,She was in the class.,वह क्लास में थी।,,simple,was/were daily practice,39
+Was practice 28,It was very easy.,यह बहुत आसान था।,It was very easy.,यह बहुत आसान था।,,simple,was/were daily practice,40
+Were practice 29,You were in the office.,तुम ऑफिस में थे।,You were in the office.,तुम ऑफिस में थे।,,simple,was/were daily practice,41
+Were practice 30,We were at the station.,हम स्टेशन पर थे।,We were at the station.,हम स्टेशन पर थे।,,simple,was/were daily practice,42
+Were practice 31,They were in the room.,वे कमरे में थे।,They were in the room.,वे कमरे में थे।,,simple,was/were daily practice,43
+Were practice 32,The students were ready.,छात्र तैयार थे।,The students were ready.,छात्र तैयार थे।,,simple,was/were daily practice,44
+Was practice 33,I was at school.,मैं स्कूल में था।,I was at school.,मैं स्कूल में था।,,simple,was/were daily practice,45
+Was practice 34,He was in the market.,वह बाजार में था।,He was in the market.,वह बाजार में था।,,simple,was/were daily practice,46
+Was practice 35,She was in the class.,वह क्लास में थी।,She was in the class.,वह क्लास में थी।,,simple,was/were daily practice,47
+Was practice 36,It was very easy.,यह बहुत आसान था।,It was very easy.,यह बहुत आसान था।,,simple,was/were daily practice,48
+Were practice 37,You were in the office.,तुम ऑफिस में थे।,You were in the office.,तुम ऑफिस में थे।,,simple,was/were daily practice,49
+Were practice 38,We were at the station.,हम स्टेशन पर थे।,We were at the station.,हम स्टेशन पर थे।,,simple,was/were daily practice,50

@@ -1,0 +1,173 @@
+<?php
+require_once __DIR__ . '/includes/functions.php';
+ensure_core_schema_columns();
+material_ensure_schema();
+$quickToolResult = null;
+$quickToolInput = '';
+$quickToolMode = 'sentence_correction';
+$page_title = app_setting('seo_practice_title', 'Free AI English Practice Lab');
+$meta_description = app_setting('seo_practice_description', 'Practise English tenses, speaking situations and sentence correction for free.');
+ensure_schema_updates();
+$lessonId = isset($_GET['lesson']) ? (int)$_GET['lesson'] : 0;
+$lesson = $lessonId ? fetch_practice_lesson($lessonId) : null;
+$questions = $lesson ? fetch_practice_questions((int)$lesson['id'], 12) : [];
+$result = null;
+$currentQuestion = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['quick_practice']) && csrf_validate($_POST['csrf_token'] ?? '')) {
+    $questionId = (int)($_POST['question_id'] ?? 0);
+    $answer = trim($_POST['answer'] ?? '');
+    $stmt = db()->prepare("SELECT * FROM practice_questions WHERE id = ? AND published='Yes' AND status_deleted=0 LIMIT 1");
+    $stmt->execute([$questionId]);
+    $currentQuestion = $stmt->fetch();
+    if ($currentQuestion && $answer !== '') {
+        $localResult = evaluate_practice_answer($currentQuestion, $answer);
+        $aiResult = practice_ai_feedback($currentQuestion, $answer, $localResult);
+        $result = merge_ai_practice_result($localResult, $aiResult);
+        save_practice_attempt($questionId, $answer, $result);
+        $lesson = fetch_practice_lesson((int)$currentQuestion['lesson_id']);
+        $questions = $lesson ? fetch_practice_questions((int)$lesson['id'], 12) : [];
+    } else {
+        flash('error', 'Please write or speak your answer first.');
+    }
+}
+$categories = fetch_practice_categories();
+$summary = practice_attempt_summary();
+$practiceHero = fetch_hero_banner('practice');
+require_once __DIR__ . '/includes/header.php';
+?>
+<section class="hero practice-hero">
+    <div class="container hero-grid">
+        <div>
+            <span class="eyebrow">🎤 <?= e($practiceHero['eyebrow'] ?? 'Free Practice Engine') ?></span>
+            <h1><?= e($practiceHero['title'] ?? app_setting('practice_page_title', 'Free AI English Practice Lab')) ?></h1>
+            <p><?= e($practiceHero['subtitle'] ?? app_setting('practice_page_subtitle', 'Practise tenses, daily situations, sentence correction and speaking confidence without login.')) ?></p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="<?= e($practiceHero['primary_url'] ?? '#practice-lessons') ?>"><?= e($practiceHero['primary_text'] ?? 'Start Practice') ?></a>
+                <a class="btn btn-light" href="<?= e($practiceHero['secondary_url'] ?? 'admission.php') ?>"><?= e($practiceHero['secondary_text'] ?? 'Book Free Demo') ?></a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat"><strong><?= e((string)$summary['total']) ?></strong><span>Today Attempts</span></div>
+                <div class="stat"><strong><?= e((string)$summary['score']) ?></strong><span>Practice Score</span></div>
+                <div class="stat"><strong>Local</strong><span>Works Without API</span></div>
+            </div>
+        </div>
+        <div class="hero-card practice-card-main">
+            <div class="practice-ai-badge"><?= e(practice_ai_status_label()) ?></div>
+            <h3><?= e($practiceHero['badge_one'] ?? 'Correct way for this website') ?></h3>
+            <p><?= e($practiceHero['badge_two'] ?? 'This lab uses local database questions first, browser voice support second, and optional AI later. So practice will not break if any API is off.') ?></p>
+            <div class="visual-list">
+                <div><span>Tense Practice</span><b>Free</b></div>
+                <div><span>Situation Practice</span><b>Guided</b></div>
+                <div><span>Voice Input</span><b>Browser</b></div>
+                <div><span>AI Correction</span><b><?= practice_setting('ai_enabled','No') === 'Yes' ? 'Optional On' : 'Optional Off' ?></b></div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section">
+    <div class="container">
+        <div class="ai-simple-tool">
+            <div class="section-head"><div><h2><?= e(app_setting('practice_tool_label', 'Free Smart English Practice Tool')) ?></h2><p><?= e(app_setting('practice_tool_note', 'Use this for quick Hindi to English, English to Hindi, and common sentence correction. It works free from your own material database.')) ?></p></div><a class="btn btn-light" href="spoken-materials.php">Open Study Material</a></div>
+            <div class="ai-tool-grid">
+                <form class="ai-tool-box" method="post">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="quick_practice" value="1">
+                    <label><strong>Choose Mode</strong></label>
+                    <div class="mode-pill-row">
+                        <label><input type="radio" name="quick_mode" value="sentence_correction" <?= $quickToolMode==='sentence_correction'?'checked':'' ?>> Correct Sentence</label>
+                        <label><input type="radio" name="quick_mode" value="hindi_to_english" <?= $quickToolMode==='hindi_to_english'?'checked':'' ?>> Hindi to English</label>
+                        <label><input type="radio" name="quick_mode" value="english_to_hindi" <?= $quickToolMode==='english_to_hindi'?'checked':'' ?>> English to Hindi</label>
+                    </div>
+                    <textarea name="quick_input" placeholder="Example: मैं रोज अंग्रेजी बोलता हूँ। / I am go market yesterday."><?= e($quickToolInput) ?></textarea>
+                    <button class="btn btn-primary" type="submit">Practice Now</button>
+                    <span class="help">Free local tool uses Study Materials and Common Mistakes. Optional paid AI can be enabled separately from admin.</span>
+                </form>
+                <div class="ai-tool-box">
+                    <h3>Result</h3>
+                    <?php if ($quickToolResult): ?>
+                        <div class="ai-tool-result"><strong><?= e($quickToolResult['title']) ?></strong><p><?= e($quickToolResult['answer']) ?></p><?php if (!empty($quickToolResult['note'])): ?><small><?= e($quickToolResult['note']) ?></small><?php endif; ?></div>
+                    <?php else: ?>
+                        <div class="ai-tool-result"><strong>Ready</strong><p>Type any sentence and choose a mode. For best Hindi-English accuracy, import your spoken notes into Admin > Study Materials.</p><small>This is intentionally not a random open chatbot. It is a controlled English practice tool for your institute.</small></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section section-soft" id="practice-lessons">
+    <div class="container">
+        <div class="section-head"><div class="section-title"><h2>Choose your practice area</h2><p>Users can practise easily without login. Admin can manage categories, lessons and questions.</p></div><a class="btn btn-soft" href="admission.php">Need Teacher Help?</a></div>
+        <div class="grid-4">
+            <?php foreach ($categories as $cat): ?>
+                <div class="card feature-card practice-category-card">
+                    <div class="icon"><?= e($cat['icon'] ?: '✅') ?></div>
+                    <h3><?= e($cat['category_name']) ?></h3>
+                    <p><?= e($cat['description']) ?></p>
+                    <?php $catLessons = fetch_practice_lessons((int)$cat['id'], 5); ?>
+                    <?php if ($catLessons): ?><div class="mini-links"><?php foreach ($catLessons as $l): ?><a href="free-ai-english-practice.php?lesson=<?= e((string)$l['id']) ?>#practice-area"><?= e($l['lesson_title']) ?></a><?php endforeach; ?></div><?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<section class="section" id="practice-area">
+    <div class="container">
+        <?php if (!$lesson): ?>
+            <div class="panel-card practice-empty">
+                <h2>Start with the recommended lessons</h2>
+                <p>Select a tense, daily situation, correction or voice lesson above. The system will show questions, correction, explanation and next step.</p>
+                <div class="grid-3">
+                    <?php foreach (fetch_practice_lessons(0, 6) as $l): ?>
+                        <a class="card lesson-mini-card" href="free-ai-english-practice.php?lesson=<?= e((string)$l['id']) ?>#practice-area"><span><?= e($l['level'] ?: 'Practice') ?></span><strong><?= e($l['lesson_title']) ?></strong><small><?= e($l['short_description']) ?></small></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="section-head"><div class="section-title"><span class="eyebrow"><?= e($lesson['level'] ?: 'Practice') ?> <?= $lesson['tense_name'] ? '• ' . e($lesson['tense_name']) : '' ?></span><h2><?= e($lesson['lesson_title']) ?></h2><p><?= e($lesson['instructions'] ?: $lesson['short_description']) ?></p></div><a class="btn btn-soft" href="free-ai-english-practice.php#practice-lessons">Change Lesson</a></div>
+            <?php if ($result && $currentQuestion): ?>
+                <div class="practice-result <?= $result['is_correct'] ? 'is-correct' : 'is-improve' ?>">
+                    <div><strong><?= $result['is_correct'] ? '✅ Correct Answer' : '💡 Practice Feedback' ?></strong><p><?= e($result['feedback']) ?></p></div>
+                    <div><span><?= ($result['ai_status'] ?? '') === 'success' ? 'AI Corrected / Natural Answer' : 'Correct / Natural Answer' ?></span><h3><?= e(($result['natural_answer'] ?? '') ?: $result['sample_answer']) ?></h3><p><?= e($result['explanation']) ?></p><?php if (!empty($result['ai_feedback'])): ?><div class="ai-feedback-box"><?= nl2br(e($result['ai_feedback'])) ?></div><?php elseif (($result['ai_status'] ?? '') === 'fallback'): ?><div class="ai-feedback-box muted">AI enhancement is currently unavailable, so local practice feedback is shown safely.</div><?php endif; ?><small><?= e($result['next_step']) ?></small></div>
+                </div>
+                <br>
+            <?php endif; ?>
+            <div class="practice-question-grid">
+                <?php foreach ($questions as $q): ?>
+                    <form class="practice-question-card" method="post">
+                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="question_id" value="<?= e((string)$q['id']) ?>">
+                        <div class="question-type"><?= e(ucwords(str_replace('_', ' ', $q['question_type']))) ?></div>
+                        <h3><?= e($q['question_text']) ?></h3>
+                        <?php if ($q['option_a'] || $q['option_b'] || $q['option_c'] || $q['option_d']): ?>
+                            <div class="option-stack"><?php foreach (['option_a','option_b','option_c','option_d'] as $opt): if (!empty($q[$opt])): ?><label><input type="radio" name="answer" value="<?= e($q[$opt]) ?>"> <?= e($q[$opt]) ?></label><?php endif; endforeach; ?></div>
+                        <?php else: ?>
+                            <textarea name="answer" rows="3" placeholder="Write or speak your answer here..."></textarea>
+                            <?php if (practice_setting('browser_voice_enabled', 'Yes') === 'Yes'): ?><button class="btn btn-sm btn-soft voice-btn" type="button">🎤 Start Speaking</button><?php endif; ?>
+                        <?php endif; ?>
+                        <button class="btn btn-primary" type="submit">Check My Answer</button>
+                    </form>
+                <?php endforeach; ?>
+                <?php if (!$questions): ?><div class="empty-state">No questions are published in this lesson yet.</div><?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+<section class="section section-soft"><div class="container"><div class="dark-cta"><div><h2><?= e(app_setting('practice_cta_title', 'Want teacher guidance after practice?')) ?></h2><p><?= e(app_setting('practice_cta_body', 'Share your practice score with the counsellor and book a free demo class for personal spoken English correction.')) ?></p></div><a class="btn btn-primary" href="admission.php?source=practice">Book Free Demo</a></div></div></section>
+<script>
+document.querySelectorAll('.voice-btn').forEach(function(button){
+    button.addEventListener('click', function(){
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var textarea = button.closest('form').querySelector('textarea');
+        if (!SpeechRecognition) { alert('Voice practice works best in Chrome browser. Please type your answer here.'); return; }
+        var recognition = new SpeechRecognition();
+        recognition.lang = 'en-IN';
+        recognition.interimResults = false;
+        button.textContent = '🎙 Listening...';
+        recognition.onresult = function(event){ textarea.value = event.results[0][0].transcript; button.textContent = '🎤 Start Speaking'; };
+        recognition.onerror = function(){ button.textContent = '🎤 Start Speaking'; alert('Could not hear clearly. Please try again or type your answer.'); };
+        recognition.onend = function(){ button.textContent = '🎤 Start Speaking'; };
+        recognition.start();
+    });
+});
+</script>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -1,0 +1,51 @@
+﻿key,col1_correct_answer,col2_question_or_hindi,col3_example,col4_hindi_example,col5_variation,type_tag,notes,sort_order
+Go,go,जाना,I go to school.,मैं स्कूल जाता हूँ।,went | gone,verb,V1 base verb,1
+Come,come,आना,I come here daily.,मैं रोज यहाँ आता हूँ।,came | come,verb,V1 base verb,2
+Eat,eat,खाना,I eat rice.,मैं चावल खाता हूँ।,ate | eaten,verb,V1 base verb,3
+Drink,drink,पीना,I drink water.,मैं पानी पीता हूँ।,drank | drunk,verb,V1 base verb,4
+Read,read,पढ़ना,I read a book.,मैं किताब पढ़ता हूँ।,read | read,verb,V1 base verb,5
+Write,write,लिखना,I write English.,मैं अंग्रेजी लिखता हूँ।,wrote | written,verb,V1 base verb,6
+Speak,speak,बोलना,I speak English.,मैं अंग्रेजी बोलता हूँ।,spoke | spoken,verb,V1 base verb,7
+Listen,listen,सुनना,I listen carefully.,मैं ध्यान से सुनता हूँ।,listened | listened,verb,V1 base verb,8
+Learn,learn,सीखना,I learn English.,मैं अंग्रेजी सीखता हूँ।,learned | learned,verb,V1 base verb,9
+Teach,teach,पढ़ाना,I teach students.,मैं छात्रों को पढ़ाता हूँ।,taught | taught,verb,V1 base verb,10
+Play,play,खेलना,I play cricket.,मैं क्रिकेट खेलता हूँ।,played | played,verb,V1 base verb,11
+Work,work,काम करना,I work hard.,मैं मेहनत करता हूँ।,worked | worked,verb,V1 base verb,12
+Study,study,अध्ययन करना,I study daily.,मैं रोज पढ़ता हूँ।,studied | studied,verb,V1 base verb,13
+Sleep,sleep,सोना,I sleep early.,मैं जल्दी सोता हूँ।,slept | slept,verb,V1 base verb,14
+Wake,wake,जागना,I wake up early.,मैं जल्दी उठता हूँ।,woke | woken,verb,V1 base verb,15
+Run,run,दौड़ना,I run in the morning.,मैं सुबह दौड़ता हूँ।,ran | run,verb,V1 base verb,16
+Walk,walk,चलना,I walk slowly.,मैं धीरे चलता हूँ।,walked | walked,verb,V1 base verb,17
+Buy,buy,खरीदना,I buy vegetables.,मैं सब्जियां खरीदता हूँ।,bought | bought,verb,V1 base verb,18
+Sell,sell,बेचना,I sell books.,मैं किताबें बेचता हूँ।,sold | sold,verb,V1 base verb,19
+Bring,bring,लाना,I bring my bag.,मैं अपना बैग लाता हूँ।,brought | brought,verb,V1 base verb,20
+Take,take,लेना,I take tea.,मैं चाय लेता हूँ।,took | taken,verb,V1 base verb,21
+Give,give,देना,I give him money.,मैं उसे पैसे देता हूँ।,gave | given,verb,V1 base verb,22
+Get,get,पाना / मिलना,I get good marks.,मुझे अच्छे अंक मिलते हैं।,got | got,verb,V1 base verb,23
+Make,make,बनाना,I make tea.,मैं चाय बनाता हूँ।,made | made,verb,V1 base verb,24
+Do,do,करना,I do my work.,मैं अपना काम करता हूँ।,did | done,verb,V1 base verb,25
+Have,have,रखना / होना,I have a pen.,मेरे पास पेन है।,had | had,verb,V1 base verb,26
+See,see,देखना,I see a bird.,मैं पक्षी देखता हूँ।,saw | seen,verb,V1 base verb,27
+Watch,watch,देखना,I watch TV.,मैं टीवी देखता हूँ।,watched | watched,verb,V1 base verb,28
+Call,call,बुलाना / फोन करना,I call my friend.,मैं अपने दोस्त को फोन करता हूँ।,called | called,verb,V1 base verb,29
+Meet,meet,मिलना,I meet him daily.,मैं उससे रोज मिलता हूँ।,met | met,verb,V1 base verb,30
+Know,know,जानना,I know him.,मैं उसे जानता हूँ।,knew | known,verb,V1 base verb,31
+Understand,understand,समझना,I understand English.,मैं अंग्रेजी समझता हूँ।,understood | understood,verb,V1 base verb,32
+Think,think,सोचना,I think about it.,मैं इसके बारे में सोचता हूँ।,thought | thought,verb,V1 base verb,33
+Tell,tell,बताना,I tell the truth.,मैं सच बताता हूँ।,told | told,verb,V1 base verb,34
+Ask,ask,पूछना,I ask a question.,मैं सवाल पूछता हूँ।,asked | asked,verb,V1 base verb,35
+Answer,answer,जवाब देना,I answer quickly.,मैं जल्दी जवाब देता हूँ।,answered | answered,verb,V1 base verb,36
+Open,open,खोलना,I open the door.,मैं दरवाजा खोलता हूँ।,opened | opened,verb,V1 base verb,37
+Close,close,बंद करना,I close the window.,मैं खिड़की बंद करता हूँ।,closed | closed,verb,V1 base verb,38
+Start,start,शुरू करना,I start my work.,मैं अपना काम शुरू करता हूँ।,started | started,verb,V1 base verb,39
+Finish,finish,खत्म करना,I finish my homework.,मैं अपना होमवर्क खत्म करता हूँ।,finished | finished,verb,V1 base verb,40
+Wait,wait,इंतजार करना,I wait for you.,मैं तुम्हारा इंतजार करता हूँ।,waited | waited,verb,V1 base verb,41
+Help,help,मदद करना,I help my mother.,मैं अपनी माँ की मदद करता हूँ।,helped | helped,verb,V1 base verb,42
+Need,need,ज़रूरत होना,I need water.,मुझे पानी चाहिए।,needed | needed,verb,V1 base verb,43
+Want,want,चाहना,I want tea.,मुझे चाय चाहिए।,wanted | wanted,verb,V1 base verb,44
+Like,like,पसंद करना,I like English.,मुझे अंग्रेजी पसंद है।,liked | liked,verb,V1 base verb,45
+Love,love,प्यार करना,I love my family.,मैं अपने परिवार से प्यार करता हूँ।,loved | loved,verb,V1 base verb,46
+Try,try,कोशिश करना,I try daily.,मैं रोज कोशिश करता हूँ।,tried | tried,verb,V1 base verb,47
+Practice,practice,अभ्यास करना,I practice English.,मैं अंग्रेजी का अभ्यास करता हूँ।,practiced | practiced,verb,V1 base verb,48
+Improve,improve,सुधारना,I improve my English.,मैं अपनी अंग्रेजी सुधारता हूँ।,improved | improved,verb,V1 base verb,49
+Remember,remember,याद रखना,I remember your name.,मुझे तुम्हारा नाम याद है।,remembered | remembered,verb,V1 base verb,50

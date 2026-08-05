@@ -1,0 +1,59 @@
+PHASE 129 CHANGED FILES
+
+Modified:
+- .env.example
+- admin/hero-banners.php
+- admin/login.php
+- admission.php
+- ai-teacher-api.php
+- ai-teacher.php
+- gallery.php
+- includes/config.php
+- includes/footer.php
+- includes/functions.php
+- includes/header.php
+- includes/ui-components.php
+- index.php
+- online-class.php
+- roadmap-lesson.php
+- spoken-materials.php
+- sql/wellfare_english.sql
+- sw.js
+- weekly-test.php
+
+Added:
+- DELETE_OLD_FILES_PHASE129.txt
+- PHASE129_PAGE_MODULE_AUDIT.md
+- PHASE129_TEST_CHECKLIST.md
+- README_PHASE129_FRONTEND_MODULE_FIX.md
+- assets/css/phase129-admission.css
+- assets/css/phase129-admission.min.css
+- assets/css/phase129-ai-teacher.css
+- assets/css/phase129-ai-teacher.min.css
+- assets/css/phase129-design-system.css
+- assets/css/phase129-design-system.min.css
+- assets/css/phase129-gallery.css
+- assets/css/phase129-gallery.min.css
+- assets/css/phase129-materials.css
+- assets/css/phase129-materials.min.css
+- assets/css/phase129-online-class.css
+- assets/css/phase129-online-class.min.css
+- assets/css/phase129-roadmap-lesson.css
+- assets/css/phase129-roadmap-lesson.min.css
+- assets/css/phase129-weekly-test.css
+- assets/css/phase129-weekly-test.min.css
+- assets/js/phase129-gallery.js
+- assets/js/phase129-ui.js
+- assets/js/phase129-weekly-test.js
+- PHASE129_CHANGED_FILES.txt
+
+Deleted:
+- admin/practice-lab.php
+- assets/css/phase123-test-center.css
+- assets/css/phase123-test-center.min.css
+- assets/css/phase128-design-system.css
+- assets/css/phase128-design-system.min.css
+- assets/js/phase128-ui.js
+- free-ai-english-practice.php
+- practice-quick-api.php
+- practice-session-api.php

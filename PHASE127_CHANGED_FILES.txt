@@ -1,0 +1,23 @@
+# Phase 127 added/changed files
+includes/ui-components.php
+includes/header.php
+includes/footer.php
+assets/css/phase127-design-system.css
+assets/css/phase127-design-system.min.css
+assets/js/phase127-ui.js
+index.php
+courses.php
+course-detail.php
+about.php
+contact.php
+admission.php
+gallery.php
+reviews.php
+spoken-materials.php
+ai-teacher.php
+free-ai-english-practice.php
+sw.js
+README_PHASE127_UNIFIED_DESIGN_FLOW.md
+PHASE127_TEST_CHECKLIST.md
+DELETE_OLD_FILES_PHASE127.txt
+PHASE127_CHANGED_FILES.txt

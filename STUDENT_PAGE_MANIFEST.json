@@ -1,0 +1,199 @@
+{
+  "version": "1.0",
+  "pages": [
+    {
+      "group": "OVERVIEW",
+      "key": "dashboard",
+      "label": "Dashboard",
+      "file": "student-dashboard.html",
+      "icon": "home",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "OVERVIEW",
+      "key": "profile",
+      "label": "My Profile",
+      "file": "student-profile.html",
+      "icon": "user",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "OVERVIEW",
+      "key": "id-card",
+      "label": "Student ID Card",
+      "file": "student-id-card.html",
+      "icon": "id",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "OVERVIEW",
+      "key": "documents",
+      "label": "My Documents",
+      "file": "student-documents.html",
+      "icon": "folder",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "course",
+      "label": "My Course",
+      "file": "student-course.html",
+      "icon": "book",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "materials",
+      "label": "Learning Materials",
+      "file": "student-materials.html",
+      "icon": "folder",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "assignments",
+      "label": "Assignments",
+      "file": "student-assignments.html",
+      "icon": "file",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "timetable",
+      "label": "Timetable",
+      "file": "student-timetable.html",
+      "icon": "calendar",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "attendance",
+      "label": "Attendance",
+      "file": "student-attendance.html",
+      "icon": "check",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "LEARNING",
+      "key": "leave",
+      "label": "Leave Requests",
+      "file": "student-leave.html",
+      "icon": "clipboard",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "EXAMINATION",
+      "key": "exams",
+      "label": "Exam Forms",
+      "file": "student-exams.html",
+      "icon": "clipboard",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "EXAMINATION",
+      "key": "online-exams",
+      "label": "Online Exams",
+      "file": "student-online-exams.html",
+      "icon": "monitor",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "EXAMINATION",
+      "key": "admit",
+      "label": "Admit Card",
+      "file": "student-admit-card.html",
+      "icon": "id",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "EXAMINATION",
+      "key": "results",
+      "label": "Results",
+      "file": "student-results.html",
+      "icon": "chart",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "EXAMINATION",
+      "key": "certificates",
+      "label": "Certificates",
+      "file": "student-certificates.html",
+      "icon": "award",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "fees",
+      "label": "Fees & Payments",
+      "file": "student-fees.html",
+      "icon": "credit",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "placement",
+      "label": "Placement",
+      "file": "student-placement.html",
+      "icon": "chart",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "news",
+      "label": "Latest News",
+      "file": "student-news.html",
+      "icon": "news",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "events",
+      "label": "Upcoming Events",
+      "file": "student-events.html",
+      "icon": "events",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "downloads",
+      "label": "Downloads",
+      "file": "student-downloads.html",
+      "icon": "download",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "STUDENT SERVICES",
+      "key": "requests",
+      "label": "My Requests",
+      "file": "student-requests.html",
+      "icon": "message",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "ACCOUNT",
+      "key": "notifications",
+      "label": "Notifications",
+      "file": "student-notifications.html",
+      "icon": "bell",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "ACCOUNT",
+      "key": "settings",
+      "label": "Preferences",
+      "file": "student-settings.html",
+      "icon": "settings",
+      "backend_status": "UI complete; Laravel domain integration required"
+    },
+    {
+      "group": "ACCOUNT",
+      "key": "security",
+      "label": "Security",
+      "file": "student-security.html",
+      "icon": "shield",
+      "backend_status": "UI complete; Laravel domain integration required"
+    }
+  ],
+  "helpdesk_deferred": true,
+  "design_source": "BFS Super Admin UI + BFS public frontend palette"
+}

@@ -1,0 +1,17 @@
+Phase 125 changed files
+
+index.php
+includes/functions.php
+includes/footer.php
+admin/content.php
+admin/hero-banners.php
+sw.js
+assets/css/phase125-home.css
+assets/css/phase125-home.min.css
+assets/js/phase125-home.js
+assets/uploads/banners/home-banner-speaking-desktop.webp
+assets/uploads/banners/home-banner-speaking-mobile.webp
+assets/uploads/banners/home-banner-student-success.webp
+README_PHASE125_HOME_PAGE.md
+PHASE125_CHANGED_FILES.txt
+PHASE125_HOME_TEST_CHECKLIST.md

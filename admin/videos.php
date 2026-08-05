@@ -1,0 +1,21 @@
+<?php require_once __DIR__ . '/_header.php';
+$edit=null;
+if (isset($_GET['edit'])) { $stmt=db()->prepare('SELECT * FROM videos WHERE id=?');$stmt->execute([(int)$_GET['edit']]);$edit=$stmt->fetch(); }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
+    $action=$_POST['action'] ?? 'save';
+    if ($action==='delete') { $stmt=db()->prepare('DELETE FROM videos WHERE id=?');$stmt->execute([(int)($_POST['id']??0)]);flash('success','Video deleted.');redirect('videos.php'); }
+    if ($action==='save') {
+        $url=trim($_POST['youtube_url']??'');
+        if (!preg_match('/(youtube\.com|youtu\.be)/i',$url)) { flash('error','Please enter a valid YouTube URL.'); redirect('videos.php'); }
+        if (!empty($_POST['id'])) { $stmt=db()->prepare('UPDATE videos SET title=?, youtube_url=?, published=? WHERE id=?');$stmt->execute([trim($_POST['title']??''),$url,$_POST['published']??'Yes',(int)$_POST['id']]);flash('success','Video updated.'); }
+        else { $stmt=db()->prepare('INSERT INTO videos (title, youtube_url, published, created_at) VALUES (?, ?, ?, NOW())');$stmt->execute([trim($_POST['title']??''),$url,$_POST['published']??'Yes']);flash('success','Video added.'); }
+        redirect('videos.php');
+    }
+}
+$rows=db()->query('SELECT * FROM videos ORDER BY id DESC')->fetchAll();
+?>
+<div class="admin-top"><div><h1>YouTube Videos</h1><p>Add class videos, demo lectures or student activity videos using YouTube links.</p></div><div class="admin-actions"><a class="btn btn-soft" href="videos.php">Add New</a></div></div>
+<?php if ($msg=flash('success')): ?><div class="alert alert-success"><?= e($msg) ?></div><?php endif; ?><?php if ($msg=flash('error')): ?><div class="alert alert-error"><?= e($msg) ?></div><?php endif; ?>
+<div class="admin-form-layout"><form class="form-box" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?= e($edit['id'] ?? '') ?>"><div class="form-grid"><div class="form-section-title"><span><?= $edit?'✎':'+' ?></span><?= $edit?'Edit Video':'Add YouTube Video' ?></div><div class="field full"><label>Video Title *</label><input name="title" required value="<?= e($edit['title'] ?? '') ?>" placeholder="English speaking practice demo"></div><div class="field full"><label>YouTube URL *</label><input name="youtube_url" required value="<?= e($edit['youtube_url'] ?? '') ?>" placeholder="https://www.youtube.com/watch?v=..."></div><div class="field"><label>Published</label><select name="published"><option <?= (($edit['published'] ?? 'Yes')==='Yes')?'selected':'' ?>>Yes</option><option <?= (($edit['published'] ?? '')==='No')?'selected':'' ?>>No</option></select></div><div class="field"><label>&nbsp;</label><button class="btn btn-primary"><?= $edit?'Update Video':'Save Video' ?></button></div></div></form><div class="panel-card"><h3>Video display tip</h3><p>Use short demo videos and real classroom activity clips. They build trust faster than plain text.</p></div></div><br>
+<div class="panel-card"><div class="table-wrap"><table><thead><tr><th>Title</th><th>Preview</th><th>Published</th><th>Actions</th></tr></thead><tbody><?php foreach ($rows as $row): ?><tr><td data-label="Title"><strong><?= e($row['title']) ?></strong><br><span class="help"><?= e($row['youtube_url']) ?></span></td><td data-label="Preview"><a class="btn btn-sm btn-soft" href="<?= e($row['youtube_url']) ?>" target="_blank">Open</a></td><td data-label="Published"><span class="badge <?= $row['published']==='Yes'?'badge-yes':'badge-no' ?>"><?= e($row['published']) ?></span></td><td data-label="Actions"><div class="table-actions"><a class="btn btn-sm btn-soft" href="videos.php?edit=<?= e((string)$row['id']) ?>">Edit</a><form method="post" onsubmit="return confirm('Delete this video?')"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= e((string)$row['id']) ?>"><button class="btn btn-sm btn-danger">Delete</button></form></div></td></tr><?php endforeach; ?><?php if (!$rows): ?><tr><td colspan="4" class="empty-state">No videos found.</td></tr><?php endif; ?></tbody></table></div></div>
+<?php require_once __DIR__ . '/_footer.php'; ?>

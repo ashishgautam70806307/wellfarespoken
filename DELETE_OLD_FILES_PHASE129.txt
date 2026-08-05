@@ -1,0 +1,15 @@
+After uploading the Phase 129 replace-only package, delete these obsolete files from the website:
+
+free-ai-english-practice.php
+practice-quick-api.php
+practice-session-api.php
+admin/practice-lab.php
+assets/css/phase128-design-system.css
+assets/css/phase128-design-system.min.css
+assets/js/phase128-ui.js
+assets/css/phase123-test-center.css
+assets/css/phase123-test-center.min.css
+
+Keep these files because they are still used by the admin panel or standalone exam room:
+assets/css/style.css
+assets/css/style.min.css

@@ -1,0 +1,11 @@
+# Delete these obsolete files after applying Phase 127 replace-only package
+assets/css/phase123-roadmap.css
+assets/css/phase123-roadmap.min.css
+assets/css/phase124-reference-ui.css
+assets/css/phase124-reference-ui.min.css
+assets/css/phase125-home.css
+assets/css/phase125-home.min.css
+assets/css/phase126-brand-system.css
+assets/css/phase126-brand-system.min.css
+assets/js/phase124-reference-ui.js
+assets/js/phase125-home.js

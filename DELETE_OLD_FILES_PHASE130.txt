@@ -1,0 +1,21 @@
+Delete these obsolete files after replacing Phase 130. They are no longer referenced:
+
+assets/css/phase129-admission.css
+assets/css/phase129-admission.min.css
+assets/css/phase129-design-system.css
+assets/css/phase129-design-system.min.css
+assets/css/phase129-materials.css
+assets/css/phase129-materials.min.css
+assets/css/phase129-online-class.css
+assets/css/phase129-online-class.min.css
+assets/css/phase129-roadmap-lesson.css
+assets/css/phase129-roadmap-lesson.min.css
+assets/css/phase129-weekly-test.css
+assets/css/phase129-weekly-test.min.css
+assets/js/phase129-ui.js
+assets/js/phase129-weekly-test.js
+
+Do not delete:
+assets/css/phase129-gallery.css
+assets/js/phase129-gallery.js
+assets/css/phase129-ai-teacher.css

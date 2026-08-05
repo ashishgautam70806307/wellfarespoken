@@ -1,0 +1,4 @@
+﻿question_text,expected_answer,question_type,topic_name,level,marks,option_a,option_b,option_c,option_d
+मैं कल स्कूल गया था।,I went to school yesterday.,hindi_to_english,Past Simple,Basic,1,,,,
+You should practise daily.,आपको रोज अभ्यास करना चाहिए।||तुम्हें रोज अभ्यास करना चाहिए।,english_to_hindi,Should,Basic,1,,,,
+Choose correct answer,He was busy.,mcq,Was / Were,Basic,1,He were busy.,He was busy.,He is busy yesterday.,He busy was.

@@ -1,0 +1,70 @@
+{
+  "name": "Well Fare English Spoken",
+  "short_name": "Well Fare",
+  "id": "./",
+  "description": "Spoken English learning, Hindi to English practice, weekly tests and student progress.",
+  "start_url": "./index.php?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1a3565",
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "assets/uploads/brand/wf-pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/uploads/brand/wf-pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/uploads/brand/wf-pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/uploads/brand/wf-pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Practice Room",
+      "short_name": "Practice",
+      "url": "./spoken-materials.php",
+      "icons": [
+        {
+          "src": "assets/uploads/brand/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Weekly Test",
+      "short_name": "Test",
+      "url": "./weekly-test.php",
+      "icons": [
+        {
+          "src": "assets/uploads/brand/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

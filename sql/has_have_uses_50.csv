@@ -1,0 +1,51 @@
+﻿key,col1_correct_answer,col2_question_or_hindi,col3_example,col4_hindi_example,col5_variation,type_tag,notes,sort_order
+Have simple,I have a book.,मेरे पास एक किताब है।,I have a book.,मेरे पास एक किताब है।,I have one book.,simple,has/have possession,1
+Has simple,He has a bike.,उसके पास बाइक है।,He has a bike.,उसके पास बाइक है।,He has one bike.,simple,has/have possession,2
+Have family,We have a big family.,हमारा बड़ा परिवार है।,We have a big family.,हमारा बड़ा परिवार है।,We have large family.,simple,has/have possession,3
+Has sister,She has a sister.,उसकी एक बहन है।,She has a sister.,उसकी एक बहन है।,She has one sister.,simple,has/have possession,4
+Have time,I have time today.,मेरे पास आज समय है।,I have time today.,मेरे पास आज समय है।,I have free time today.,simple,has/have possession,5
+Has money,He has money.,उसके पास पैसे हैं।,He has money.,उसके पास पैसे हैं।,He has some money.,simple,has/have possession,6
+Have problem,I have a problem.,मुझे एक समस्या है।,I have a problem.,मुझे एक समस्या है।,I have one problem.,simple,has/have state,7
+Has fever,She has a fever.,उसे बुखार है।,She has a fever.,उसे बुखार है।,She has fever.,simple,has/have state,8
+Do not have,I do not have a pen.,मेरे पास पेन नहीं है।,I do not have a pen.,मेरे पास पेन नहीं है।,I don't have a pen.,negative,has/have negative,9
+Does not have,He does not have time.,उसके पास समय नहीं है।,He does not have time.,उसके पास समय नहीं है।,He doesn't have time.,negative,has/have negative,10
+Do you have,Do you have a mobile?,क्या तुम्हारे पास मोबाइल है?,Do you have a mobile?,क्या तुम्हारे पास मोबाइल है?,Do you have phone?,interrogative,has/have question,11
+Does he have,Does he have a car?,क्या उसके पास कार है?,Does he have a car?,क्या उसके पास कार है?,Does he have car?,interrogative,has/have question,12
+What do you have,What do you have?,तुम्हारे पास क्या है?,What do you have?,तुम्हारे पास क्या है?,What have you got?,wh_question,has/have wh,13
+Have practice 1,I have a notebook.,मेरे पास एक नोटबुक है।,I have a notebook.,मेरे पास एक नोटबुक है।,,simple,has/have daily practice,14
+Have practice 2,You have a charger.,तुम्हारे पास एक चार्जर है।,You have a charger.,तुम्हारे पास एक चार्जर है।,,simple,has/have daily practice,15
+Have practice 3,We have a plan.,हमारे पास एक योजना है।,We have a plan.,हमारे पास एक योजना है।,,simple,has/have daily practice,16
+Have practice 4,They have a meeting.,उनके पास एक मीटिंग है।,They have a meeting.,उनके पास एक मीटिंग है।,,simple,has/have daily practice,17
+Has practice 5,He has a new bag.,उसके पास एक नया बैग है।,He has a new bag.,उसके पास एक नया बैग है।,,simple,has/have daily practice,18
+Has practice 6,She has a red pen.,उसके पास एक लाल पेन है।,She has a red pen.,उसके पास एक लाल पेन है।,,simple,has/have daily practice,19
+Has practice 7,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,,simple,has/have daily practice,20
+Have practice 8,My friends have books.,मेरे दोस्तों के पास किताबें है।,My friends have books.,मेरे दोस्तों के पास किताबें है।,,simple,has/have daily practice,21
+Have practice 9,I have a notebook.,मेरे पास एक नोटबुक है।,I have a notebook.,मेरे पास एक नोटबुक है।,,simple,has/have daily practice,22
+Have practice 10,You have a charger.,तुम्हारे पास एक चार्जर है।,You have a charger.,तुम्हारे पास एक चार्जर है।,,simple,has/have daily practice,23
+Have practice 11,We have a plan.,हमारे पास एक योजना है।,We have a plan.,हमारे पास एक योजना है।,,simple,has/have daily practice,24
+Have practice 12,They have a meeting.,उनके पास एक मीटिंग है।,They have a meeting.,उनके पास एक मीटिंग है।,,simple,has/have daily practice,25
+Has practice 13,He has a new bag.,उसके पास एक नया बैग है।,He has a new bag.,उसके पास एक नया बैग है।,,simple,has/have daily practice,26
+Has practice 14,She has a red pen.,उसके पास एक लाल पेन है।,She has a red pen.,उसके पास एक लाल पेन है।,,simple,has/have daily practice,27
+Has practice 15,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,,simple,has/have daily practice,28
+Have practice 16,My friends have books.,मेरे दोस्तों के पास किताबें है।,My friends have books.,मेरे दोस्तों के पास किताबें है।,,simple,has/have daily practice,29
+Have practice 17,I have a notebook.,मेरे पास एक नोटबुक है।,I have a notebook.,मेरे पास एक नोटबुक है।,,simple,has/have daily practice,30
+Have practice 18,You have a charger.,तुम्हारे पास एक चार्जर है।,You have a charger.,तुम्हारे पास एक चार्जर है।,,simple,has/have daily practice,31
+Have practice 19,We have a plan.,हमारे पास एक योजना है।,We have a plan.,हमारे पास एक योजना है।,,simple,has/have daily practice,32
+Have practice 20,They have a meeting.,उनके पास एक मीटिंग है।,They have a meeting.,उनके पास एक मीटिंग है।,,simple,has/have daily practice,33
+Has practice 21,He has a new bag.,उसके पास एक नया बैग है।,He has a new bag.,उसके पास एक नया बैग है।,,simple,has/have daily practice,34
+Has practice 22,She has a red pen.,उसके पास एक लाल पेन है।,She has a red pen.,उसके पास एक लाल पेन है।,,simple,has/have daily practice,35
+Has practice 23,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,,simple,has/have daily practice,36
+Have practice 24,My friends have books.,मेरे दोस्तों के पास किताबें है।,My friends have books.,मेरे दोस्तों के पास किताबें है।,,simple,has/have daily practice,37
+Have practice 25,I have a notebook.,मेरे पास एक नोटबुक है।,I have a notebook.,मेरे पास एक नोटबुक है।,,simple,has/have daily practice,38
+Have practice 26,You have a charger.,तुम्हारे पास एक चार्जर है।,You have a charger.,तुम्हारे पास एक चार्जर है।,,simple,has/have daily practice,39
+Have practice 27,We have a plan.,हमारे पास एक योजना है।,We have a plan.,हमारे पास एक योजना है।,,simple,has/have daily practice,40
+Have practice 28,They have a meeting.,उनके पास एक मीटिंग है।,They have a meeting.,उनके पास एक मीटिंग है।,,simple,has/have daily practice,41
+Has practice 29,He has a new bag.,उसके पास एक नया बैग है।,He has a new bag.,उसके पास एक नया बैग है।,,simple,has/have daily practice,42
+Has practice 30,She has a red pen.,उसके पास एक लाल पेन है।,She has a red pen.,उसके पास एक लाल पेन है।,,simple,has/have daily practice,43
+Has practice 31,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,My brother has a bicycle.,मेरे भाई के पास एक साइकिल है।,,simple,has/have daily practice,44
+Have practice 32,My friends have books.,मेरे दोस्तों के पास किताबें है।,My friends have books.,मेरे दोस्तों के पास किताबें है।,,simple,has/have daily practice,45
+Have practice 33,I have a notebook.,मेरे पास एक नोटबुक है।,I have a notebook.,मेरे पास एक नोटबुक है।,,simple,has/have daily practice,46
+Have practice 34,You have a charger.,तुम्हारे पास एक चार्जर है।,You have a charger.,तुम्हारे पास एक चार्जर है।,,simple,has/have daily practice,47
+Have practice 35,We have a plan.,हमारे पास एक योजना है।,We have a plan.,हमारे पास एक योजना है।,,simple,has/have daily practice,48
+Have practice 36,They have a meeting.,उनके पास एक मीटिंग है।,They have a meeting.,उनके पास एक मीटिंग है।,,simple,has/have daily practice,49
+Has practice 37,He has a new bag.,उसके पास एक नया बैग है।,He has a new bag.,उसके पास एक नया बैग है।,,simple,has/have daily practice,50

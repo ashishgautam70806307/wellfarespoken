@@ -1,0 +1,4 @@
+.env
+storage/rate-limits/*.json
+assets/uploads/**/index.html
+*.log
