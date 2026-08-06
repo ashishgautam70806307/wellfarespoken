@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             flash('success','Admission quick update saved.');
             redirect('admission-view.php?id=' . $id);
         }
-    } catch(Throwable $e) { flash('error', $e->getMessage()); redirect('admission-view.php?id=' . $id); }
+    } catch (Throwable $e) { error_log('[admin-admission-view] ' . $e->__toString()); flash('error', 'Admission status could not be updated.'); redirect('admission-view.php?id=' . $id); }
 }
 $photo = site_asset_url($row['student_photo'] ?? '');
 $balance = max(0, (float)$row['total_fee'] - (float)$row['discount_amount'] - (float)$row['paid_amount']);

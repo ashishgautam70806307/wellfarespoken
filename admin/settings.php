@@ -3,6 +3,7 @@ ensure_schema_updates();
 $groups = [
     'Brand & Contact' => [
         'site_name' => ['Site Name', 'text'],
+        'site_tagline' => ['Site Tagline', 'text'],
         'brand_short' => ['Brand Short Mark', 'text'],
         'brand_title' => ['Brand Main Text', 'text'],
         'brand_subtitle' => ['Brand Subtitle', 'text'],
@@ -14,12 +15,14 @@ $groups = [
         'email' => ['Email Address', 'email'],
         'address' => ['Institute Address', 'textarea'],
         'map_url' => ['Google Map URL', 'text'],
-        'facebook_url' => ['Facebook URL', 'text'],
-        'instagram_url' => ['Instagram URL', 'text'],
-        'youtube_url' => ['YouTube Channel URL', 'text'],
-        'twitter_url' => ['Twitter / X URL', 'text'],
-        'linkedin_url' => ['LinkedIn URL', 'text'],
         'admission_marquee_text' => ['Topbar Moving Text', 'textarea']
+    ],
+    'Social Media Links' => [
+        'facebook_url' => ['Facebook URL', 'url', 'https://facebook.com/your-page'],
+        'instagram_url' => ['Instagram URL', 'url', 'https://instagram.com/your-profile'],
+        'youtube_url' => ['YouTube Channel URL', 'url', 'https://youtube.com/@your-channel'],
+        'twitter_url' => ['Twitter / X URL', 'url', 'https://x.com/your-profile'],
+        'linkedin_url' => ['LinkedIn URL', 'url', 'https://linkedin.com/company/your-page']
     ],
     'Homepage Hero' => [
         'hero_eyebrow' => ['Hero Small Label', 'text'],
@@ -95,9 +98,19 @@ $flatKeys = [];
 foreach ($groups as $fields) { foreach ($fields as $key => $meta) { $flatKeys[$key] = $meta; } }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
     $uploadError = '';
+    $settingErrors = [];
+    $socialKeys = ['facebook_url','instagram_url','youtube_url','twitter_url','linkedin_url'];
     $stmt = db()->prepare('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)');
     foreach ($flatKeys as $key => $meta) {
-        $stmt->execute([$key, trim($_POST[$key] ?? '')]);
+        $value = trim((string)($_POST[$key] ?? ''));
+        if (in_array($key, $socialKeys, true) && $value !== '') {
+            if (!preg_match('#^https?://#i', $value)) $value = 'https://' . ltrim($value, '/');
+            if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                $settingErrors[] = ($meta[0] ?? $key) . ' is not a valid URL.';
+                continue;
+            }
+        }
+        $stmt->execute([$key, $value]);
     }
     if (!empty($_FILES['site_logo_file']['name'])) {
         $logoPath = upload_brand_asset($_FILES['site_logo_file'], 'logo');
@@ -122,13 +135,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 $stmt->execute(['director_photo', $directorPhotoPath]);
             }
         } catch (Throwable $e) {
-            $uploadError = $e->getMessage();
+            error_log('[admin-settings-upload] ' . $e->__toString());
+            $uploadError = 'Director photo upload failed. Use a valid image under the configured upload limit.';
         }
     }
-    if ($uploadError !== '') {
-        flash('error', $uploadError);
+    if ($uploadError !== '' || $settingErrors) {
+        $messages = array_values(array_filter(array_merge([$uploadError], $settingErrors)));
+        flash('error', implode(' ', $messages));
     } else {
-        flash('success', 'Dynamic site settings updated.');
+        flash('success', 'Dynamic site settings updated. Social icons appear automatically in the footer when their URLs are saved.');
     }
     redirect('settings.php');
 }
@@ -155,6 +170,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 <div class="field full"><label>Logo Path</label><input name="site_logo" value="<?= e(app_setting('site_logo', '')) ?>" placeholder="assets/uploads/brand/logo.png"><span class="help">Upload a logo above or paste an existing path.</span></div>
                 <div class="field full"><label>Favicon Path</label><input name="site_favicon" value="<?= e(app_setting('site_favicon', '')) ?>" placeholder="assets/uploads/brand/favicon.png"><span class="help">Upload a favicon above or paste an existing path.</span></div>
             <?php endif; ?>
+            <?php if ($groupTitle === 'Social Media Links'): ?>
+                <div class="field full">
+                    <div class="wf139-social-admin-note">
+                        <span><i class="fa-solid fa-share-nodes" aria-hidden="true"></i></span>
+                        <div><b>Dynamic footer social icons</b><small>Save a valid profile URL to show its icon in the website footer. Leave a field blank to hide that platform.</small></div>
+                    </div>
+                    <div class="wf139-social-admin-preview" aria-label="Configured social link status">
+                        <?php foreach ([
+                            'facebook_url' => ['Facebook','fa-brands fa-facebook-f'],
+                            'instagram_url' => ['Instagram','fa-brands fa-instagram'],
+                            'youtube_url' => ['YouTube','fa-brands fa-youtube'],
+                            'twitter_url' => ['X','fa-brands fa-x-twitter'],
+                            'linkedin_url' => ['LinkedIn','fa-brands fa-linkedin-in'],
+                        ] as $socialKey => [$socialLabel, $socialIcon]): $socialActive = trim((string)app_setting($socialKey, '')) !== ''; ?>
+                            <span class="<?= $socialActive ? 'is-active' : 'is-hidden' ?>"><i class="<?= e($socialIcon) ?>" aria-hidden="true"></i><b><?= e($socialLabel) ?></b><small><?= $socialActive ? 'Visible' : 'Hidden' ?></small></span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <?php if ($groupTitle === 'About Director'): ?>
                 <div class="field full" id="director-settings">
                     <label>Current Director Photo</label>
@@ -166,11 +200,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 <div class="field"><label>Choose Director Image</label><input type="file" name="director_photo_file" accept="image/png,image/jpeg,image/gif"><span class="help">Allowed: PNG, JPG, JPEG, GIF. Best size: square or portrait image under 2 MB.</span></div>
                 <div class="field"><label>Director Photo Path</label><input name="director_photo" value="<?= e(app_setting('director_photo', '')) ?>" placeholder="assets/uploads/gallery/director.png"><span class="help">Upload image above or paste existing image path.</span></div>
             <?php endif; ?>
-            <?php foreach ($fields as $key => $meta): [$label, $type] = $meta; ?>
+            <?php foreach ($fields as $key => $meta): $label = $meta[0]; $type = $meta[1]; $placeholder = $meta[2] ?? ''; ?>
                 <?php if ($type !== 'hidden'): ?>
                 <div class="field <?= $type === 'textarea' ? 'full' : '' ?>">
                     <label><?= e($label) ?></label>
-                    <?php if ($type === 'textarea'): ?><textarea name="<?= e($key) ?>"><?= e(app_setting($key, '')) ?></textarea><?php else: ?><input type="<?= e($type) ?>" name="<?= e($key) ?>" value="<?= e(app_setting($key, '')) ?>"><?php endif; ?>
+                    <?php if ($type === 'textarea'): ?><textarea name="<?= e($key) ?>" placeholder="<?= e($placeholder) ?>"><?= e(app_setting($key, '')) ?></textarea><?php else: ?><input type="<?= e($type) ?>" name="<?= e($key) ?>" value="<?= e(app_setting($key, '')) ?>" placeholder="<?= e($placeholder) ?>"><?php endif; ?>
                 </div>
                 <?php endif; ?>
             <?php endforeach; ?>

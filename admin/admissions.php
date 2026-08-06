@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             }
             redirect('admissions.php');
         }
-    } catch (Throwable $e) { flash('error', $e->getMessage()); redirect('admissions.php' . (!empty($_POST['id']) ? '?edit='.(int)$_POST['id'] : '')); }
+    } catch (Throwable $e) { error_log('[admin-admissions] ' . $e->__toString()); flash('error', 'Admission record could not be saved. Check required fields and database setup.'); redirect('admissions.php' . (!empty($_POST['id']) ? '?edit='.(int)$_POST['id'] : '')); }
 }
 
 $q = trim((string)($_GET['q'] ?? ''));

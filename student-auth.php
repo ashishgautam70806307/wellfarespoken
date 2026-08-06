@@ -2,15 +2,15 @@
 require_once __DIR__ . '/includes/functions.php';
 private_no_store();
 ensure_schema_updates();
+$mode = (string)($_POST['mode'] ?? ($_GET['mode'] ?? 'login'));
+$mode = $mode === 'register' ? 'register' : 'login';
+$returnTo = safe_local_redirect((string)($_POST['redirect'] ?? ($_GET['redirect'] ?? 'student-dashboard.php')));
 if (is_student()) {
-    redirect('student-dashboard.php');
+    redirect($returnTo);
 }
 $page_title = 'Student Login | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Student login and registration for spoken English practice, Hindi to English learning and progress tracking.';
 $errors = [];
-$mode = (string)($_POST['mode'] ?? ($_GET['mode'] ?? 'login'));
-$mode = $mode === 'register' ? 'register' : 'login';
-$returnTo = safe_local_redirect((string)($_POST['redirect'] ?? ($_GET['redirect'] ?? 'student-dashboard.php')));
 if (isset($_GET['expired'])) $errors[] = 'Session expired. Please login again.';
 if (isset($_GET['inactive'])) $errors[] = 'Your account is inactive. Please contact the institute.';
 
@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         redirect($returnTo === 'student-dashboard.php' ? 'student-dashboard.php?welcome=1' : $returnTo);
                     }
                 } catch (Throwable $e) {
+                    error_log('[student-register] ' . $e->__toString());
                     $errors[] = 'Could not create account. Please try again.';
                 }
             }
@@ -77,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect($returnTo);
                 }
             } catch (Throwable $e) {
+                error_log('[student-login] ' . $e->__toString());
                 $errors[] = 'Login failed. Please try again.';
             }
         }
@@ -87,7 +89,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 <section class="section student-auth-section mode-<?= e($mode) ?>">
     <div class="container auth-grid">
-        <aside class="auth-copy" data-reveal>
+        <aside class="auth-copy wf-surface-dark" data-wf-surface="dark" data-reveal>
             <span class="eyebrow"><i class="fa-solid fa-user-graduate"></i> Student Learning Account</span>
             <h1><?= $mode === 'register' ? 'Create your account and begin at the right level.' : 'Continue your learning from where you stopped.' ?></h1>
             <p><?= $mode === 'register' ? 'Register once to save lessons, practice, tests and progress.' : 'Login to open your roadmap, practice history and test results.' ?></p>
@@ -101,6 +103,17 @@ require_once __DIR__ . '/includes/header.php';
                     <?php foreach (student_level_steps() as $index => $step): ?>
                         <span><b><?= e((string)($index + 1)) ?></b><?= e($step[0]) ?></span>
                     <?php endforeach; ?>
+                </div>
+                <div class="auth-support" aria-label="Registration process">
+                    <span><i class="fa-solid fa-user-check" aria-hidden="true"></i>Create one secure student account</span>
+                    <span><i class="fa-solid fa-route" aria-hidden="true"></i>Open the correct roadmap for your level</span>
+                    <span><i class="fa-solid fa-chart-line" aria-hidden="true"></i>Save practice, tests and improvement</span>
+                </div>
+            <?php else: ?>
+                <div class="auth-support" aria-label="Login benefits">
+                    <span><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i>Continue your latest lesson</span>
+                    <span><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>View previous test and revision</span>
+                    <span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Secure account-based progress</span>
                 </div>
             <?php endif; ?>
         </aside>
@@ -121,14 +134,14 @@ require_once __DIR__ . '/includes/header.php';
                 <input type="hidden" name="mode" value="<?= e($mode === 'register' ? 'register' : 'login') ?>">
                 <input type="hidden" name="redirect" value="<?= e($returnTo) ?>">
                 <?php if ($mode === 'register'): ?>
-                    <div class="field full"><label for="studentFullName">Full Name *</label><div class="wf129-input-icon"><i class="fa-solid fa-user"></i><input id="studentFullName" type="text" name="full_name" required maxlength="100" value="<?= e($_POST['full_name'] ?? '') ?>" placeholder="Enter student name" autocomplete="name"></div></div>
-                    <div class="field"><label for="studentEmail">Email <small>Optional</small></label><div class="wf129-input-icon"><i class="fa-solid fa-envelope"></i><input id="studentEmail" type="email" name="email" value="<?= e($_POST['email'] ?? '') ?>" placeholder="student@example.com" autocomplete="email"></div></div>
+                    <div class="field full"><label for="studentFullName">Full Name *</label><input id="studentFullName" type="text" name="full_name" required maxlength="100" value="<?= e($_POST['full_name'] ?? '') ?>" placeholder="Enter student name" autocomplete="name"></div>
+                    <div class="field"><label for="studentEmail">Email <small>Optional</small></label><input id="studentEmail" type="email" name="email" value="<?= e($_POST['email'] ?? '') ?>" placeholder="student@example.com" autocomplete="email"></div>
                     <div class="field"><label for="studentLevel">Current English Level</label><select id="studentLevel" name="current_level"><?php $postedLevel = (string)($_POST['current_level'] ?? 'Zero Level'); foreach (['Zero Level','Basic','Intermediate','Advanced'] as $levelOption): ?><option value="<?= e($levelOption) ?>" <?= $postedLevel === $levelOption ? 'selected' : '' ?>><?= e($levelOption) ?></option><?php endforeach; ?></select></div>
-                    <div class="field full"><label for="studentGoal">Learning Goal</label><div class="wf129-input-icon"><i class="fa-solid fa-bullseye"></i><input id="studentGoal" type="text" name="target_goal" value="<?= e($_POST['target_goal'] ?? '') ?>" placeholder="Interview, daily conversation or school English"></div></div>
+                    <div class="field full"><label for="studentGoal">Learning Goal</label><input id="studentGoal" type="text" name="target_goal" value="<?= e($_POST['target_goal'] ?? '') ?>" placeholder="Interview, daily conversation or school English"></div>
                 <?php endif; ?>
-                <div class="field <?= $mode === 'register' ? '' : 'full' ?>"><label for="studentPhone">Phone Number *</label><div class="wf129-input-icon"><i class="fa-solid fa-mobile-screen-button"></i><input id="studentPhone" type="tel" name="phone" required maxlength="10" inputmode="numeric" value="<?= e($_POST['phone'] ?? '') ?>" placeholder="10 digit mobile" autocomplete="tel"></div></div>
-                <div class="field <?= $mode === 'register' ? '' : 'full' ?>"><label for="studentPassword">Password *</label><div class="wf129-input-icon password-wrap"><i class="fa-solid fa-lock"></i><input id="studentPassword" type="password" name="password" required minlength="8" autocomplete="<?= $mode === 'register' ? 'new-password' : 'current-password' ?>" placeholder="Minimum 8 characters"></div></div>
-                <?php if ($mode === 'register'): ?><div class="field full"><label for="studentConfirmPassword">Confirm Password *</label><div class="wf129-input-icon password-wrap"><i class="fa-solid fa-shield-halved"></i><input id="studentConfirmPassword" type="password" name="confirm_password" required minlength="8" autocomplete="new-password" placeholder="Enter password again"></div></div><?php endif; ?>
+                <div class="field <?= $mode === 'register' ? '' : 'full' ?>"><label for="studentPhone">Phone Number *</label><input id="studentPhone" type="tel" name="phone" required maxlength="10" inputmode="numeric" value="<?= e($_POST['phone'] ?? '') ?>" placeholder="10 digit mobile" autocomplete="tel"></div>
+                <div class="field <?= $mode === 'register' ? '' : 'full' ?>"><label for="studentPassword">Password *</label><input id="studentPassword" type="password" name="password" required minlength="8" autocomplete="<?= $mode === 'register' ? 'new-password' : 'current-password' ?>" placeholder="Minimum 8 characters"></div>
+                <?php if ($mode === 'register'): ?><div class="field full"><label for="studentConfirmPassword">Confirm Password *</label><input id="studentConfirmPassword" type="password" name="confirm_password" required minlength="8" autocomplete="new-password" placeholder="Enter password again"></div><?php endif; ?>
                 <div class="auth-submit full"><button class="wf-btn wf-btn-primary" type="submit"><span class="wf-btn-label"><i class="fa-solid <?= $mode === 'register' ? 'fa-user-plus' : 'fa-right-to-bracket' ?>"></i><?= $mode === 'register' ? 'Create Student Account' : 'Login to Dashboard' ?></span></button><small><i class="fa-solid fa-shield-halved"></i> Your account information is protected.</small></div>
             </form>
         </div>

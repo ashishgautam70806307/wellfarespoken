@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-08-06T00:36:52+0000",
+  "passed": 3,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "Weekly Test page supplies CSRF and paper ID",
+      "status": "PASS",
+      "detail": "csrf=64, test_id=11"
+    },
+    {
+      "name": "Basic Test AJAX attempt starts",
+      "status": "PASS",
+      "detail": "{\"success\": true, \"attempt_id\": 901, \"remaining_seconds\": 1200}"
+    },
+    {
+      "name": "Basic Test normal POST fallback redirects to exam room",
+      "status": "PASS",
+      "detail": "303 weekly-exam-room.php?attempt_id=901&token=b4a2073161bd10d66fd620b406bc64bbe679dcee1fa0e839858e8e1857ba72f6"
+    }
+  ]
+}

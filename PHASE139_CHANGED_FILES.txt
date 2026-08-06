@@ -1,0 +1,21 @@
+Added:
+- assets/css/phase139-mobile-learning.css
+- assets/css/phase139-mobile-learning.min.css
+- assets/js/phase139-mobile-learning.js
+- README_PHASE139_COMPACT_MOBILE.md
+- PHASE139_MOBILE_INTERACTION_REPORT.md
+- PHASE139_BROWSER_TEST_CHECKLIST.md
+- PHASE139_VALIDATION.json
+- PHASE139_CHANGED_FILES.txt
+
+Modified:
+- includes/header.php
+- includes/footer.php
+- admin/_header.php
+- admin/_footer.php
+- admin/login.php
+- admin/settings.php
+- weekly-test.php
+- weekly-exam-room.php
+- sw.js
+- README.md

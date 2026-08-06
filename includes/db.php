@@ -18,6 +18,7 @@ function db(): PDO
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     } catch (PDOException $e) {
+        error_log('[database] Connection failed for ' . DB_HOST . ':' . DB_PORT . '/' . DB_NAME . ' as ' . DB_USER . ' - ' . $e->getMessage());
         http_response_code(500);
         exit('Database connection failed. Please check configuration.');
     }

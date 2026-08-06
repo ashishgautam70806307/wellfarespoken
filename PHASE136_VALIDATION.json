@@ -1,0 +1,87 @@
+{
+  "phase": "136",
+  "name": "Regression Repair",
+  "generated_at": "2026-08-05T22:51:00+05:30",
+  "base": "spoken_phase135_reusable_ui_foundation.zip",
+  "counts": {
+    "php_files": 68,
+    "javascript_files": 7,
+    "css_files": 36,
+    "sql_files": 1,
+    "all_files_before_reports": 225,
+    "canonical_tables": 40
+  },
+  "checks": {
+    "php_syntax": {
+      "status": "PASS",
+      "files": 68
+    },
+    "javascript_syntax": {
+      "status": "PASS",
+      "files": 7
+    },
+    "css_parse": {
+      "status": "PASS",
+      "files": 36
+    },
+    "literal_asset_and_link_scan": {
+      "status": "PASS",
+      "references": 180,
+      "missing": 0
+    },
+    "service_worker_precache": {
+      "status": "PASS",
+      "missing": 0
+    },
+    "automatic_local_runtime_selection": {
+      "status": "PASS"
+    },
+    "automatic_live_runtime_selection": {
+      "status": "PASS"
+    },
+    "canonical_sql_static_structure": {
+      "status": "PASS",
+      "tables": 40,
+      "foreign_keys": 0,
+      "note": "No database server was available for an actual import."
+    },
+    "mysql_import": {
+      "status": "NOT_RUN",
+      "reason": "MySQL/MariaDB server unavailable"
+    },
+    "browser_e2e": {
+      "status": "NOT_RUN",
+      "reason": "Interactive browser and real database unavailable"
+    },
+    "static_http_smoke": {
+      "status": "PASS",
+      "targets": [
+        "manifest.webmanifest",
+        "sw.js",
+        "assets/css/wf-components.css"
+      ],
+      "http_status": 200
+    }
+  },
+  "repaired_areas": [
+    "weekly test atomic finalization",
+    "official exam duplicate-start prevention",
+    "autosave row locking",
+    "timer-expiry grading",
+    "roadmap prerequisite enforcement",
+    "student level protection",
+    "admission server validation and duplicate suppression",
+    "material API validation/rate limiting/no-store",
+    "course/variant transactions",
+    "duplicate batch seed cleanup"
+  ],
+  "deferred_critical": [
+    "live credential rotation/removal from source",
+    "default admin seed replacement",
+    "foreign-key and orphan-data migration",
+    "roles/MFA/audit logs",
+    "complete fee ledger and connected admission workflow",
+    "full automated integration/browser suite"
+  ],
+  "release_status": "STAGING_READY_LIVE_VERIFICATION_REQUIRED"
+}

@@ -219,4 +219,4 @@ try{
  }
 
  aj(['success'=>false,'message'=>'Unknown action']);
-}catch(Throwable $e){ aj(['success'=>false,'message'=>'Server error: '.$e->getMessage()],500); }
+} catch (Throwable $e) { error_log('[admin-weekly-test-ajax] ' . $e->__toString()); aj(['success'=>false,'message'=>'Weekly Test request failed. Check Admin > System Check.'],500); }

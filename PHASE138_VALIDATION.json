@@ -1,0 +1,37 @@
+{
+  "phase": "138",
+  "php_files": 68,
+  "php_syntax_failures": [],
+  "javascript_files": 8,
+  "javascript_syntax_failures": [],
+  "css_files": 42,
+  "css_parse_failures": [],
+  "literal_local_references_checked": 198,
+  "missing_literal_local_references": [],
+  "literal_css_references_checked": 0,
+  "missing_literal_css_references": [],
+  "duplicate_literal_ids": [],
+  "service_worker_cache_name": "wellfare-spoken-static-v138",
+  "service_worker_assets": 30,
+  "missing_service_worker_assets": [],
+  "phase138_inclusion_checks": {
+    "public_phase138_css": true,
+    "public_phase138_js": true,
+    "admin_phase138_css": true,
+    "admin_phase138_js": true,
+    "admin_login_phase138": true,
+    "exam_phase138": true,
+    "service_worker_v138": true,
+    "mobile_drawer_call_action": true,
+    "admin_table_auto_labels": true,
+    "dynamic_form_icons": true
+  },
+  "phase138_asset_sizes": {
+    "css_bytes": 44641,
+    "css_min_bytes": 42465,
+    "css_min_gzip_bytes": 6802,
+    "js_bytes": 6303,
+    "js_gzip_bytes": 1999
+  },
+  "status": "PASS"
+}

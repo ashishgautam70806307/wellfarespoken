@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+private_no_store();
 header('Content-Type: application/json; charset=utf-8');
 function material_api_out(array $data, int $code = 200): void {
     http_response_code($code);
@@ -14,11 +15,21 @@ try {
     if (!csrf_validate($_POST['csrf_token'] ?? '')) {
         material_api_out(['success' => false, 'message' => 'Session expired. Refresh once and try again.'], 419);
     }
-    $pairId = (int)($_POST['pair_id'] ?? 0);
+    $pairId = max(0, (int)($_POST['pair_id'] ?? 0));
     $direction = ($_POST['direction'] ?? 'hindi_to_english') === 'english_to_hindi' ? 'english_to_hindi' : 'hindi_to_english';
-    $answer = trim($_POST['answer'] ?? '');
+    $answer = trim((string)($_POST['answer'] ?? ''));
+    $rateIdentity = current_student_id() > 0 ? ('student-' . current_student_id()) : ('session-' . session_id());
+    if (!security_rate_limit('material-practice:' . $rateIdentity, 180, 600)) {
+        material_api_out(['success' => false, 'message' => 'Too many practice requests. Please pause for a minute and continue.'], 429);
+    }
+    if ($pairId <= 0) {
+        material_api_out(['success' => false, 'message' => 'Practice sentence is missing.'], 422);
+    }
     if ($answer === '') {
         material_api_out(['success' => false, 'message' => 'Please write your answer first.'], 422);
+    }
+    if (mb_strlen($answer) > 2000) {
+        material_api_out(['success' => false, 'message' => 'Answer is too long.'], 413);
     }
     $stmt = db()->prepare("SELECT * FROM translation_pairs WHERE id=? AND published='Yes' AND status_deleted=0 LIMIT 1");
     $stmt->execute([$pairId]);
@@ -30,5 +41,6 @@ try {
     save_material_attempt($pairId, $direction, $answer, $result);
     material_api_out(['success' => true, 'result' => $result, 'summary' => material_attempt_summary()]);
 } catch (Throwable $e) {
+    error_log('[material-practice-api] ' . $e->__toString());
     material_api_out(['success' => false, 'message' => 'Could not check this material practice. Run Admin > System Check once.'], 500);
 }

@@ -1,0 +1,7 @@
+Phase 136 cleanup list
+======================
+- Removed duplicate default batch seed rows 4, 5 and 6 from the canonical SQL.
+- Added safe cleanup SQL for only those known legacy duplicate rows.
+- No project source file was deleted in this phase.
+- Historical PHASE/README reports were retained for traceability and are blocked from public HTTP access by .htaccess.
+- Old CSS was not deleted because the project has not yet completed page-by-page reusable-UI migration and visual regression testing.

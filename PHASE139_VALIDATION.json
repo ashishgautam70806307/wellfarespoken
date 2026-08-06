@@ -1,0 +1,37 @@
+{
+  "php": {
+    "files": 68,
+    "errors": []
+  },
+  "javascript": {
+    "files": 9,
+    "errors": []
+  },
+  "css": {
+    "files": 44,
+    "errors": []
+  },
+  "literal_local_references": {
+    "checked": 181,
+    "missing": []
+  },
+  "duplicate_literal_ids": [],
+  "service_worker": {
+    "cache_name": "wellfare-spoken-static-v139",
+    "assets": 32,
+    "missing": []
+  },
+  "integration_checks": {
+    "public_css": true,
+    "public_js": true,
+    "admin_css": true,
+    "admin_js": true,
+    "admin_login_css": true,
+    "exam_css_after_inline": true,
+    "weekly_mobile_labels": true,
+    "social_admin_group": true,
+    "social_footer_dynamic": true,
+    "cache_v139": true
+  },
+  "ok": true
+}

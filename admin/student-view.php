@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             flash('success','Admin note saved.');
             redirect('student-view.php?id=' . $id);
         }
-    } catch (Throwable $e) { flash('error', $e->getMessage()); redirect('student-view.php?id=' . $id); }
+    } catch (Throwable $e) { error_log('[admin-student-view] ' . $e->__toString()); flash('error', 'Student record could not be updated.'); redirect('student-view.php?id=' . $id); }
 }
 
 $summary = student_activity_summary($id);

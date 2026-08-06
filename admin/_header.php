@@ -2,7 +2,10 @@
 if (!ob_get_level()) {
     ob_start(); // admin output buffer allows safe redirects/flash after shared header is loaded
 }
-require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_schema_updates(); ?>
+require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_schema_updates();
+$adminPageSlug = preg_replace('/[^a-z0-9-]+/i', '-', pathinfo(basename($_SERVER['PHP_SELF'] ?? 'admin'), PATHINFO_FILENAME));
+$adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $admin_page_styles : [];
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,15 +17,24 @@ require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_sch
     <?php $adminFavicon = site_asset_url(app_setting('site_favicon', app_setting('site_logo', ''))); if ($adminFavicon !== ''): ?>
     <link rel="icon" href="../<?= e($adminFavicon) ?>">
     <?php endif; ?>
+    <?php if (defined('APP_REMOTE_FONTS') && APP_REMOTE_FONTS): ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <?php endif; ?>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-design-tokens.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/style.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase123-ui-core.css'))) ?>">
+    <?php foreach ($adminPageStyles as $adminPageStyle): ?>
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path((string)$adminPageStyle))) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-components.css'))) ?>">
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>">
 </head>
-<body class="admin-body">
+<body class="admin-body page-admin-<?= e($adminPageSlug) ?> wf138-admin-mobile wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>
 <?= admin_toast_html() ?>
 <div class="admin-shell">
@@ -62,6 +74,7 @@ require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_sch
             <a class="<?= active_nav('settings.php') ?>" href="settings.php"><span class="menu-ico"><i class="fa-solid fa-gear"></i></span><span>Site Settings</span></a>
 
             <div class="admin-menu-title">System</div>
+            <a class="<?= active_nav('ui-library.php') ?>" href="ui-library.php"><span class="menu-ico"><i class="fa-solid fa-swatchbook"></i></span><span>UI Library</span></a>
             <a class="<?= active_nav('password.php') ?>" href="password.php"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password</span></a>
             <a class="<?= active_nav('system-check.php') ?>" href="system-check.php"><span class="menu-ico"><i class="fa-solid fa-screwdriver-wrench"></i></span><span>System Check</span></a>
             <a href="../index.php" target="_blank"><span class="menu-ico"><i class="fa-solid fa-globe"></i></span><span>View Website</span></a>
@@ -94,6 +107,7 @@ require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_sch
             ['Navigation', 'nav-menus.php', 'Website Control', 'fa-solid fa-bars'],
             ['SEO', 'seo.php', 'Website Control', 'fa-solid fa-magnifying-glass'],
             ['Site Settings', 'settings.php', 'Website Control', 'fa-solid fa-gear'],
+            ['UI Library', 'ui-library.php', 'System', 'fa-solid fa-swatchbook'],
             ['Password', 'password.php', 'System', 'fa-solid fa-lock'],
             ['System Check', 'system-check.php', 'System', 'fa-solid fa-screwdriver-wrench'],
         ];

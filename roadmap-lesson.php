@@ -27,8 +27,11 @@ $nextId = $unit ? roadmap_next_unit_id((int)$unit['id']) : 0;
 $prevId = $unit ? roadmap_previous_unit_id((int)$unit['id']) : 0;
 $roadmapStudentLoggedIn = is_student();
 $roadmapServerCompleted = $roadmapStudentLoggedIn ? roadmap_student_completed_ids(current_student_id()) : [];
-if ($roadmapStudentLoggedIn && $prevId > 0 && !in_array($prevId, $roadmapServerCompleted, true)) {
-    redirect('learning-roadmap.php?locked=1#roadmapPath');
+if ($roadmapStudentLoggedIn) {
+    $roadmapAccess = roadmap_student_unit_access(current_student_id(), $unitId);
+    if (empty($roadmapAccess['allowed'])) {
+        redirect('learning-roadmap.php?locked=1#roadmapPath');
+    }
 }
 
 $page_title = ($unit ? $unit['title'] : 'Lesson') . ' | Learning Roadmap';
@@ -79,19 +82,19 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
             <div class="duo-energy"><span id="lessonUnlockCount">0 / 0</span></div>
         </div>
 
-        <div class="duo-lesson-header">
+        <div class="duo-lesson-header wf-surface-dark" data-wf-surface="dark">
             <span class="duo-label"><?= e($unit['group_title'] ?? 'LESSON') ?></span>
             <h1><?= e($unit['title'] ?? 'Lesson') ?></h1>
             <p><?= e((string)(($unit['description'] ?? '') ?: ($unit['subtitle'] ?? ''))) ?></p><?php if ($smartSourceTitle !== ''): ?><?php endif; ?>
         </div>
 
-        <div class="duo-lesson-tabs">
-            <button class="active" type="button" data-tab="learn">Learn</button>
-            <button type="button" data-tab="practice">Practice</button>
-            <button type="button" data-tab="finish">Finish</button>
+        <div class="duo-lesson-tabs" role="tablist" aria-label="Lesson steps">
+            <button class="active" type="button" role="tab" aria-selected="true" data-tab="learn"><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i><span>Learn</span></button>
+            <button type="button" role="tab" aria-selected="false" data-tab="practice"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i><span>Practice</span></button>
+            <button type="button" role="tab" aria-selected="false" data-tab="finish"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>Finish</span></button>
         </div>
 
-        <div class="duo-panel active" data-panel="learn">
+        <div class="duo-panel active" role="tabpanel" data-panel="learn">
             <?php if (!$items): ?>
                 <div class="duo-empty">No learning rows yet. Add data from admin roadmap.</div>
             <?php elseif ($type === 'meaning' && $pronounRows): ?>
@@ -144,7 +147,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
             <button class="duo-big-green next-tab" type="button" data-next="practice">START PRACTICE</button>
         </div>
 
-        <div class="duo-panel" data-panel="practice">
+        <div class="duo-panel" role="tabpanel" data-panel="practice">
             <div class="duo-exercise" data-items='<?= e(json_encode(array_slice($practiceRows, 0, $practiceLimit), JSON_UNESCAPED_UNICODE)) ?>'>
                 <div class="duo-practice-progress-line">
                     <span id="practiceQuestionCount">0 / 0</span>
@@ -163,7 +166,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
             </div>
         </div>
 
-        <div class="duo-panel" data-panel="finish">
+        <div class="duo-panel" role="tabpanel" data-panel="finish">
             <div class="duo-finish-card">
                 <h2>Level complete?</h2>
                 <p>Finish this lesson to save progress and unlock the next step.</p>
@@ -204,7 +207,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
     updateUnlockProgress();
 
     function show(tab){
-        document.querySelectorAll('.duo-lesson-tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+        document.querySelectorAll('.duo-lesson-tabs button').forEach(b=>{const active=b.dataset.tab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',active?'true':'false');});
         document.querySelectorAll('.duo-panel').forEach(p=>p.classList.toggle('active', p.dataset.panel===tab));
     }
     document.querySelectorAll('.duo-lesson-tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
@@ -264,6 +267,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
     const start=document.getElementById('duoStartPractice');
     const next=document.getElementById('duoNextQuestion');
     const result=document.getElementById('duoResultBox');
+    const exercise=result?.closest('.duo-exercise');
     let idx=0, correctAnswer='', rightCount=0, wrongCount=0;
 
     function normalize(v){return String(v||'').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();}
@@ -315,7 +319,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
 
     function render(){
         updatePracticeProgress();
-        result.hidden=true; next.hidden=true;
+        result.hidden=true; result.className='duo-result-box'; exercise?.classList.remove('has-result'); next.hidden=true;
         if(!rows.length){
             qText.textContent='No practice rows added yet.';
             grid.innerHTML='<div class="duo-empty"><b>No practice data found.</b><br>Admin me isi lesson/topic ke andar records import ya add karo. Correct answer ko Column 1 me aur question/Hindi ko Column 2 me rakho.</div>';
@@ -350,6 +354,7 @@ $smartSourceId = (int)($items[0]['source_unit_id'] ?? 0);
                 if(ok){ rightCount++; } else { wrongCount++; }
                 result.hidden=false;
                 result.className='duo-result-box '+(ok?'ok':'bad');
+                exercise?.classList.add('has-result');
                 const feedbackText = ok ? randomPraise() : randomWrongHelp();
                 result.innerHTML = ok
                     ? '<strong>'+feedbackText+'</strong><span>You selected the right answer.</span>'

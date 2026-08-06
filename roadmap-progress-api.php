@@ -38,7 +38,14 @@ if (!security_rate_limit('roadmap-progress:' . $studentId, 90, 3600)) {
 
 if ($action === 'complete') {
     $unitId = max(0, (int)($_POST['unit_id'] ?? 0));
-    if ($unitId <= 0 || !roadmap_mark_student_complete($studentId, $unitId)) {
+    $access = roadmap_student_unit_access($studentId, $unitId);
+    if ($unitId <= 0 || empty($access['allowed'])) {
+        $message = ($access['reason'] ?? '') === 'prerequisite_incomplete'
+            ? 'Complete the previous level before marking this level complete.'
+            : 'This roadmap level is not available.';
+        roadmap_api_response(['success' => false, 'message' => $message], 422);
+    }
+    if (!roadmap_mark_student_complete($studentId, $unitId)) {
         roadmap_api_response(['success' => false, 'message' => 'Could not save progress.'], 422);
     }
     roadmap_api_response([

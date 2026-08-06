@@ -26,9 +26,21 @@ foreach ($batches as $batchRow) {
         break;
     }
 }
-$requestedCourse = trim((string)($_GET['course'] ?? $_POST['course'] ?? ($selectedBatch['course_name'] ?? '')));
-$sourceLabel = $mode === 'online' ? 'Online Class Admission' : trim((string)($_GET['source'] ?? $_POST['source'] ?? 'Website Admission Form'));
-if ($sourceLabel === '') $sourceLabel = 'Website Admission Form';
+$requestedCourse = $selectedBatch
+    ? trim((string)($selectedBatch['course_name'] ?? ''))
+    : trim((string)($_GET['course'] ?? $_POST['course'] ?? ''));
+$sourceLabel = $mode === 'online' ? 'Online Class Admission' : 'Website Admission Form';
+
+$validCourseTitles = array_values(array_unique(array_filter(array_map(static fn(array $course): string => trim((string)($course['title'] ?? '')), $courses))));
+$validLevelValues = array_values(array_unique(array_filter(array_map(static fn(array $option): string => trim((string)(($option['option_value'] ?? '') ?: ($option['option_label'] ?? ''))), $levels))));
+$validBatchValues = [];
+foreach ($batches as $batchRow) {
+    $validBatchValues[] = trim((string)$batchRow['batch_name'] . ' - ' . (string)($batchRow['timing'] ?? ''));
+}
+foreach ($preferredTimes as $option) {
+    $validBatchValues[] = trim((string)(($option['option_value'] ?? '') ?: ($option['option_label'] ?? '')));
+}
+$validBatchValues = array_values(array_unique(array_filter($validBatchValues)));
 
 $formValues = [
     'name' => trim((string)($_POST['name'] ?? '')),
@@ -42,26 +54,58 @@ $formValues = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate($_POST['csrf_token'] ?? '')) {
         flash('error', 'Security token expired. Please refresh and try again.');
-    } elseif ($formValues['name'] === '' || $formValues['phone'] === '') {
-        flash('error', 'Student name and mobile number are required.');
+    } elseif (mb_strlen($formValues['name']) < 2 || mb_strlen($formValues['name']) > 100) {
+        flash('error', 'Please enter a valid student name.');
     } elseif (!preg_match('/^[0-9]{10}$/', $formValues['phone'])) {
         flash('error', 'Please enter a valid 10 digit mobile number.');
+    } elseif ($mode === 'online' && (!$selectedBatch || $requestedBatchId <= 0)) {
+        flash('error', 'The selected online batch is no longer available. Please choose the batch again.');
+    } elseif ($formValues['course'] !== '' && !in_array($formValues['course'], $validCourseTitles, true)
+        && (!$selectedBatch || !hash_equals(trim((string)($selectedBatch['course_name'] ?? '')), $formValues['course']))) {
+        flash('error', 'Please choose a valid course from the list.');
+    } elseif ($formValues['current_level'] !== '' && !in_array($formValues['current_level'], $validLevelValues, true)) {
+        flash('error', 'Please choose a valid current level.');
+    } elseif ($formValues['preferred_batch'] !== '' && !in_array($formValues['preferred_batch'], $validBatchValues, true)) {
+        flash('error', 'Please choose a valid batch time.');
+    } elseif (!security_rate_limit('admission-enquiry:' . $formValues['phone'], 5, 3600)) {
+        flash('error', 'Too many requests were sent from this device. Please wait and try again.');
     } else {
-        $stmt = db()->prepare('INSERT INTO enquiries (name, phone, course_interest, current_level, preferred_batch, lead_source, message, enquiry_status, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-        $stmt->execute([
-            $formValues['name'], $formValues['phone'], $formValues['course'], $formValues['current_level'],
-            $formValues['preferred_batch'], mb_substr($sourceLabel, 0, 100), $formValues['message'], 'New', $_SERVER['REMOTE_ADDR'] ?? ''
-        ]);
-        flash('success', 'Thank you! Your counselling request has been submitted.');
-        $return = 'admission.php?submitted=1';
-        if ($mode === 'online') $return .= '&mode=online';
-        redirect($return);
+        try {
+            $duplicate = db()->prepare("SELECT id FROM enquiries WHERE phone=? AND created_at>=DATE_SUB(NOW(), INTERVAL 5 MINUTE) ORDER BY id DESC LIMIT 1");
+            $duplicate->execute([$formValues['phone']]);
+            if ($duplicate->fetchColumn()) {
+                flash('success', 'Your counselling request has already been received. The institute team will contact you.');
+                $return = 'admission.php?submitted=1';
+                if ($mode === 'online') $return .= '&mode=online';
+                redirect($return);
+            }
+
+            $stmt = db()->prepare('INSERT INTO enquiries (name, phone, course_interest, current_level, preferred_batch, lead_source, message, enquiry_status, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+            $stmt->execute([
+                mb_substr($formValues['name'], 0, 120),
+                $formValues['phone'],
+                mb_substr($formValues['course'], 0, 160),
+                mb_substr($formValues['current_level'], 0, 120),
+                mb_substr($formValues['preferred_batch'], 0, 120),
+                mb_substr($sourceLabel, 0, 80),
+                mb_substr($formValues['message'], 0, 4000),
+                'New',
+                client_ip() === 'unknown' ? '' : client_ip()
+            ]);
+            flash('success', 'Thank you! Your counselling request has been submitted.');
+            $return = 'admission.php?submitted=1';
+            if ($mode === 'online') $return .= '&mode=online';
+            redirect($return);
+        } catch (Throwable $e) {
+            error_log('[admission-enquiry] ' . $e->__toString());
+            flash('error', 'Your request could not be saved right now. Please call or WhatsApp the institute.');
+        }
     }
 }
 
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="wf129-admission-hero">
+<section class="wf129-admission-hero wf-surface-dark" data-wf-surface="dark">
     <div class="container wf129-admission-hero-inner">
         <div>
             <span class="wf-page-kicker"><i class="fa-solid <?= $mode === 'online' ? 'fa-laptop-file' : 'fa-user-plus' ?>"></i><?= $mode === 'online' ? 'Online Class Admission' : 'Free Counselling' ?></span>
@@ -137,8 +181,8 @@ require_once __DIR__ . '/includes/header.php';
             <?php if ($msg = flash('success')): ?><div class="alert alert-success"><?= e($msg) ?></div><?php endif; ?>
             <?php if ($msg = flash('error')): ?><div class="alert alert-error"><?= e($msg) ?></div><?php endif; ?>
             <div class="form-grid">
-                <div class="field"><label for="admissionName">Student Name *</label><div class="wf129-input-icon"><i class="fa-solid fa-user"></i><input id="admissionName" name="name" required maxlength="100" value="<?= e($formValues['name']) ?>" placeholder="Enter student name"></div></div>
-                <div class="field"><label for="admissionPhone">Mobile Number *</label><div class="wf129-input-icon"><i class="fa-solid fa-mobile-screen-button"></i><input id="admissionPhone" name="phone" required maxlength="10" inputmode="numeric" pattern="[0-9]{10}" value="<?= e($formValues['phone']) ?>" placeholder="10 digit mobile"></div></div>
+                <div class="field"><label for="admissionName">Student Name *</label><input id="admissionName" name="name" required maxlength="100" value="<?= e($formValues['name']) ?>" placeholder="Enter student name"></div>
+                <div class="field"><label for="admissionPhone">Mobile Number *</label><input id="admissionPhone" name="phone" required maxlength="10" inputmode="numeric" pattern="[0-9]{10}" value="<?= e($formValues['phone']) ?>" placeholder="10 digit mobile"></div>
                 <div class="field"><label for="admissionCourse">Course Interest</label><select id="admissionCourse" name="course"><option value="">Select course</option><?php foreach ($courses as $course): ?><option value="<?= e((string)$course['title']) ?>" <?= $formValues['course'] === (string)$course['title'] ? 'selected' : '' ?>><?= e((string)$course['title']) ?></option><?php endforeach; ?></select></div>
                 <div class="field"><label for="admissionLevel">Current English Level</label><select id="admissionLevel" name="current_level"><option value="">Select level</option><?php foreach ($levels as $option): $value=(string)($option['option_value'] ?: $option['option_label']); ?><option value="<?= e($value) ?>" <?= $formValues['current_level'] === $value ? 'selected' : '' ?>><?= e((string)$option['option_label']) ?></option><?php endforeach; ?></select></div>
                 <div class="field full"><label for="admissionBatch">Preferred Batch Time</label><select id="admissionBatch" name="preferred_batch"><option value="">Select preferred timing</option><?php foreach ($batches as $batch): $value=trim((string)$batch['batch_name'].' - '.(string)($batch['timing'] ?? '')); ?><option value="<?= e($value) ?>" <?= $formValues['preferred_batch'] === $value ? 'selected' : '' ?>><?= e((string)$batch['batch_name']) ?><?= !empty($batch['timing']) ? ' · '.e((string)$batch['timing']) : '' ?><?= !empty($batch['days']) ? ' · '.e((string)$batch['days']) : '' ?></option><?php endforeach; ?><?php foreach ($preferredTimes as $option): $value=(string)($option['option_value'] ?: $option['option_label']); ?><option value="<?= e($value) ?>" <?= $formValues['preferred_batch'] === $value ? 'selected' : '' ?>><?= e((string)$option['option_label']) ?></option><?php endforeach; ?></select></div>

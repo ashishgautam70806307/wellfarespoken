@@ -1,0 +1,45 @@
+Phase 137 changed/new files
+
+Public PHP
+- about.php
+- admission.php
+- contact.php
+- course-detail.php
+- index.php
+- online-class.php
+- roadmap-lesson.php
+- spoken-materials.php
+- student-auth.php
+- student-dashboard.php
+- student-revision.php
+- weekly-test.php
+
+Admin PHP
+- admin/login.php
+
+Shared includes
+- includes/header.php
+- includes/footer.php
+- includes/ui-components.php
+
+CSS
+- assets/css/style.css
+- assets/css/style.min.css
+- assets/css/wf-components.css
+- assets/css/wf-components.min.css
+- assets/css/phase130-materials.css
+- assets/css/phase130-materials.min.css
+- assets/css/phase137-visual-repair.css (new)
+- assets/css/phase137-visual-repair.min.css (new)
+- assets/css/phase137-admin-login.css (new)
+- assets/css/phase137-admin-login.min.css (new)
+
+PWA
+- sw.js
+
+Documentation
+- README_PHASE137_VISUAL_UI_REPAIR.md
+- PHASE137_VISUAL_AUDIT_REPORT.md
+- PHASE137_BROWSER_TEST_CHECKLIST.md
+- PHASE137_CHANGED_FILES.txt
+- PHASE137_VALIDATION.json

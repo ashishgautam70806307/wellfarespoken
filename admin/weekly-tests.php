@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
             db()->prepare("UPDATE weekly_test_attempts SET status_deleted=1, deleted_at=NOW() WHERE id=?")->execute([$attemptId]);
             weekly_admin_post_reply(true, 'Attempt hidden for admin. It will be permanently cleaned after 15 days.', ['attempt_id'=>$attemptId]);
         }
-    } catch (Throwable $e) { weekly_admin_post_reply(false, 'Server error: '.$e->getMessage()); }
+    } catch (Throwable $e) { error_log('[admin-weekly-tests] ' . $e->__toString()); weekly_admin_post_reply(false, 'Weekly Test change could not be saved. Check Admin > System Check.'); }
 }
 
 $typeLabel = ['basic'=>'Basic Test','previous'=>'Previous Test','upcoming'=>'Upcoming Test'];

@@ -40,9 +40,9 @@ wf_page_hero([
                 <span class="eyebrow">Course Price</span>
                 <div class="course-detail-price"><?= e(course_money_label($course['price'] ?? 0)) ?></div>
                 <p><?= e(wf_text_limit((string)($course['short_description'] ?? ''), 145)) ?></p>
-                <div class="course-action-row"><a class="btn btn-primary" href="<?= e($payUrl) ?>">Join Course</a><a class="btn btn-soft" href="courses.php">Back to Courses</a></div>
+                <div class="course-action-row"><a class="btn btn-primary" href="<?= e(app_safe_href($payUrl)) ?>">Join Course</a><a class="btn btn-soft" href="courses.php">Back to Courses</a></div>
             </div>
-            <aside class="course-summary-card" data-reveal>
+            <aside class="course-summary-card wf-surface-dark" data-wf-surface="dark" data-reveal>
                 <div class="summary-icon"><i class="fa-solid fa-list-check"></i></div>
                 <h3>Course Summary</h3>
                 <div class="summary-list">
@@ -120,7 +120,7 @@ wf_page_hero([
                         <li>Tests: <?= e((string)($v['total_tests'] ?? 0)) ?></li>
                     </ul>
                     <div class="variant-actions">
-                        <a class="btn btn-sm btn-primary" href="<?= e($payUrl) ?>">Pay Now</a>
+                        <a class="btn btn-sm btn-primary" href="<?= e(app_safe_href($payUrl)) ?>">Pay Now</a>
                         <a class="btn btn-sm btn-light" href="admission.php?course=<?= e(urlencode($course['title'])) ?>">Ask Details</a>
                     </div>
                 </div>

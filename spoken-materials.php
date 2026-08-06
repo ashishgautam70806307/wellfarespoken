@@ -25,47 +25,65 @@ $units = fetch_material_units((int)$defaultCollection, 200);
 ?>
 <section class="section ajax-practice-room" id="practice-room">
     <div class="container">
-        <?php wf_section_heading('Practice Room', 'Choose one practice mode.', 'Choose a mode and start one sentence at a time.', ['label' => 'Teacher Help', 'url' => 'admission.php?source=practice-room']); ?>
+        <?php wf_section_heading('Practice Room', 'Choose one practice mode.', 'Select a goal, choose your lesson and practise one sentence at a time.', ['label' => 'Teacher Help', 'url' => 'admission.php?source=practice-room']); ?>
 
-        <div class="practice-goal-panel panel-card">
-            <div class="goal-tabs ajax-goal-tabs" role="tablist">
-                <button type="button" class="goal-tab active" data-goal="speak" data-direction="hindi_to_english"><b><i class="fa-solid fa-microphone" aria-hidden="true"></i> Speak Daily</b><span>Listen and repeat English</span></button>
-                <button type="button" class="goal-tab" data-goal="hindi_to_english" data-direction="hindi_to_english"><b><i class="fa-solid fa-language" aria-hidden="true"></i> Hindi → English</b><span>Speak Hindi sentence in English</span></button>
-                <button type="button" class="goal-tab" data-goal="english_to_hindi" data-direction="english_to_hindi"><b><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> English → Hindi</b><span>Understand meaning and revise</span></button>
-                <button type="button" class="goal-tab" data-goal="revision" data-direction="hindi_to_english"><b><i class="fa-solid fa-star" aria-hidden="true"></i> Revision</b><span>Repeat saved material</span></button>
+        <div class="practice-command-center">
+            <div class="practice-mode-intro">
+                <div><span class="practice-mode-kicker">Step 1</span><h3><span class="wf141-desktop-copy">Select your practice goal</span><span class="wf141-mobile-copy">Choose practice mode</span></h3><p>Each mode changes the question, answer language and speaking guidance.</p></div>
+                <span class="practice-mode-status"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Guided Practice</span>
             </div>
+            <div class="goal-tabs ajax-goal-tabs" role="tablist" aria-label="Practice modes">
+                <button type="button" class="goal-tab active" data-goal="speak" data-direction="hindi_to_english" role="tab" aria-selected="true">
+                    <span class="goal-tab-number">01</span><span class="goal-tab-icon"><i class="fa-solid fa-microphone" aria-hidden="true"></i></span><span class="goal-tab-copy"><b>Speak Daily</b><small>Listen and repeat English</small></span><i class="fa-solid fa-circle-check goal-tab-check" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="goal-tab" data-goal="hindi_to_english" data-direction="hindi_to_english" role="tab" aria-selected="false">
+                    <span class="goal-tab-number">02</span><span class="goal-tab-icon"><i class="fa-solid fa-language" aria-hidden="true"></i></span><span class="goal-tab-copy"><b>Hindi → English</b><small>Translate and speak clearly</small></span><i class="fa-solid fa-circle-check goal-tab-check" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="goal-tab" data-goal="english_to_hindi" data-direction="english_to_hindi" role="tab" aria-selected="false">
+                    <span class="goal-tab-number">03</span><span class="goal-tab-icon"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span><span class="goal-tab-copy"><b>English → Hindi</b><small>Understand meaning and revise</small></span><i class="fa-solid fa-circle-check goal-tab-check" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="goal-tab" data-goal="revision" data-direction="hindi_to_english" role="tab" aria-selected="false">
+                    <span class="goal-tab-number">04</span><span class="goal-tab-icon"><i class="fa-solid fa-star" aria-hidden="true"></i></span><span class="goal-tab-copy"><b>Revision</b><small>Repeat your saved material</small></span><i class="fa-solid fa-circle-check goal-tab-check" aria-hidden="true"></i>
+                </button>
+            </div>
+
             <form id="practiceFilterForm" class="ajax-practice-filter" autocomplete="off">
                 <input type="hidden" name="goal" value="speak">
                 <input type="hidden" name="direction" value="hindi_to_english">
-                <label>Lesson Group
-                    <select name="collection" id="practiceCollection">
-                        <?php foreach($collections as $c): ?><option value="<?= e((string)$c['id']) ?>" <?= (int)$defaultCollection===(int)$c['id']?'selected':'' ?>><?= e($c['title']) ?></option><?php endforeach; ?>
-                    </select>
-                </label>
-                <label>Topic / Tense / Use
-                    <select name="unit" id="practiceUnit"><option value="0">All Topics</option><?php foreach($units as $u): ?><option value="<?= e((string)$u['id']) ?>"><?= e($u['title']) ?></option><?php endforeach; ?></select>
-                </label>
-                <label>Search
-                    <input name="q" placeholder="Search is/am/are, present, interview, market...">
-                </label>
-                <button class="btn btn-primary" type="submit">Start</button>
+                <div class="practice-filter-field">
+                    <label for="practiceCollection"><span>Step 2</span> Lesson Group</label>
+                    <div class="practice-control"><select name="collection" id="practiceCollection"><?php foreach($collections as $c): ?><option value="<?= e((string)$c['id']) ?>" <?= (int)$defaultCollection===(int)$c['id']?'selected':'' ?>><?= e($c['title']) ?></option><?php endforeach; ?></select></div>
+                </div>
+                <div class="practice-filter-field">
+                    <label for="practiceUnit"><span>Step 3</span> Topic / Tense / Use</label>
+                    <div class="practice-control"><select name="unit" id="practiceUnit"><option value="0">All Topics</option><?php foreach($units as $u): ?><option value="<?= e((string)$u['id']) ?>"><?= e($u['title']) ?></option><?php endforeach; ?></select></div>
+                </div>
+                <div class="practice-filter-field practice-filter-search">
+                    <label for="practiceSearch"><span>Optional</span> Search</label>
+                    <div class="practice-control"><input id="practiceSearch" name="q" placeholder="Search is/am/are, interview, market..."></div>
+                </div>
+                <button class="btn btn-primary practice-start-btn" type="submit"><i class="fa-solid fa-play" aria-hidden="true"></i><span>Start Practice</span></button>
             </form>
         </div>
 
-        <div id="practiceLoader" class="panel-card practice-loader">Loading practice records...</div>
-        <div id="practiceEmpty" class="panel-card empty-state" hidden>No practice sentences found. Admin can upload Hindi-English sentences from Study Materials Manager.</div>
+        <div id="practiceReady" class="panel-card practice-ready-state">
+            <span><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i></span>
+            <div><b>Ready when you are</b><small>Choose the mode, lesson and topic above, then tap Start Practice.</small></div>
+        </div>
+        <div id="practiceLoader" class="panel-card practice-loader" hidden><span class="practice-loader-icon"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i></span><div><b>Preparing your practice</b><small>Loading sentences and speaking guidance...</small></div></div>
+        <div id="practiceEmpty" class="panel-card empty-state practice-empty" hidden><span><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i></span><h3>No practice sentences found</h3><p>Choose another lesson or ask the institute to publish more material.</p></div>
         <div id="practiceApp" class="practice-room-shell enhanced-practice-shell" hidden>
             <aside class="practice-progress-card panel-card">
-                <span class="badge badge-green">Today Plan</span>
+                <div class="practice-plan-head"><span class="badge badge-green">Today Plan</span><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
                 <h3>One sentence at a time</h3>
-                <p>Listen carefully, speak aloud, then type your answer. Practice without rushing.</p>
-                <div class="practice-meter"><span id="practiceMeterBar"></span></div>
-                <strong id="practiceCounter">1 / 1</strong>
+                <p>Listen, speak aloud and type your answer. Accuracy grows through calm repetition.</p>
+                <div class="practice-progress-summary"><strong id="practiceCounter">1 / 1</strong><span>Sentence progress</span></div>
+                <div class="practice-meter" aria-hidden="true"><span id="practiceMeterBar"></span></div>
                 <div class="mini-tips">
-                    <div><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Read loudly</div>
-                    <div><i class="fa-solid fa-headphones" aria-hidden="true"></i> Listen twice</div>
-                    <div><i class="fa-solid fa-microphone" aria-hidden="true"></i> Speak answer</div>
-                    <div><i class="fa-solid fa-pen" aria-hidden="true"></i> Type from memory</div>
+                    <div><i class="fa-solid fa-volume-high" aria-hidden="true"></i><span><b>Listen</b><small>Hear clearly</small></span></div>
+                    <div><i class="fa-solid fa-headphones" aria-hidden="true"></i><span><b>Repeat</b><small>Say it twice</small></span></div>
+                    <div><i class="fa-solid fa-microphone" aria-hidden="true"></i><span><b>Speak</b><small>Use the mic</small></span></div>
+                    <div><i class="fa-solid fa-pen" aria-hidden="true"></i><span><b>Check</b><small>Type from memory</small></span></div>
                 </div>
             </aside>
             <div class="practice-stepper" id="practiceStepper"></div>
@@ -75,7 +93,7 @@ $units = fetch_material_units((int)$defaultCollection, 200);
 
 <section class="section section-cream">
     <div class="container">
-        <div class="dark-cta">
+        <div class="dark-cta wf-surface-dark">
             <div><h2>Want personal feedback from a teacher?</h2><p>Use Practice Room daily, then book a counselling call for live spoken English guidance.</p></div>
             <a class="btn btn-primary" href="admission.php?source=practice-room">Book Free Counselling</a>
         </div>
@@ -85,21 +103,24 @@ $units = fetch_material_units((int)$defaultCollection, 200);
 <script>
 (function(){
     const filterForm = document.getElementById('practiceFilterForm');
+    const commandCenter = document.querySelector('.practice-command-center');
+    const ready = document.getElementById('practiceReady');
     const loader = document.getElementById('practiceLoader');
     const empty = document.getElementById('practiceEmpty');
     const app = document.getElementById('practiceApp');
     const stepper = document.getElementById('practiceStepper');
     const counter = document.getElementById('practiceCounter');
     const meter = document.getElementById('practiceMeterBar');
+    const startButton = filterForm.querySelector('.practice-start-btn');
 
     let items = [], current = 0, csrf = '';
+    let requestVersion = 0, activeRequest = null;
     let autoTimers = new WeakMap(), checkingNow = new WeakSet();
     let autoMicTimer = null, activeRecognition = null, micStopTimer = null, micSettleTimer = null, questionRetryTimer = null;
     const MAX_WRONG_RETRY = 3;
 
     function esc(v){ return String(v||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c])); }
     function hasSpeech(){ return 'speechSynthesis' in window; }
-    function hasMic(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
     function getVoices(){ return hasSpeech() ? window.speechSynthesis.getVoices() : []; }
     function chooseVoice(lang){
         const voices = getVoices();
@@ -146,16 +167,6 @@ $units = fetch_material_units((int)$defaultCollection, 200);
         speakText(p.text, p.lang, function(){ setTimeout(() => speakMany(parts, index + 1, done), p.pause || 350); });
     }
 
-    if(hasSpeech()){
-        window.speechSynthesis.onvoiceschanged = function(){
-            const active = document.querySelector('.practice-slide.active');
-            if(active && !active.dataset.voiceStarted){
-                active.dataset.voiceStarted = '1';
-                setTimeout(() => playQuestionThenMic(active, false), 350);
-            }
-        };
-    }
-
     function questionLangFor(form){ return form.dataset.direction === 'english_to_hindi' ? 'en-IN' : 'hi-IN'; }
     function answerLangFor(form){ return form.dataset.direction === 'english_to_hindi' ? 'hi-IN' : 'en-IN'; }
     function getQuestionText(form){ return form.dataset.question || ''; }
@@ -172,17 +183,57 @@ $units = fetch_material_units((int)$defaultCollection, 200);
         }
     }
 
+    function setLoading(isLoading){
+        commandCenter?.classList.toggle('is-loading', isLoading);
+        loader.hidden = !isLoading;
+        startButton.disabled = isLoading;
+        startButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+        startButton.innerHTML = isLoading
+            ? '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i><span>Loading Practice</span>'
+            : '<i class="fa-solid fa-play" aria-hidden="true"></i><span>Start Practice</span>';
+    }
+
+    function showError(message){
+        ready.hidden = true;
+        app.hidden = true;
+        empty.hidden = false;
+        empty.innerHTML = '<span><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span><h3>Practice could not load</h3><p>'+esc(message || 'Please try again.')+'</p>';
+    }
+
     function loadPractice(){
         cleanupMic();
-        loader.hidden=false; empty.hidden=true; app.hidden=true; stepper.innerHTML='';
+        const version = ++requestVersion;
+        if(activeRequest) activeRequest.abort();
+        activeRequest = new AbortController();
+        setLoading(true);
+        ready.hidden = true;
+        empty.hidden = true;
+        app.hidden = true;
+        stepper.innerHTML = '';
+        window.dispatchEvent(new CustomEvent('wf:practice-config'));
+
         const qs = new URLSearchParams(new FormData(filterForm));
-        fetch('material-practice-list-api.php?'+qs.toString(), {headers:{'X-Requested-With':'XMLHttpRequest'}})
-            .then(r=>r.json()).then(data=>{
-                if(!data.success) throw new Error(data.message||'Could not load practice.');
-                csrf = data.csrf; items = data.items || []; current = 0;
-                syncUnits(data.units || [], data.unit_id || 0);
-                renderItems(data.direction || filterForm.direction.value, data.goal || filterForm.goal.value);
-            }).catch(err=>{ loader.hidden=true; empty.hidden=false; empty.textContent=err.message; });
+        fetch('material-practice-list-api.php?'+qs.toString(), {
+            signal: activeRequest.signal,
+            headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).then(r=>{
+            if(!r.ok) throw new Error('Could not connect to the practice service.');
+            return r.json();
+        }).then(data=>{
+            if(version !== requestVersion) return;
+            if(!data.success) throw new Error(data.message||'Could not load practice.');
+            csrf = data.csrf; items = data.items || []; current = 0;
+            syncUnits(data.units || [], data.unit_id || 0);
+            renderItems(data.direction || filterForm.direction.value, data.goal || filterForm.goal.value);
+        }).catch(err=>{
+            if(err && err.name === 'AbortError') return;
+            if(version === requestVersion) showError(err.message);
+        }).finally(()=>{
+            if(version === requestVersion){
+                activeRequest = null;
+                setLoading(false);
+            }
+        });
     }
 
     function syncUnits(units, selected){
@@ -191,16 +242,9 @@ $units = fetch_material_units((int)$defaultCollection, 200);
         if([...sel.options].some(o=>o.value==old)) sel.value=old;
     }
 
-    function modeGuide(direction, goal){
-        if(goal === 'speak') return {text:'Speak daily mode. Listen and repeat the sentence.', lang:'en-IN'};
-        if(goal === 'revision') return {text:'Revision mode. Listen and repeat saved material.', lang:'en-IN'};
-        if(direction === 'english_to_hindi') return {text:'English to Hindi practice. Listen to English and answer in Hindi.', lang:'en-IN'};
-        return {text:'Hindi to English practice. Listen to Hindi and answer in English.', lang:'en-IN'};
-    }
-
     function renderItems(direction, goal){
         loader.hidden=true;
-        if(!items.length){ empty.hidden=false; app.hidden=true; return; }
+        if(!items.length){ empty.hidden=false; app.hidden=true; empty.innerHTML='<span><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i></span><h3>No practice sentences found</h3><p>Choose another lesson or ask the institute to publish more material.</p>'; return; }
         empty.hidden=true; app.hidden=false;
 
         stepper.innerHTML = items.map((p,i)=>{
@@ -213,26 +257,34 @@ $units = fetch_material_units((int)$defaultCollection, 200);
                 : (isSpeakMode ? 'Listen and speak the same English sentence.' : 'Listen to the Hindi question. If needed, say again bolo / dobara bolo.');
             return '<form class="practice-slide material-ajax-card auto-voice-practice '+(i===0?'active':'')+'" data-index="'+i+'" data-id="'+p.id+'" data-answer="'+esc(answer)+'" data-question="'+esc(question)+'" data-english="'+esc(p.english)+'" data-hindi="'+esc(p.hindi)+'" data-direction="'+esc(direction)+'" data-goal="'+esc(goal)+'" data-wrong-count="0">'
             + '<input type="hidden" name="csrf_token" value="'+esc(csrf)+'"><input type="hidden" name="pair_id" value="'+p.id+'"><input type="hidden" name="direction" value="'+esc(direction)+'">'
-            + '<div class="practice-card-top"><span class="question-type">'+esc(p.level)+' • '+esc(p.topic)+' • '+esc(p.sentence_type||'Practice')+'</span><span class="badge badge-muted">'+(i+1)+' / '+items.length+'</span></div>'
-            + '<h3>'+esc(question)+'</h3>'
+            + '<div class="practice-slide-head"><div><span class="question-type"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> '+esc(p.level)+' • '+esc(p.topic)+'</span><small>'+esc(p.sentence_type||'Speaking Practice')+'</small></div><span class="practice-count-badge">Sentence '+(i+1)+' <small>of '+items.length+'</small></span></div>'
+            + '<div class="practice-question-panel wf-surface-dark" data-wf-surface="dark"><span class="practice-question-label"><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Listen and speak</span><h3>'+esc(question)+'</h3>'
             + (p.roman && !isEngToHindi ? '<p class="roman-line">'+esc(p.roman)+'</p>' : '')
-            + '<p class="muted-text">'+esc(help)+'</p>'
-            + '<div class="handsfree-switch"><label><input type="checkbox" class="handsfree-toggle" checked> Hands-free auto mic</label><small>Question ek baar bolega. Dobara sunna ho to again bolo.</small></div>'
-            + '<div class="voice-status" hidden></div>'
-            + '<div class="practice-action-row"><button type="button" class="btn btn-soft listen-question"><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Read Question</button><button type="button" class="btn btn-primary mic-answer"><i class="fa-solid fa-microphone" aria-hidden="true"></i> Speak Now</button><button type="button" class="btn btn-light stop-auto">Stop Auto</button></div>'
-            + '<textarea name="answer" rows="4" placeholder="'+(isEngToHindi?'Hindi answer yahan dikhega/type karein...':'English answer yahan dikhega/type karein...')+'"></textarea>'
-            + '<div class="translation-actions"><button class="btn btn-soft" type="submit">Manual Check</button><button class="btn btn-soft finish-check" type="button">Finish & Check</button><button class="btn btn-soft next-slide" type="button">Next</button></div>'
+            + '<p class="practice-question-help">'+esc(help)+'</p></div>'
+            + '<div class="practice-assist-row"><label class="handsfree-switch"><input type="checkbox" class="handsfree-toggle" checked><span class="handsfree-track" aria-hidden="true"><i></i></span><span><b>Hands-free auto mic</b><small>Question ek baar bolega. Dobara sunna ho to “again” bolo.</small></span></label><div class="voice-status" hidden></div></div>'
+            + '<div class="practice-action-row practice-primary-actions"><button type="button" class="btn btn-soft listen-question"><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Read Question</button><button type="button" class="btn btn-primary mic-answer"><i class="fa-solid fa-microphone" aria-hidden="true"></i> Speak Now</button><button type="button" class="btn btn-light stop-auto"><i class="fa-solid fa-stop" aria-hidden="true"></i> Stop Auto</button></div>'
+            + '<div class="practice-answer-block"><label><span>Your answer</span><small>Use the microphone or type from memory.</small></label><textarea name="answer" rows="4" placeholder="'+(isEngToHindi?'Hindi answer yahan dikhega/type karein...':'English answer yahan dikhega/type karein...')+'"></textarea></div>'
+            + '<div class="translation-actions"><button class="btn btn-soft" type="submit"><i class="fa-solid fa-spell-check" aria-hidden="true"></i> Manual Check</button><button class="btn btn-soft finish-check" type="button"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Finish & Check</button><button class="btn btn-soft next-slide" type="button">Next <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button></div>'
             + '<div class="material-inline-result" hidden></div></form>';
         }).join('');
 
         bindPracticeCards();
-        const guide = modeGuide(direction, goal);
-        speakText(guide.text, guide.lang, function(){ showSlide(0); });
+        showSlide(0);
+        window.dispatchEvent(new CustomEvent('wf:practice-start'));
+    }
+
+    function finishPractice(){
+        cleanupMic();
+        counter.textContent = items.length + ' / ' + items.length;
+        meter.style.width = '100%';
+        stepper.innerHTML = '<div class="practice-complete-card"><span><i class="fa-solid fa-trophy" aria-hidden="true"></i></span><h3>Practice complete</h3><p>You completed all available sentences in this set.</p><button type="button" class="btn btn-primary restart-practice"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Practise Again</button></div>';
     }
 
     function showSlide(i){
         cleanupMic();
-        current=Math.max(0,Math.min(i,items.length-1));
+        if(!items.length) return;
+        if(i >= items.length){ finishPractice(); return; }
+        current=Math.max(0,i);
         document.querySelectorAll('.practice-slide').forEach((s,idx)=>{
             s.classList.toggle('active',idx===current);
             if(idx===current){
@@ -362,6 +414,7 @@ $units = fetch_material_units((int)$defaultCollection, 200);
     }
 
     function checkForm(form, source){
+        clearTimeout(autoTimers.get(form));
         const answer = form.querySelector('textarea').value.trim();
         const box=form.querySelector('.material-inline-result');
         if(isRepeatQuestionCommand(answer)){
@@ -373,8 +426,8 @@ $units = fetch_material_units((int)$defaultCollection, 200);
         checkingNow.add(form);
         cleanupMic();
 
-        const btn=form.querySelector('button[type="submit"]'); const old=btn.textContent;
-        btn.disabled=true; btn.textContent='Checking...';
+        const btn=form.querySelector('button[type="submit"]'); const old=btn.innerHTML;
+        btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Checking';
         box.hidden=false; box.className='material-inline-result is-checking'; box.innerHTML='<strong>Checking...</strong><p>Please wait.</p>';
 
         fetch('material-practice-api.php',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(data=>{
@@ -386,7 +439,7 @@ $units = fetch_material_units((int)$defaultCollection, 200);
         }).finally(()=>{
             checkingNow.delete(form);
             btn.disabled=false;
-            btn.textContent=old;
+            btn.innerHTML=old;
         });
     }
 
@@ -505,14 +558,21 @@ $units = fetch_material_units((int)$defaultCollection, 200);
     }
 
     document.addEventListener('click',function(e){
+        const restart=e.target.closest('.restart-practice'); if(restart){ current=0; renderItems(filterForm.direction.value, filterForm.goal.value); return; }
         const tab=e.target.closest('.goal-tab');
         if(tab){
-            document.querySelectorAll('.goal-tab').forEach(t=>t.classList.remove('active'));
-            tab.classList.add('active');
+            document.querySelectorAll('.goal-tab').forEach(function(t){
+                const active = t === tab;
+                t.classList.toggle('active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
             filterForm.goal.value=tab.dataset.goal;
             filterForm.direction.value=tab.dataset.direction;
-            const guide = modeGuide(tab.dataset.direction, tab.dataset.goal);
-            speakText(guide.text, guide.lang, function(){ loadPractice(); });
+            cleanupMic();
+            ready.hidden = false;
+            empty.hidden = true;
+            app.hidden = true;
+            window.dispatchEvent(new CustomEvent('wf:practice-config'));
             return;
         }
         const next=e.target.closest('.next-slide'); if(next){ showSlide(current+1); }
@@ -530,9 +590,17 @@ $units = fetch_material_units((int)$defaultCollection, 200);
     });
 
     filterForm.addEventListener('submit',function(e){ e.preventDefault(); loadPractice(); });
-    filterForm.querySelectorAll('select').forEach(el=>el.addEventListener('change',loadPractice));
-    let qTimer=null; filterForm.q.addEventListener('input',function(){ clearTimeout(qTimer); qTimer=setTimeout(loadPractice,500); });
-    loadPractice();
+    filterForm.querySelectorAll('select,input[type="search"],input[name="q"]').forEach(el=>el.addEventListener('change',function(){
+        ready.hidden = false;
+        empty.hidden = true;
+        app.hidden = true;
+        window.dispatchEvent(new CustomEvent('wf:practice-config'));
+    }));
+    window.addEventListener('wf:practice-config', function(){
+        cleanupMic();
+        app.hidden = true;
+        if(loader.hidden && empty.hidden) ready.hidden = false;
+    });
 })();
 </script>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -66,7 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('students.php');
             }
         } catch (Throwable $e) {
-            $errors[] = $e->getMessage();
+            error_log('[admin-students] ' . $e->__toString());
+            $errors[] = ($e instanceof RuntimeException && !($e instanceof PDOException))
+                ? $e->getMessage()
+                : 'Student change could not be saved. Check Admin > System Check.';
         }
     }
 }

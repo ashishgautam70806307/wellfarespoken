@@ -1,0 +1,47 @@
+{
+  "phase": "142",
+  "date": "2026-08-06",
+  "php_files": 68,
+  "javascript_and_service_worker_files": 9,
+  "css_files": 50,
+  "php_syntax": "PASS",
+  "javascript_syntax": "PASS",
+  "inline_javascript": {
+    "spoken-materials.php": [
+      {
+        "block": 1,
+        "pass": true
+      }
+    ],
+    "roadmap-lesson.php": [
+      {
+        "block": 1,
+        "pass": true
+      }
+    ],
+    "admin/login.php": [
+      {
+        "block": 1,
+        "pass": true
+      }
+    ]
+  },
+  "css_parse_errors": [],
+  "duplicate_literal_ids": [],
+  "literal_local_references_checked": 184,
+  "missing_literal_local_references": [],
+  "service_worker_assets_checked": 35,
+  "service_worker_missing_assets": [],
+  "phase_assertions": {
+    "explicit_start_only": true,
+    "stale_request_protection": true,
+    "no_duplicate_voice_autostart": true,
+    "no_hidden_attribute_observer": true,
+    "explicit_practice_events": true,
+    "no_decorative_input_icon_markup": true,
+    "no_obsolete_input_icon_css": true,
+    "roadmap_result_in_normal_flow": true,
+    "service_worker_v142": true
+  },
+  "real_mysql_browser_microphone_testing": "PENDING"
+}

@@ -7,8 +7,34 @@ while (ob_get_level() > 1) { @ob_end_clean(); }
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private, max-age=0');
 
+function weekly_api_wants_json(): bool
+{
+    $requestedWith = strtolower(trim((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')));
+    $accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+    return $requestedWith === 'xmlhttprequest' || str_contains($accept, 'application/json');
+}
+
 function jt(array $payload, int $code = 200): never
 {
+    $action = trim((string)($_POST['action'] ?? $_GET['action'] ?? ''));
+    if ($action === 'start' && !weekly_api_wants_json()) {
+        if (!empty($payload['success']) && !empty($payload['attempt_id']) && !empty($payload['access_token'])) {
+            $url = 'weekly-exam-room.php?attempt_id=' . rawurlencode((string)$payload['attempt_id'])
+                . '&token=' . rawurlencode((string)$payload['access_token']);
+            header('Location: ' . $url, true, 303);
+            exit;
+        }
+        if (!empty($payload['result_url'])) {
+            header('Location: ' . safe_local_redirect((string)$payload['result_url'], 'weekly-test.php#my-results'), true, 303);
+            exit;
+        }
+        $type = strtolower(trim((string)($_POST['test_type'] ?? 'basic')));
+        if (!in_array($type, ['basic', 'previous', 'upcoming'], true)) $type = 'basic';
+        flash('error', trim((string)($payload['message'] ?? 'Test could not start.')) ?: 'Test could not start.');
+        header('Location: weekly-test.php?type=' . rawurlencode($type) . '#wfTestSetup', true, 303);
+        exit;
+    }
+
     http_response_code($code);
     if (ob_get_length()) @ob_clean();
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -18,15 +44,7 @@ function jt(array $payload, int $code = 200): never
 function weekly_api_attempt(int $attemptId, string $token): ?array
 {
     if ($attemptId <= 0 || strlen($token) < 32) return null;
-    $stmt = db()->prepare("SELECT a.*, t.title, t.test_type, t.duration_minutes, t.total_questions,
-                                  t.penalty_after_warnings, t.penalty_per_warning, t.warning_limit,
-                                  t.auto_submit_on_warning_limit, t.shuffle_options
-                           FROM weekly_test_attempts a
-                           JOIN weekly_tests t ON t.id=a.test_id
-                           WHERE a.id=? AND a.access_token=? AND COALESCE(a.status_deleted,0)=0
-                           LIMIT 1");
-    $stmt->execute([$attemptId, $token]);
-    return $stmt->fetch() ?: null;
+    return weekly_test_fetch_attempt_record($attemptId, $token, false);
 }
 
 function weekly_api_assert_owner(array $attempt): void
@@ -46,18 +64,7 @@ function weekly_api_assert_owner(array $attempt): void
 
 function weekly_api_snapshot(array &$attempt): array
 {
-    $snapshot = weekly_test_snapshot_questions($attempt, true);
-    if ($snapshot) return $snapshot;
-
-    $questions = weekly_test_fetch_questions((int)$attempt['test_id'], 500);
-    $questions = weekly_test_order_questions($questions, $attempt, $attempt);
-    $questions = array_slice($questions, 0, max(1, (int)($attempt['total_questions'] ?? 30)));
-    $snapshot = weekly_test_create_snapshot($questions, $attempt);
-    $json = json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    db()->prepare("UPDATE weekly_test_attempts SET question_snapshot=? WHERE id=? AND access_token=?")
-        ->execute([$json, (int)$attempt['id'], (string)$attempt['access_token']]);
-    $attempt['question_snapshot'] = $json;
-    return $snapshot;
+    return weekly_test_attempt_snapshot($attempt);
 }
 
 function weekly_api_sanitized_answers(string $json): array
@@ -78,6 +85,10 @@ function weekly_api_sanitized_answers(string $json): array
 
 try {
     $action = trim((string)($_POST['action'] ?? $_GET['action'] ?? ''));
+    $schemaStatus = weekly_test_schema_status();
+    if (!($schemaStatus['ready'] ?? false)) {
+        jt(['success'=>false, 'message'=>'Weekly Test database upgrade is incomplete. Import sql/wellfare_english_complete.sql once.'], 503);
+    }
 
     if ($action === 'list') {
         $type = trim((string)($_GET['type'] ?? ''));
@@ -146,26 +157,33 @@ try {
     }
 
     if ($action === 'start') {
-        if (!security_rate_limit('weekly-test-start', 25, 300)) {
-            jt(['success'=>false, 'message'=>'Too many test start requests. Please wait a few minutes.'], 429);
-        }
         $testId = (int)($_POST['test_id'] ?? 0);
         $type = trim((string)($_POST['test_type'] ?? 'basic'));
         if (!in_array($type, ['basic','previous','upcoming'], true)) $type = 'basic';
+        if (!security_rate_limit('weekly-test-start:' . $type, 25, 300)) {
+            jt(['success'=>false, 'message'=>'Too many test start requests. Please wait a few minutes.'], 429);
+        }
         $test = null;
         if ($testId > 0) {
             $s = db()->prepare("SELECT * FROM weekly_tests WHERE id=? AND status_deleted=0 LIMIT 1");
             $s->execute([$testId]);
             $test = $s->fetch() ?: null;
+            if (!$test) jt(['success'=>false, 'message'=>'The selected test paper is no longer available. Refresh the page and choose again.'], 404);
+        } else {
+            $test = weekly_test_default_by_type($type);
         }
-        if (!$test) $test = weekly_test_default_by_type($type);
         if (!$test) jt(['success'=>false, 'message'=>'No test found. Ask admin to create a test.']);
-        $isOfficialExam = (string)($test['test_type'] ?? '') === 'upcoming';
+        $actualType = strtolower(trim((string)($test['test_type'] ?? '')));
+        if (!in_array($actualType, ['basic','previous','upcoming'], true) || $actualType !== $type) {
+            jt(['success'=>false, 'message'=>'Selected test type does not match this paper. Refresh the page and try again.'], 409);
+        }
+        $isOfficialExam = $actualType === 'upcoming';
         if (($isOfficialExam || ($test['requires_login'] ?? 'No') === 'Yes') && !is_student()) {
             jt(['success'=>false, 'login_required'=>true, 'message'=>'Student login is required for the weekly exam.']);
         }
+        $activeStudent = null;
         if (is_student()) {
-            $studentCheck = db()->prepare("SELECT published, status_deleted FROM students WHERE id=? LIMIT 1");
+            $studentCheck = db()->prepare("SELECT id, full_name, phone, published, status_deleted FROM students WHERE id=? LIMIT 1");
             $studentCheck->execute([current_student_id()]);
             $activeStudent = $studentCheck->fetch();
             if (!$activeStudent || ($activeStudent['published'] ?? 'No') !== 'Yes' || (int)($activeStudent['status_deleted'] ?? 0) !== 0) {
@@ -186,36 +204,53 @@ try {
 
         $studentId = is_student() ? current_student_id() : null;
         $duration = max(1, min(240, (int)($test['duration_minutes'] ?? 30)));
+        $startTransactionOpen = false;
         if (($test['test_type'] ?? '') === 'upcoming' && $studentId) {
-            $chk = db()->prepare("SELECT * FROM weekly_test_attempts
+            $pdo = db();
+            $pdo->beginTransaction();
+            $startTransactionOpen = true;
+            // Every concurrent start for the same official paper waits on this row lock.
+            $lock = $pdo->prepare("SELECT id FROM weekly_tests WHERE id=? AND status_deleted=0 FOR UPDATE");
+            $lock->execute([(int)$test['id']]);
+            if (!$lock->fetchColumn()) {
+                $pdo->rollBack();
+                $startTransactionOpen = false;
+                jt(['success'=>false, 'message'=>'The selected test paper is no longer available.'], 404);
+            }
+
+            $chk = $pdo->prepare("SELECT * FROM weekly_test_attempts
                                   WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND student_id=?
-                                    AND status IN ('started','submitted','checked') ORDER BY id DESC LIMIT 1");
+                                    AND status IN ('started','submitted','checked') ORDER BY id DESC LIMIT 1 FOR UPDATE");
             $chk->execute([(int)$test['id'], $studentId]);
             $existing = $chk->fetch();
             if ($existing && in_array($existing['status'], ['submitted','checked'], true)) {
+                $pdo->commit();
+                $startTransactionOpen = false;
                 jt(['success'=>false, 'message'=>'You have already submitted this weekly exam. Open My Results.']);
             }
             if ($existing && $existing['status'] === 'started') {
-                $accessToken = trim((string)($existing['access_token'] ?? ''));
-                $resultToken = trim((string)($existing['result_token'] ?? ''));
-                if ($accessToken === '') $accessToken = bin2hex(random_bytes(32));
-                if ($resultToken === '') $resultToken = bin2hex(random_bytes(32));
-                db()->prepare("UPDATE weekly_test_attempts SET access_token=?, result_token=? WHERE id=?")
+                $accessToken = trim((string)($existing['access_token'] ?? '')) ?: bin2hex(random_bytes(32));
+                $resultToken = trim((string)($existing['result_token'] ?? '')) ?: bin2hex(random_bytes(32));
+                $pdo->prepare("UPDATE weekly_test_attempts SET access_token=?, result_token=? WHERE id=?")
                     ->execute([$accessToken, $resultToken, (int)$existing['id']]);
                 $existing['access_token'] = $accessToken;
                 $existing['result_token'] = $resultToken;
-                // Preserve the attempt ID. A raw array_merge() would overwrite it with the test ID.
-                $existing['duration_minutes'] = (int) ($test['duration_minutes'] ?? 30);
-                $existing['total_questions'] = (int) ($test['total_questions'] ?? 30);
-                $existing['shuffle_options'] = (string) ($test['shuffle_options'] ?? 'Yes');
-                $existing['shuffle_questions'] = (string) ($test['shuffle_questions'] ?? 'Yes');
-                $existing['title'] = (string) ($test['title'] ?? 'Weekly Test');
-                $existing['test_type'] = (string) ($test['test_type'] ?? 'upcoming');
+                $existing['duration_minutes'] = (int)($test['duration_minutes'] ?? 30);
+                $existing['total_questions'] = (int)($test['total_questions'] ?? 30);
+                $existing['shuffle_options'] = (string)($test['shuffle_options'] ?? 'Yes');
+                $existing['shuffle_questions'] = (string)($test['shuffle_questions'] ?? 'Yes');
+                $existing['title'] = (string)($test['title'] ?? 'Weekly Test');
+                $existing['test_type'] = (string)($test['test_type'] ?? 'upcoming');
                 $remaining = weekly_attempt_remaining_seconds($existing);
+                $pdo->commit();
+                $startTransactionOpen = false;
+
                 if ($remaining <= 0) {
-                    db()->prepare("UPDATE weekly_test_attempts SET status='submitted', submitted_at=NOW(), submission_reason='timer_expired' WHERE id=? AND status='started'")
-                        ->execute([(int)$existing['id']]);
-                    jt(['success'=>false, 'message'=>'Your exam time is over. Open My Results.']);
+                    $finalized = weekly_test_finalize_attempt((int)$existing['id'], $accessToken, [], 'timer_expired');
+                    jt(['success'=>false,
+                        'message'=>$finalized['success'] ? 'Your exam time is over. Saved answers were submitted. Open My Results.' : $finalized['message'],
+                        'result_url'=>$finalized['result_url'] ?? weekly_test_result_url($existing)],
+                        $finalized['success'] ? 200 : 500);
                 }
                 $snapshot = weekly_api_snapshot($existing);
                 $safe = array_map(function($q){ unset($q['expected']); return $q; }, $snapshot);
@@ -230,10 +265,17 @@ try {
         $questions = weekly_test_fetch_questions((int)$test['id'], 500);
         $questions = weekly_test_order_questions($questions, $test, null);
         $questions = array_slice($questions, 0, max(1, (int)($test['total_questions'] ?: 30)));
-        if (!$questions) jt(['success'=>false, 'message'=>'This test has no active questions.']);
+        if (!$questions) {
+            if (!empty($startTransactionOpen) && db()->inTransaction()) db()->rollBack();
+            jt(['success'=>false, 'message'=>'This test has no active questions.']);
+        }
 
-        $guestName = trim((string)($_POST['guest_name'] ?? 'Guest Student')) ?: 'Guest Student';
-        $guestPhone = weekly_test_clean_phone((string)($_POST['guest_phone'] ?? ''));
+        $guestName = $studentId
+            ? (trim((string)($activeStudent['full_name'] ?? 'Student')) ?: 'Student')
+            : (trim((string)($_POST['guest_name'] ?? 'Guest Student')) ?: 'Guest Student');
+        $guestPhone = $studentId
+            ? weekly_test_clean_phone((string)($activeStudent['phone'] ?? ''))
+            : weekly_test_clean_phone((string)($_POST['guest_phone'] ?? ''));
         if (!$studentId) {
             if (strlen($guestPhone) !== 10) jt(['success'=>false, 'message'=>'Enter a valid 10 digit mobile number.']);
             if (mb_strlen($guestName) < 2 || mb_strlen($guestName) > 100) jt(['success'=>false, 'message'=>'Enter a valid student name.']);
@@ -252,6 +294,10 @@ try {
                         $duration, $totalMarks, $accessToken, $resultToken,
                         json_encode($orderIds), json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
         $attemptId = (int)db()->lastInsertId();
+        if (!empty($startTransactionOpen) && db()->inTransaction()) {
+            db()->commit();
+            $startTransactionOpen = false;
+        }
         $safe = array_map(function($q){ unset($q['expected']); return $q; }, $snapshot);
         jt(['success'=>true, 'attempt_id'=>$attemptId, 'access_token'=>$accessToken,
             'remaining_seconds'=>$duration * 60,
@@ -289,69 +335,66 @@ try {
         $answers = array_intersect_key($answers, $allowedIds);
         $expired = weekly_attempt_remaining_seconds($attempt) <= 0
             || (!empty($attempt['expires_at']) && strtotime((string)$attempt['expires_at']) <= time());
-        if ($expired) $action = 'submit';
 
-        $ins = db()->prepare("INSERT INTO weekly_test_answers
-            (attempt_id,question_id,answer_text,is_correct,marks_awarded,admin_note)
-            VALUES (?,?,?,?,?,?)
-            ON DUPLICATE KEY UPDATE answer_text=VALUES(answer_text), is_correct=VALUES(is_correct),
-                                    marks_awarded=VALUES(marks_awarded), admin_note=VALUES(admin_note)");
-
-        if ($action === 'autosave') {
-            $saved = 0;
-            foreach ($snapshot as $q) {
-                $qid = (int)$q['id'];
-                if (!array_key_exists($qid, $answers)) continue;
-                $answer = $answers[$qid];
-                $match = weekly_test_match_answer($answer, (string)($q['expected'] ?? ''));
-                $ins->execute([$attemptId, $qid, $answer, $match['is_correct'], null, $match['note']]);
-                $saved++;
+        if ($action === 'autosave' && !$expired) {
+            $pdo = db();
+            $pdo->beginTransaction();
+            try {
+                $lockedAttempt = weekly_test_fetch_attempt_record($attemptId, $token, true);
+                if (!$lockedAttempt || ($lockedAttempt['status'] ?? '') !== 'started') {
+                    $pdo->rollBack();
+                    jt(['success'=>false, 'message'=>'This test is already closed.'], 409);
+                }
+                $ins = $pdo->prepare("INSERT INTO weekly_test_answers
+                    (attempt_id,question_id,answer_text,is_correct,marks_awarded,admin_note)
+                    VALUES (?,?,?,?,?,?)
+                    ON DUPLICATE KEY UPDATE answer_text=VALUES(answer_text), is_correct=VALUES(is_correct),
+                                            marks_awarded=VALUES(marks_awarded), admin_note=VALUES(admin_note)");
+                $saved = 0;
+                foreach ($snapshot as $q) {
+                    $qid = (int)$q['id'];
+                    if (!array_key_exists($qid, $answers)) continue;
+                    $answer = $answers[$qid];
+                    $match = weekly_test_match_answer($answer, (string)($q['expected'] ?? ''));
+                    $ins->execute([$attemptId, $qid, $answer, $match['is_correct'], null, $match['note']]);
+                    $saved++;
+                }
+                $pdo->prepare("UPDATE weekly_test_attempts SET last_saved_at=NOW() WHERE id=? AND access_token=? AND status='started'")
+                    ->execute([$attemptId, $token]);
+                $pdo->commit();
+                jt(['success'=>true, 'message'=>'Saved ' . $saved . ' answer(s).',
+                    'remaining_seconds'=>weekly_attempt_remaining_seconds($lockedAttempt)]);
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
             }
-            db()->prepare("UPDATE weekly_test_attempts SET last_saved_at=NOW() WHERE id=? AND access_token=? AND status='started'")
-                ->execute([$attemptId, $token]);
-            jt(['success'=>true, 'message'=>'Saved ' . $saved . ' answer(s).',
-                'remaining_seconds'=>weekly_attempt_remaining_seconds($attempt)]);
         }
 
-        $auto = 0.0;
-        $saved = 0;
-        foreach ($snapshot as $q) {
-            $qid = (int)$q['id'];
-            $answer = trim((string)($answers[$qid] ?? ''));
-            $expected = trim((string)($q['expected'] ?? ''));
-            $match = weekly_test_match_answer($answer, $expected);
-            $marks = 0.0;
-            if ($expected !== '' && $answer !== '') $marks = round((float)$q['marks'] * (float)$match['marks_ratio'], 2);
-            if ($match['is_correct'] === 'Yes') $auto += $marks;
-            $ins->execute([$attemptId, $qid, $answer, $match['is_correct'], $marks, $match['note']]);
-            $saved++;
-        }
-
-        $warningCount = (int)($attempt['warning_count'] ?? 0);
-        $penalty = 0.0;
-        if (($attempt['test_type'] ?? 'basic') !== 'basic' && (($attempt['penalty_after_warnings'] ?? 'Yes') === 'Yes')) {
-            $penalty = max(0, $warningCount - 1) * max(0, (float)($attempt['penalty_per_warning'] ?? 1));
-        }
-        $finalAuto = max(0, round($auto - $penalty, 2));
         $reason = $expired ? 'timer_expired' : 'manual_submit';
-        $note = $penalty > 0 ? (' Security penalty applied: -' . $penalty . ' mark(s).') : '';
-        $resultToken = trim((string)($attempt['result_token'] ?? '')) ?: bin2hex(random_bytes(32));
-        $upd = db()->prepare("UPDATE weekly_test_attempts
-                              SET submitted_at=NOW(), status='submitted', auto_score=?, penalty_marks=?,
-                                  submission_reason=?, result_token=?, last_saved_at=NOW(),
-                                  admin_note=CONCAT(COALESCE(admin_note,''), ?)
-                              WHERE id=? AND access_token=? AND status='started'");
-        $upd->execute([$finalAuto, $penalty, $reason, $resultToken, $note, $attemptId, $token]);
-        if ($upd->rowCount() !== 1) jt(['success'=>false, 'message'=>'This test was already submitted.'], 409);
-        $attempt['result_token'] = $resultToken;
-        jt(['success'=>true,
-            'message'=>$expired ? 'Time ended. Your saved answers were submitted automatically.' : 'Test submitted successfully. Teacher/admin will review marks.',
-            'auto_score'=>$finalAuto, 'penalty_marks'=>$penalty, 'saved'=>$saved,
-            'expired'=>$expired, 'result_url'=>weekly_test_result_url($attempt)]);
+        $finalized = weekly_test_finalize_attempt($attemptId, $token, $answers, $reason);
+        if (empty($finalized['success'])) jt($finalized, 500);
+        jt([
+            'success'=>true,
+            'message'=>$finalized['message'],
+            'auto_score'=>$finalized['auto_score'] ?? 0,
+            'penalty_marks'=>$finalized['penalty_marks'] ?? 0,
+            'saved'=>$finalized['saved'] ?? 0,
+            'expired'=>$expired,
+            'already_closed'=>$finalized['already_closed'] ?? false,
+            'result_url'=>$finalized['result_url'] ?? '',
+        ]);
     }
 
     jt(['success'=>false, 'message'=>'Unknown action.'], 400);
 } catch (Throwable $e) {
-    if (defined('APP_DEBUG') && APP_DEBUG) error_log($e->__toString());
+    if (isset($startTransactionOpen) && $startTransactionOpen) {
+        try {
+            $rollbackDb = db();
+            if ($rollbackDb->inTransaction()) $rollbackDb->rollBack();
+        } catch (Throwable $rollbackError) {
+            error_log('[weekly-test-api-rollback] ' . $rollbackError->getMessage());
+        }
+    }
+    error_log('[weekly-test-api] ' . $e->__toString());
     jt(['success'=>false, 'message'=>'Server error. Open Admin > System Check once.'], 500);
 }

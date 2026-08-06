@@ -201,7 +201,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('roadmap.php?tab=' . urlencode($tab) . '&unit_id=' . $unitId);
         }
     } catch (Throwable $e) {
-        flash('error', $e->getMessage());
+        error_log('[admin-roadmap] ' . $e->__toString());
+        flash('error', 'Roadmap change could not be saved. Check Admin > System Check.');
         redirect('roadmap.php?tab=' . urlencode($tab));
     }
 }

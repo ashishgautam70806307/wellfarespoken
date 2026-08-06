@@ -16,11 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $action = $_POST['action'] ?? '';
         if ($action === 'profile') {
-            $level = trim((string)($_POST['current_level'] ?? $student['current_level']));
             $goal = trim((string)($_POST['target_goal'] ?? ''));
+            if (mb_strlen($goal) > 180) $goal = mb_substr($goal, 0, 180);
             $minutes = max(5, min(180, (int)($_POST['daily_goal_minutes'] ?? 20)));
-            db()->prepare('UPDATE students SET current_level=?, target_goal=?, daily_goal_minutes=? WHERE id=?')->execute([$level, $goal, $minutes, (int)$student['id']]);
-            flash('success', 'Learning profile updated.');
+            // Official curriculum level is assessment/admin controlled; students may update only their goal and daily target.
+            db()->prepare('UPDATE students SET target_goal=?, daily_goal_minutes=? WHERE id=?')->execute([$goal ?: null, $minutes, (int)$student['id']]);
+            flash('success', 'Learning profile updated. Your current level remains assessment-controlled.');
             redirect('student-dashboard.php');
         }
         if ($action === 'activity') {
@@ -59,7 +60,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php $successMessage = flash('success'); if ($successMessage): ?><div class="alert alert-success"><p><?= e($successMessage) ?></p></div><?php endif; ?>
         <?php if ($errors): ?><div class="alert alert-error"><?php foreach ($errors as $error): ?><p><?= e($error) ?></p><?php endforeach; ?></div><?php endif; ?>
 
-        <div class="student-dashboard-hero">
+        <div class="student-dashboard-hero wf-surface-dark">
             <div class="student-welcome-copy">
                 <span class="eyebrow">Student Dashboard</span>
                 <h1>Welcome, <?= e($student['full_name']) ?></h1>
@@ -111,7 +112,7 @@ require_once __DIR__ . '/includes/header.php';
                 <h2>Learning Profile</h2>
                 <form method="post" class="form-stack compact-form">
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="profile">
-                    <label>Current Level<select name="current_level"><option <?= $student['current_level']==='Zero Level'?'selected':'' ?>>Zero Level</option><option <?= $student['current_level']==='Basic'?'selected':'' ?>>Basic</option><option <?= $student['current_level']==='Intermediate'?'selected':'' ?>>Intermediate</option><option <?= $student['current_level']==='Advanced'?'selected':'' ?>>Advanced</option></select></label>
+                    <label>Current Level<select disabled aria-describedby="levelControlHelp"><option selected><?= e((string)$student['current_level']) ?></option></select><small id="levelControlHelp">Level is updated through assessment or by the institute.</small></label>
                     <label>Target Goal<input type="text" name="target_goal" value="<?= e($student['target_goal'] ?? '') ?>" placeholder="Example: Job interview English"></label>
                     <label>Daily Goal Minutes<input type="number" min="5" max="180" name="daily_goal_minutes" value="<?= e((string)$student['daily_goal_minutes']) ?>"></label>
                     <button class="btn btn-primary" type="submit">Save Profile</button>

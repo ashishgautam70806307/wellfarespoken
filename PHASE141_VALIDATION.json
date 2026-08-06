@@ -1,0 +1,23 @@
+{
+  "phase": 141,
+  "scope": [
+    "spoken-materials.php",
+    "learning-roadmap.php",
+    "weekly-test.php"
+  ],
+  "php_files_checked": 68,
+  "php_syntax_errors": 0,
+  "javascript_and_service_worker_files_checked": 9,
+  "javascript_syntax_errors": 0,
+  "css_files_checked": 48,
+  "css_parse_errors": 0,
+  "duplicate_literal_ids": 0,
+  "service_worker_cache": "wellfare-spoken-static-v141",
+  "service_worker_assets_checked": 34,
+  "service_worker_assets_missing": 0,
+  "database_schema_changed": false,
+  "business_logic_changed": false,
+  "real_mysql_testing": "pending",
+  "real_authenticated_browser_testing": "pending",
+  "real_microphone_testing": "pending"
+}

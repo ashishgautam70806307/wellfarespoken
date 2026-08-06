@@ -75,11 +75,27 @@ function security_rate_limit_clear(string $key): void
 
 function safe_local_redirect(string $path, string $default = 'student-dashboard.php'): string
 {
-    $path = trim(str_replace(["\r", "\n"], '', $path));
-    if ($path === '' || str_contains($path, '://') || str_starts_with($path, '//')) return $default;
-    $clean = ltrim($path, '/');
-    if (!preg_match('/^[A-Za-z0-9_\-\.]+(?:\?[A-Za-z0-9_\-\.=&%]*)?$/', $clean)) return $default;
-    return $clean;
+    $path = trim(str_replace(["\r", "\n", "\0"], '', html_entity_decode($path, ENT_QUOTES, 'UTF-8')));
+    if ($path === '' || str_starts_with($path, '//') || str_contains($path, '\\')) return $default;
+
+    $parts = parse_url($path);
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host']) || isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
+        return $default;
+    }
+
+    $cleanPath = ltrim((string)($parts['path'] ?? ''), '/');
+    if ($cleanPath === '' || preg_match('#(^|/)\.\.(/|$)#', $cleanPath)) return $default;
+    if (!preg_match('/^[A-Za-z0-9_\-\.\/]+$/', $cleanPath)) return $default;
+
+    $query = (string)($parts['query'] ?? '');
+    if ($query !== '' && (strlen($query) > 1500 || preg_match('/[\x00-\x1F\x7F]/', $query))) return $default;
+
+    $fragment = (string)($parts['fragment'] ?? '');
+    if ($fragment !== '' && !preg_match('/^[A-Za-z0-9_\-:.]+$/', $fragment)) return $default;
+
+    return $cleanPath
+        . ($query !== '' ? '?' . $query : '')
+        . ($fragment !== '' ? '#' . $fragment : '');
 }
 
 function csv_safe_cell(mixed $value): string
@@ -92,6 +108,28 @@ function csv_safe_cell(mixed $value): string
 function e(?string $value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function app_safe_href(?string $url, string $default = '#', bool $webOnly = false): string
+{
+    $url = trim(str_replace(["\r", "\n", "\0"], '', html_entity_decode((string)$url, ENT_QUOTES, 'UTF-8')));
+    if ($url === '' || str_starts_with($url, '//') || str_contains($url, '\\')) return $default;
+    if (preg_match('/[\x00-\x1F\x7F]/', $url)) return $default;
+
+    if (str_starts_with($url, '#')) {
+        return preg_match('/^#[A-Za-z0-9_\-:.]+$/', $url) ? $url : $default;
+    }
+
+    $scheme = strtolower((string)(parse_url($url, PHP_URL_SCHEME) ?? ''));
+    if ($scheme !== '') {
+        $allowed = $webOnly ? ['http', 'https'] : ['http', 'https', 'mailto', 'tel'];
+        return in_array($scheme, $allowed, true) ? $url : $default;
+    }
+
+    if ($webOnly) return $default;
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?? '');
+    if ($path === '' || preg_match('#(^|/)\.\.(/|$)#', $path)) return $default;
+    return $url;
 }
 
 function app_icon_class(?string $value, string $fallback = 'fa-solid fa-circle-check'): string
@@ -287,10 +325,11 @@ function db_exec_safe(string $sql): bool
 function table_exists(string $table): bool
 {
     try {
-        $safeTable = str_replace('`', '', $table);
-        $stmt = db()->prepare('SHOW TABLES LIKE ?');
+        $safeTable = preg_replace('/[^A-Za-z0-9_]/', '', $table);
+        if ($safeTable === '') return false;
+        $stmt = db()->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?');
         $stmt->execute([$safeTable]);
-        return (bool)$stmt->fetchColumn();
+        return (int)$stmt->fetchColumn() > 0;
     } catch (Throwable $e) {
         return false;
     }
@@ -298,6 +337,10 @@ function table_exists(string $table): bool
 
 function ensure_core_schema_columns(): void
 {
+    if (defined('APP_ALLOW_SCHEMA_UPDATES') && !APP_ALLOW_SCHEMA_UPDATES) return;
+    static $done = false;
+    if ($done) return;
+    $done = true;
     try {
         db_exec_safe("CREATE TABLE IF NOT EXISTS enquiries (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -782,6 +825,7 @@ function ensure_schema_updates(): void
 
         $defaults = [
             'site_name' => APP_NAME,
+            'site_tagline' => APP_TAGLINE,
             'brand_short' => 'WF',
             'brand_title' => 'Well Fare',
             'brand_subtitle' => 'English Spoken',
@@ -797,8 +841,11 @@ function ensure_schema_updates(): void
             'facebook_url' => '',
             'instagram_url' => '',
             'youtube_url' => '',
+            'linkedin_url' => '',
+            'twitter_url' => '',
             'footer_about' => 'Practical spoken English classes for students, job seekers and working professionals.',
             'footer_copyright' => 'All rights reserved.',
+            'contact_office_time' => 'Call or visit for admission guidance.',
             'hero_eyebrow' => 'Trusted Spoken English Institute in Mariahu',
             'hero_headline' => 'Speak English confidently in daily life, interviews and career conversations.',
             'hero_subtitle' => 'Join practical spoken English classes designed for students, job seekers, working professionals and homemakers who want real speaking confidence.',
@@ -1325,14 +1372,16 @@ function fetch_course_variants(int $courseId): array
 
 function fetch_testimonials(int $limit = 6): array
 {
-    $stmt = db()->prepare('SELECT * FROM testimonials WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . (int)$limit);
+    $limit = max(1, min(100, $limit));
+    $stmt = db()->prepare('SELECT * FROM testimonials WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . $limit);
     $stmt->execute(['Yes']);
     return $stmt->fetchAll();
 }
 
 function fetch_videos(int $limit = 3): array
 {
-    $stmt = db()->prepare('SELECT * FROM videos WHERE published = ? ORDER BY id DESC LIMIT ' . (int)$limit);
+    $limit = max(1, min(100, $limit));
+    $stmt = db()->prepare('SELECT * FROM videos WHERE published = ? ORDER BY id DESC LIMIT ' . $limit);
     $stmt->execute(['Yes']);
     return $stmt->fetchAll();
 }
@@ -1341,7 +1390,8 @@ function fetch_gallery(int $limit = 30): array
 {
     try {
         ensure_schema_updates();
-        $stmt = db()->prepare('SELECT * FROM gallery_images WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . (int)$limit);
+        $limit = max(1, min(500, $limit));
+        $stmt = db()->prepare('SELECT * FROM gallery_images WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . $limit);
         $stmt->execute(['Yes']);
         return $stmt->fetchAll();
     } catch (Throwable $e) {
@@ -1353,7 +1403,8 @@ function fetch_faqs(int $limit = 20): array
 {
     try {
         ensure_schema_updates();
-        $stmt = db()->prepare('SELECT * FROM faqs WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . (int)$limit);
+        $limit = max(1, min(200, $limit));
+        $stmt = db()->prepare('SELECT * FROM faqs WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . $limit);
         $stmt->execute(['Yes']);
         return $stmt->fetchAll();
     } catch (Throwable $e) {
@@ -1365,7 +1416,8 @@ function fetch_batch_timings(int $limit = 20): array
 {
     try {
         ensure_schema_updates();
-        $stmt = db()->prepare('SELECT * FROM batch_timings WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . (int)$limit);
+        $limit = max(1, min(200, $limit));
+        $stmt = db()->prepare('SELECT * FROM batch_timings WHERE published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . $limit);
         $stmt->execute(['Yes']);
         return $stmt->fetchAll();
     } catch (Throwable $e) {
@@ -1377,7 +1429,8 @@ function fetch_content_blocks(string $type, int $limit = 20): array
 {
     try {
         ensure_schema_updates();
-        $stmt = db()->prepare('SELECT * FROM content_blocks WHERE block_type = ? AND published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . (int)$limit);
+        $limit = max(1, min(500, $limit));
+        $stmt = db()->prepare('SELECT * FROM content_blocks WHERE block_type = ? AND published = ? ORDER BY sort_order ASC, id DESC LIMIT ' . $limit);
         $stmt->execute([$type, 'Yes']);
         return $stmt->fetchAll();
     } catch (Throwable $e) {
@@ -1514,13 +1567,15 @@ function upload_brand_asset(array $file, string $type = 'logo'): ?string
 
 function site_asset_url(string $path): string
 {
-    $path = trim($path);
-    if ($path === '') {
-        return '';
-    }
-    if (preg_match('#^https?://#i', $path)) {
-        return $path;
-    }
+    $path = trim(str_replace(["\r", "\n", "\0"], '', html_entity_decode($path, ENT_QUOTES, 'UTF-8')));
+    if ($path === '' || str_starts_with($path, '//') || str_contains($path, '\\')) return '';
+    if (preg_match('/[\x00-\x1F\x7F]/', $path)) return '';
+
+    $scheme = strtolower((string)(parse_url($path, PHP_URL_SCHEME) ?? ''));
+    if ($scheme !== '') return in_array($scheme, ['http', 'https'], true) ? $path : '';
+
+    $cleanPath = ltrim((string)(parse_url($path, PHP_URL_PATH) ?? ''), '/');
+    if ($cleanPath === '' || preg_match('#(^|/)\.\.(/|$)#', $cleanPath)) return '';
     return ltrim($path, '/');
 }
 
@@ -2312,6 +2367,7 @@ function fetch_material_collections(int $limit = 50): array
 function fetch_material_practice_collections(int $limit = 50): array
 {
     material_ensure_schema();
+    $limit = max(1, min(500, $limit));
     $stmt = db()->prepare("SELECT c.* FROM material_collections c WHERE c.published='Yes' AND c.status_deleted=0 AND EXISTS (SELECT 1 FROM translation_pairs p WHERE p.collection_id=c.id AND p.published='Yes' AND p.status_deleted=0) ORDER BY c.sort_order ASC, c.id DESC LIMIT {$limit}");
     $stmt->execute();
     return $stmt->fetchAll();
@@ -2370,6 +2426,7 @@ function fetch_translation_pairs(int $collectionId = 0, int $unitId = 0, string 
 function fetch_material_assets(int $collectionId = 0, int $limit = 80): array
 {
     material_ensure_schema();
+    $limit = max(1, min(500, $limit));
     if ($collectionId > 0) {
         $stmt = db()->prepare("SELECT * FROM material_assets WHERE collection_id=? AND published='Yes' AND status_deleted=0 ORDER BY practice_priority DESC, sort_order ASC, id DESC LIMIT {$limit}");
         $stmt->execute([$collectionId]);
@@ -3268,6 +3325,47 @@ function free_ai_local_tool(string $mode, string $input): array
     }
 }
 
+function weekly_test_schema_status(): array
+{
+    $required = [
+        'weekly_tests' => [
+            'id','title','test_type','status','published','requires_login','duration_minutes','total_questions',
+            'starts_at','ends_at','batch_id','instructions','shuffle_questions','shuffle_options','warning_limit',
+            'penalty_after_warnings','penalty_per_warning','auto_submit_on_warning_limit'
+        ],
+        'weekly_test_questions' => [
+            'id','test_id','question_type','question_text','expected_answer','option_a','option_b','option_c','option_d',
+            'marks','sort_order','published','status_deleted'
+        ],
+        'weekly_test_attempts' => [
+            'id','test_id','student_id','guest_name','guest_phone','canonical_phone','started_at','submitted_at','expires_at',
+            'status','auto_score','admin_score','total_marks','penalty_marks','admin_note','warning_count','activity_log',
+            'timing_log','suspicious_flag','access_token','result_token','question_snapshot','question_order',
+            'submission_reason','last_saved_at','status_deleted'
+        ],
+        'weekly_test_answers' => ['id','attempt_id','question_id','answer_text','is_correct','marks_awarded','admin_note'],
+    ];
+    $missing = [];
+    try {
+        foreach ($required as $table => $columns) {
+            if (!table_exists($table)) {
+                $missing[] = $table;
+                continue;
+            }
+            foreach ($columns as $column) {
+                if (!column_exists($table, $column)) $missing[] = $table . '.' . $column;
+            }
+        }
+    } catch (Throwable $e) {
+        return ['ready' => false, 'missing' => ['database_connection'], 'message' => 'Database connection or schema check failed.'];
+    }
+    return [
+        'ready' => $missing === [],
+        'missing' => $missing,
+        'message' => $missing === [] ? 'Weekly Test schema is ready.' : 'Weekly Test database upgrade is incomplete.',
+    ];
+}
+
 function weekly_test_ensure_schema(): void
 {
     if (defined('APP_ALLOW_SCHEMA_UPDATES') && !APP_ALLOW_SCHEMA_UPDATES) return;
@@ -3540,14 +3638,13 @@ function weekly_test_result_url(array $attempt): string
 
 function weekly_attempt_remaining_seconds(array $attempt): int
 {
-    $duration = max(1, (int)($attempt['duration_minutes'] ?? 30)) * 60;
-    $started = strtotime((string)($attempt['started_at'] ?? ''));
-    if (!$started) {
-        $expires = strtotime((string)($attempt['expires_at'] ?? ''));
-        $remaining = $expires ? ($expires - time()) : $duration;
-        return max(0, min($duration, (int)$remaining));
+    $duration = max(1, min(240, (int)($attempt['duration_minutes'] ?? 30))) * 60;
+    $expires = strtotime((string)($attempt['expires_at'] ?? ''));
+    if ($expires) {
+        return max(0, min($duration, $expires - time()));
     }
-    $remaining = ($started + $duration) - time();
+    $started = strtotime((string)($attempt['started_at'] ?? ''));
+    $remaining = $started ? (($started + $duration) - time()) : $duration;
     return max(0, min($duration, (int)$remaining));
 }
 
@@ -3643,7 +3740,8 @@ function weekly_test_fetch_tests(?string $type = null): array
 function weekly_test_fetch_questions(int $testId, int $limit = 30): array
 {
     weekly_test_ensure_schema();
-    $stmt = db()->prepare("SELECT * FROM weekly_test_questions WHERE test_id=? AND status_deleted=0 AND published='Yes' ORDER BY sort_order ASC, id ASC LIMIT " . (int)$limit);
+    $limit = max(1, min(500, $limit));
+    $stmt = db()->prepare("SELECT * FROM weekly_test_questions WHERE test_id=? AND status_deleted=0 AND published='Yes' ORDER BY sort_order ASC, id ASC LIMIT " . $limit);
     $stmt->execute([$testId]);
     return $stmt->fetchAll();
 }
@@ -3888,6 +3986,187 @@ function weekly_test_match_answer(string $answer, string $expected): array
 }
 
 
+
+/**
+ * Load one weekly-test attempt with all grading settings.
+ * When $forUpdate is true the row is locked inside the caller's transaction.
+ */
+function weekly_test_fetch_attempt_record(int $attemptId, string $accessToken = '', bool $forUpdate = false): ?array
+{
+    if ($attemptId <= 0) return null;
+    $sql = "SELECT a.*, t.title, t.test_type, t.duration_minutes, t.total_questions,
+                   t.penalty_after_warnings, t.penalty_per_warning, t.warning_limit,
+                   t.auto_submit_on_warning_limit, t.shuffle_options, t.shuffle_questions,
+                   t.instructions
+            FROM weekly_test_attempts a
+            JOIN weekly_tests t ON t.id=a.test_id
+            WHERE a.id=? AND COALESCE(a.status_deleted,0)=0";
+    $params = [$attemptId];
+    if ($accessToken !== '') {
+        $sql .= " AND a.access_token=?";
+        $params[] = $accessToken;
+    }
+    $sql .= " LIMIT 1";
+    if ($forUpdate) $sql .= " FOR UPDATE";
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+/** Build and persist an immutable question snapshot for an attempt when missing. */
+function weekly_test_attempt_snapshot(array &$attempt): array
+{
+    $snapshot = weekly_test_snapshot_questions($attempt, true);
+    if ($snapshot) return $snapshot;
+
+    $questions = weekly_test_fetch_questions((int)($attempt['test_id'] ?? 0), 500);
+    $questions = weekly_test_order_questions($questions, $attempt, $attempt);
+    $questions = array_slice($questions, 0, max(1, (int)($attempt['total_questions'] ?? 30)));
+    if (!$questions) return [];
+
+    $snapshot = weekly_test_create_snapshot($questions, $attempt);
+    $json = json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (!is_string($json)) return [];
+
+    $params = [$json, (int)$attempt['id']];
+    $sql = "UPDATE weekly_test_attempts SET question_snapshot=? WHERE id=?";
+    $token = trim((string)($attempt['access_token'] ?? ''));
+    if ($token !== '') {
+        $sql .= " AND access_token=?";
+        $params[] = $token;
+    }
+    db()->prepare($sql)->execute($params);
+    $attempt['question_snapshot'] = $json;
+    return $snapshot;
+}
+
+function weekly_test_saved_answer_map(int $attemptId): array
+{
+    if ($attemptId <= 0) return [];
+    $stmt = db()->prepare('SELECT question_id, answer_text FROM weekly_test_answers WHERE attempt_id=?');
+    $stmt->execute([$attemptId]);
+    $answers = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $answers[(int)$row['question_id']] = trim((string)($row['answer_text'] ?? ''));
+    }
+    return $answers;
+}
+
+/**
+ * Finalize one attempt from submitted answers plus any previously autosaved answers.
+ * The operation is row-locked, atomic and idempotent.
+ */
+function weekly_test_finalize_attempt(int $attemptId, string $accessToken, array $submittedAnswers = [], string $reason = 'manual_submit'): array
+{
+    $allowedReasons = ['manual_submit', 'timer_expired', 'warning_limit', 'admin_recovery'];
+    if (!in_array($reason, $allowedReasons, true)) $reason = 'manual_submit';
+    if ($attemptId <= 0 || strlen($accessToken) < 32) {
+        return ['success'=>false, 'message'=>'Invalid test attempt.'];
+    }
+
+    $pdo = db();
+    $startedTransaction = !$pdo->inTransaction();
+    try {
+        if ($startedTransaction) $pdo->beginTransaction();
+        $attempt = weekly_test_fetch_attempt_record($attemptId, $accessToken, true);
+        if (!$attempt) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false, 'message'=>'Attempt not found.'];
+        }
+
+        if (($attempt['status'] ?? '') !== 'started') {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->commit();
+            return [
+                'success'=>true,
+                'already_closed'=>true,
+                'message'=>'This test is already closed.',
+                'auto_score'=>(float)($attempt['auto_score'] ?? 0),
+                'penalty_marks'=>(float)($attempt['penalty_marks'] ?? 0),
+                'result_url'=>weekly_test_result_url($attempt),
+                'attempt'=>$attempt,
+            ];
+        }
+
+        $snapshot = weekly_test_attempt_snapshot($attempt);
+        if (!$snapshot) throw new RuntimeException('Question snapshot is unavailable.');
+
+        $allowedIds = [];
+        foreach ($snapshot as $question) $allowedIds[(int)$question['id']] = true;
+        $answers = weekly_test_saved_answer_map($attemptId);
+        foreach ($submittedAnswers as $questionId => $answer) {
+            $questionId = (int)$questionId;
+            if ($questionId <= 0 || !isset($allowedIds[$questionId])) continue;
+            $answer = trim((string)$answer);
+            if (mb_strlen($answer) > 5000) $answer = mb_substr($answer, 0, 5000);
+            $answers[$questionId] = $answer;
+        }
+
+        $upsert = $pdo->prepare("INSERT INTO weekly_test_answers
+            (attempt_id,question_id,answer_text,is_correct,marks_awarded,admin_note)
+            VALUES (?,?,?,?,?,?)
+            ON DUPLICATE KEY UPDATE answer_text=VALUES(answer_text), is_correct=VALUES(is_correct),
+                                    marks_awarded=VALUES(marks_awarded), admin_note=VALUES(admin_note)");
+
+        $autoScore = 0.0;
+        $savedCount = 0;
+        foreach ($snapshot as $question) {
+            $questionId = (int)($question['id'] ?? 0);
+            if ($questionId <= 0) continue;
+            $answer = trim((string)($answers[$questionId] ?? ''));
+            $expected = trim((string)($question['expected'] ?? ''));
+            $match = weekly_test_match_answer($answer, $expected);
+            $marks = ($expected !== '' && $answer !== '')
+                ? round((float)($question['marks'] ?? 1) * (float)($match['marks_ratio'] ?? 0), 2)
+                : 0.0;
+            if (($match['is_correct'] ?? 'Review') === 'Yes') $autoScore += $marks;
+            $upsert->execute([$attemptId, $questionId, $answer, $match['is_correct'], $marks, $match['note']]);
+            $savedCount++;
+        }
+
+        $warningCount = (int)($attempt['warning_count'] ?? 0);
+        $penalty = 0.0;
+        if (($attempt['test_type'] ?? 'basic') !== 'basic' && (($attempt['penalty_after_warnings'] ?? 'Yes') === 'Yes')) {
+            $penalty = max(0, $warningCount - 1) * max(0, (float)($attempt['penalty_per_warning'] ?? 1));
+        }
+        $finalScore = max(0, round($autoScore - $penalty, 2));
+        $resultToken = trim((string)($attempt['result_token'] ?? '')) ?: bin2hex(random_bytes(32));
+        $note = $penalty > 0 ? (' Security penalty applied: -' . $penalty . ' mark(s).') : '';
+
+        $update = $pdo->prepare("UPDATE weekly_test_attempts
+                                 SET submitted_at=NOW(), status='submitted', auto_score=?, penalty_marks=?,
+                                     submission_reason=?, result_token=?, last_saved_at=NOW(),
+                                     admin_note=CONCAT(COALESCE(admin_note,''), ?)
+                                 WHERE id=? AND access_token=? AND status='started'");
+        $update->execute([$finalScore, $penalty, $reason, $resultToken, $note, $attemptId, $accessToken]);
+        if ($update->rowCount() !== 1) throw new RuntimeException('Attempt state changed before finalization.');
+
+        $attempt['status'] = 'submitted';
+        $attempt['auto_score'] = $finalScore;
+        $attempt['penalty_marks'] = $penalty;
+        $attempt['result_token'] = $resultToken;
+        $attempt['submission_reason'] = $reason;
+
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->commit();
+        return [
+            'success'=>true,
+            'already_closed'=>false,
+            'message'=>$reason === 'timer_expired'
+                ? 'Time ended. Your saved answers were submitted automatically.'
+                : 'Test submitted successfully. Teacher/admin will review marks.',
+            'auto_score'=>$finalScore,
+            'penalty_marks'=>$penalty,
+            'saved'=>$savedCount,
+            'result_url'=>weekly_test_result_url($attempt),
+            'attempt'=>$attempt,
+        ];
+    } catch (Throwable $e) {
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('[weekly-finalize] ' . $e->__toString());
+        return ['success'=>false, 'message'=>'The test could not be finalized safely. Please try again.'];
+    }
+}
+
 function weekly_test_complete_batch(int $testId): array
 {
     weekly_test_ensure_schema();
@@ -4067,14 +4346,41 @@ function roadmap_student_completed_ids(int $studentId): array
     }
 }
 
+
+/** Return whether a student may open/complete a roadmap unit. */
+function roadmap_student_unit_access(int $studentId, int $unitId): array
+{
+    if ($studentId <= 0 || $unitId <= 0) {
+        return ['allowed'=>false, 'reason'=>'invalid', 'prerequisite_id'=>0];
+    }
+    roadmap_ensure_schema();
+    try {
+        $stmt = db()->prepare("SELECT id, unlock_after_unit_id FROM roadmap_units WHERE id=? AND published='Yes' AND status_deleted=0 LIMIT 1");
+        $stmt->execute([$unitId]);
+        $unit = $stmt->fetch();
+        if (!$unit) return ['allowed'=>false, 'reason'=>'missing', 'prerequisite_id'=>0];
+
+        $prerequisiteId = max(0, (int)($unit['unlock_after_unit_id'] ?? 0));
+        if ($prerequisiteId <= 0) $prerequisiteId = roadmap_previous_unit_id($unitId);
+        if ($prerequisiteId <= 0) return ['allowed'=>true, 'reason'=>'first_unit', 'prerequisite_id'=>0];
+
+        $check = db()->prepare("SELECT 1 FROM student_roadmap_progress WHERE student_id=? AND unit_id=? AND status='completed' LIMIT 1");
+        $check->execute([$studentId, $prerequisiteId]);
+        if ($check->fetchColumn()) return ['allowed'=>true, 'reason'=>'prerequisite_complete', 'prerequisite_id'=>$prerequisiteId];
+        return ['allowed'=>false, 'reason'=>'prerequisite_incomplete', 'prerequisite_id'=>$prerequisiteId];
+    } catch (Throwable $e) {
+        error_log('[roadmap-access] ' . $e->__toString());
+        return ['allowed'=>false, 'reason'=>'error', 'prerequisite_id'=>0];
+    }
+}
+
 function roadmap_mark_student_complete(int $studentId, int $unitId): bool
 {
     if ($studentId <= 0 || $unitId <= 0) return false;
     roadmap_ensure_schema();
     try {
-        $check = db()->prepare("SELECT id FROM roadmap_units WHERE id=? AND published='Yes' AND status_deleted=0 LIMIT 1");
-        $check->execute([$unitId]);
-        if (!$check->fetchColumn()) return false;
+        $access = roadmap_student_unit_access($studentId, $unitId);
+        if (empty($access['allowed'])) return false;
         $stmt = db()->prepare("INSERT INTO student_roadmap_progress (student_id,unit_id,status,score,completed_at) VALUES (?,?,'completed',100,NOW()) ON DUPLICATE KEY UPDATE status='completed',score=GREATEST(score,100),completed_at=COALESCE(completed_at,NOW())");
         return $stmt->execute([$studentId, $unitId]);
     } catch (Throwable $e) {
@@ -4096,6 +4402,9 @@ function roadmap_reset_student_progress(int $studentId): bool
 
 function roadmap_seed_defaults(): void
 {
+    // Default records belong to the canonical SQL import or an explicit upgrade run,
+    // never to a normal public page request.
+    if (defined('APP_ALLOW_SCHEMA_UPDATES') && !APP_ALLOW_SCHEMA_UPDATES) return;
     roadmap_ensure_schema();
     try {
         $count = (int)db()->query("SELECT COUNT(*) FROM roadmap_groups WHERE status_deleted=0")->fetchColumn();

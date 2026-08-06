@@ -15,10 +15,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
     try {
         if ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
-            $stmt = db()->prepare('DELETE FROM course_variants WHERE course_id=?');
-            $stmt->execute([$id]);
-            $stmt = db()->prepare('DELETE FROM courses WHERE id=?');
-            $stmt->execute([$id]);
+            if ($id <= 0) throw new RuntimeException('Invalid course record.');
+            $pdo = db();
+            $pdo->beginTransaction();
+            try {
+                $stmt = $pdo->prepare('DELETE FROM course_variants WHERE course_id=?');
+                $stmt->execute([$id]);
+                $stmt = $pdo->prepare('DELETE FROM courses WHERE id=?');
+                $stmt->execute([$id]);
+                $pdo->commit();
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
+            }
             flash('success', 'Course deleted.'); redirect('courses.php');
         }
         if ($action === 'save') {
@@ -44,41 +53,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 (int)($_POST['sort_order'] ?? 0),
                 $_POST['published'] ?? 'Yes'
             ];
-            if (!empty($_POST['id'])) {
-                $courseId = (int)$_POST['id'];
-                $data[] = $courseId;
-                $stmt = db()->prepare('UPDATE courses SET title=?, short_description=?, duration=?, level=?, price=?, pay_url=?, course_image=?, class_time=?, class_days=?, total_tests=?, lessons_count=?, course_details=?, outcomes=?, includes_text=?, sort_order=?, published=? WHERE id=?');
-                $stmt->execute($data);
-                flash('success', 'Course updated.');
-            } else {
-                $stmt = db()->prepare('INSERT INTO courses (title, short_description, duration, level, price, pay_url, course_image, class_time, class_days, total_tests, lessons_count, course_details, outcomes, includes_text, sort_order, published, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-                $stmt->execute($data);
-                $courseId = (int)db()->lastInsertId();
-                flash('success', 'Course added.');
-            }
+            $pdo = db();
+            $pdo->beginTransaction();
+            try {
+                $wasUpdate = !empty($_POST['id']);
+                if ($wasUpdate) {
+                    $courseId = (int)$_POST['id'];
+                    if ($courseId <= 0) throw new RuntimeException('Invalid course record.');
+                    $data[] = $courseId;
+                    $stmt = $pdo->prepare('UPDATE courses SET title=?, short_description=?, duration=?, level=?, price=?, pay_url=?, course_image=?, class_time=?, class_days=?, total_tests=?, lessons_count=?, course_details=?, outcomes=?, includes_text=?, sort_order=?, published=? WHERE id=?');
+                    $stmt->execute($data);
+                } else {
+                    $stmt = $pdo->prepare('INSERT INTO courses (title, short_description, duration, level, price, pay_url, course_image, class_time, class_days, total_tests, lessons_count, course_details, outcomes, includes_text, sort_order, published, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+                    $stmt->execute($data);
+                    $courseId = (int)$pdo->lastInsertId();
+                }
 
-            $stmt = db()->prepare('DELETE FROM course_variants WHERE course_id=?');
-            $stmt->execute([$courseId]);
-            $variantTitles = $_POST['variant_title'] ?? [];
-            foreach ($variantTitles as $i => $title) {
-                $title = trim((string)$title);
-                if ($title === '') { continue; }
-                $stmt = db()->prepare('INSERT INTO course_variants (course_id, variant_title, price, class_time, class_days, total_tests, details, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-                $stmt->execute([
-                    $courseId,
-                    $title,
-                    (float)($_POST['variant_price'][$i] ?? 0),
-                    trim((string)($_POST['variant_class_time'][$i] ?? '')),
-                    trim((string)($_POST['variant_class_days'][$i] ?? '')),
-                    (int)($_POST['variant_total_tests'][$i] ?? 0),
-                    trim((string)($_POST['variant_details'][$i] ?? '')),
-                    (int)($_POST['variant_sort_order'][$i] ?? $i)
-                ]);
+                $stmt = $pdo->prepare('DELETE FROM course_variants WHERE course_id=?');
+                $stmt->execute([$courseId]);
+                $variantTitles = is_array($_POST['variant_title'] ?? null) ? $_POST['variant_title'] : [];
+                $insertVariant = $pdo->prepare('INSERT INTO course_variants (course_id, variant_title, price, class_time, class_days, total_tests, details, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+                foreach ($variantTitles as $i => $title) {
+                    $title = trim((string)$title);
+                    if ($title === '') continue;
+                    $insertVariant->execute([
+                        $courseId,
+                        mb_substr($title, 0, 180),
+                        max(0, (float)($_POST['variant_price'][$i] ?? 0)),
+                        mb_substr(trim((string)($_POST['variant_class_time'][$i] ?? '')), 0, 120),
+                        mb_substr(trim((string)($_POST['variant_class_days'][$i] ?? '')), 0, 120),
+                        max(0, (int)($_POST['variant_total_tests'][$i] ?? 0)),
+                        mb_substr(trim((string)($_POST['variant_details'][$i] ?? '')), 0, 2000),
+                        (int)($_POST['variant_sort_order'][$i] ?? $i)
+                    ]);
+                }
+                $pdo->commit();
+                flash('success', $wasUpdate ? 'Course updated.' : 'Course added.');
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
             }
             redirect('courses.php');
         }
     } catch (Throwable $e) {
-        flash('success', 'Error: ' . $e->getMessage());
+        error_log('[admin-courses] ' . $e->__toString());
+        flash('error', 'Course could not be saved. Check the fields, upload and database setup.');
     }
 }
 $q = trim($_GET['q'] ?? '');

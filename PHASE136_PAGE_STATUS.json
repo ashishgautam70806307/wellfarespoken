@@ -1,0 +1,243 @@
+{
+  "generated_at": "2026-08-06T02:48:51+0000",
+  "passed": 23,
+  "failed": 0,
+  "pages": [
+    {
+      "page": "Home",
+      "route": "index.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/index.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Courses",
+      "route": "courses.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/courses.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Course Detail",
+      "route": "course-detail.php?id=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/course-detail.php?id=1",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Online Class",
+      "route": "online-class.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/online-class.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Spoken Materials",
+      "route": "spoken-materials.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/spoken-materials.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Learning Roadmap",
+      "route": "learning-roadmap.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/learning-roadmap.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Roadmap Lesson",
+      "route": "roadmap-lesson.php?id=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/roadmap-lesson.php?id=1",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Basic Test",
+      "route": "weekly-test.php?type=basic",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/weekly-test.php?type=basic",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Previous Test",
+      "route": "weekly-test.php?type=previous",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/weekly-test.php?type=previous",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Upcoming Test",
+      "route": "weekly-test.php?type=upcoming",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/weekly-test.php?type=upcoming",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Student Login",
+      "route": "student-auth.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/student-auth.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Student Register",
+      "route": "student-auth.php?mode=register",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/student-auth.php?mode=register",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Admission Batch Preselection",
+      "route": "admission.php?mode=online&batch_id=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/admission.php?mode=online&batch_id=1",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "About",
+      "route": "about.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/about.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Contact",
+      "route": "contact.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/contact.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Gallery",
+      "route": "gallery.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/gallery.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Reviews",
+      "route": "reviews.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/reviews.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Faculty Profile",
+      "route": "faculty-profile.php?id=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/faculty-profile.php?id=1",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "PWA Check",
+      "route": "pwa-check.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/pwa-check.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Institute Login",
+      "route": "admin/login.php",
+      "expected_status": 200,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/admin/login.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "AI Teacher Hidden",
+      "route": "ai-teacher.php",
+      "expected_status": 302,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/spoken-materials.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Student Dashboard Protected",
+      "route": "student-dashboard.php",
+      "expected_status": 302,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/student-auth.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    },
+    {
+      "page": "Student Revision Protected",
+      "route": "student-revision.php",
+      "expected_status": 302,
+      "actual_status": 200,
+      "final_url": "http://127.0.0.1:18771/student-auth.php",
+      "location": "",
+      "status": "PASS",
+      "php_error_in_body": false
+    }
+  ],
+  "php_log_issues": [],
+  "removed_feature_files": {
+    "free-ai-english-practice.php": true,
+    "practice-quick-api.php": true,
+    "practice-session-api.php": true
+  }
+}

@@ -114,7 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('faculty.php');
         }
     } catch (Throwable $e) {
-        flash('error', $e->getMessage());
+        error_log('[admin-faculty] ' . $e->__toString());
+        flash('error', 'Faculty record could not be saved. Check the fields and upload permissions.');
         redirect('faculty.php');
     }
 }

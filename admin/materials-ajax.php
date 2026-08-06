@@ -276,5 +276,6 @@ try {
 
     mat_json(['success'=>false,'message'=>'Unknown action.'],400);
 } catch (Throwable $e) {
-    mat_json(['success'=>false,'message'=>'Server error: '.$e->getMessage()],500);
+    error_log('[admin-materials-ajax] ' . $e->__toString());
+    mat_json(['success'=>false,'message'=>'The materials request could not be completed. Check Admin > System Check.'],500);
 }

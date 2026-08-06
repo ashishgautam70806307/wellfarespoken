@@ -1,0 +1,20 @@
+{
+  "phase": 140,
+  "base": "spoken_phase139_compact_mobile_learning.zip",
+  "scope": "premium contact page redesign",
+  "php_files_checked": 68,
+  "php_syntax_failures": 0,
+  "javascript_files_checked": 9,
+  "javascript_syntax_failures": 0,
+  "css_files_checked": 46,
+  "css_structural_failures": 0,
+  "service_worker_cache": "wellfare-spoken-static-v140",
+  "service_worker_assets_checked": 33,
+  "service_worker_missing_assets": 0,
+  "legacy_contact_markup_found": false,
+  "new_javascript_dependencies": 0,
+  "database_schema_changed": false,
+  "business_logic_changed": false,
+  "live_mysql_test": "pending",
+  "interactive_browser_test": "pending"
+}

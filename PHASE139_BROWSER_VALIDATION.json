@@ -1,0 +1,888 @@
+{
+  "generated_at": "2026-08-06T02:47:47.198Z",
+  "base_url": "http://127.0.0.1:18775",
+  "passed": 67,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "index.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Well Fare English Spoken | Spoken English Classes; 1351/1351"
+    },
+    {
+      "name": "index.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Home: dynamic responsive banners render",
+      "status": "PASS",
+      "details": "{\"slides\":2,\"active\":0,\"rows\":2,\"cards\":16,\"animations\":[\"wf133ReviewLeft\",\"wf133ReviewRight\"],\"h1Color\":\"rgb(255, 255, 255)\",\"h1Visible\":true}"
+    },
+    {
+      "name": "Home: hero heading is visible",
+      "status": "PASS",
+      "details": "rgb(255, 255, 255)"
+    },
+    {
+      "name": "Home: reviews rows and cards render",
+      "status": "PASS",
+      "details": "2 rows / 16 cards"
+    },
+    {
+      "name": "Home: reviews auto animation is active",
+      "status": "PASS",
+      "details": "wf133ReviewLeft, wf133ReviewRight"
+    },
+    {
+      "name": "Home: reviews use measured seamless distance",
+      "status": "PASS",
+      "details": "[{\"distance\":\"-1416px\",\"duration\":\"32.93s\"},{\"distance\":\"-1416px\",\"duration\":\"34.93s\"}]"
+    },
+    {
+      "name": "Footer: logo, dynamic social icons and useful links render",
+      "status": "PASS",
+      "details": "{\"logoVisible\":true,\"socials\":5,\"phone\":\"+91 9506617831\",\"links\":16}"
+    },
+    {
+      "name": "Home: banner next control works",
+      "status": "PASS",
+      "details": "{\"before\":0,\"after\":1}"
+    },
+    {
+      "name": "Navigation: desktop dropdown opens and closes",
+      "status": "PASS",
+      "details": "{\"open\":true,\"closed\":true}"
+    },
+    {
+      "name": "courses.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Courses | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "courses.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Courses: every card has visible actions",
+      "status": "PASS",
+      "details": "[{\"buttons\":2,\"visible\":true},{\"buttons\":2,\"visible\":true},{\"buttons\":2,\"visible\":true}]"
+    },
+    {
+      "name": "Courses: buttons use Student Login CTA structure",
+      "status": "PASS",
+      "details": "[{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"},{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"},{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"},{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"},{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"},{\"radius\":999,\"height\":50,\"after\":\"rgb(216, 166, 45)\"}]"
+    },
+    {
+      "name": "weekly-test.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Student Test Center | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "weekly-test.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Weekly Test: Basic/Previous/Upcoming render",
+      "status": "PASS",
+      "details": "{\"cards\":3,\"types\":[\"basic\",\"previous\",\"upcoming\"],\"setupHidden\":true}"
+    },
+    {
+      "name": "Weekly Test: card opens working setup",
+      "status": "PASS",
+      "details": "{\"visible\":true,\"type\":\"basic\",\"options\":1}"
+    },
+    {
+      "name": "Weekly Test: Basic attempt API actually starts",
+      "status": "PASS",
+      "details": "{\"status\":200,\"success\":true,\"attempt\":901,\"questions\":1,\"token\":64,\"testId\":\"11\",\"message\":\"\"}"
+    },
+    {
+      "name": "admission.php?mode=online&batch_id=1: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Admission Enquiry | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "admission.php?mode=online&batch_id=1: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Admission: online batch auto-selected",
+      "status": "PASS",
+      "details": "{\"batch\":\"Morning Online Batch - 7:00 AM - 8:00 AM\",\"course\":\"Basic Spoken English\",\"hiddenBatch\":\"1\",\"fields\":10}"
+    },
+    {
+      "name": "Admission: related course auto-selected",
+      "status": "PASS",
+      "details": "Basic Spoken English"
+    },
+    {
+      "name": "Admission: universal fields are smooth and non-overlapping",
+      "status": "PASS",
+      "details": "[{\"radius\":14,\"height\":54,\"placeholder\":\"15px\",\"width\":275.578125,\"left\":669.328125,\"right\":944.90625,\"viewport\":1366},{\"radius\":14,\"height\":54,\"placeholder\":\"15px\",\"width\":275.59375,\"left\":962.90625,\"right\":1238.5,\"viewport\":1366},{\"radius\":14,\"height\":54,\"placeholder\":\"15px\",\"width\":275.578125,\"left\":669.328125,\"right\":944.90625,\"viewport\":1366},{\"radius\":14,\"height\":54,\"placeholder\":\"15px\",\"width\":275.59375,\"left\":962.90625,\"right\":1238.5,\"viewport\":1366},{\"radius\":14,\"height\":54,\"placeholder\":\"15px\",\"width\":569.171875,\"left\":669.328125,\"right\":1238.5,\"viewport\":1366},{\"radius\":14,\"height\":86.75,\"placeholder\":\"15px\",\"width\":569.171875,\"left\":669.328125,\"right\":1238.5,\"viewport\":1366}]"
+    },
+    {
+      "name": "learning-roadmap.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Learning Roadmap | Spoken English App; 1351/1351"
+    },
+    {
+      "name": "learning-roadmap.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Roadmap: path, stages and process render",
+      "status": "PASS",
+      "details": "{\"stages\":2,\"steps\":3,\"nodes\":3,\"process\":4}"
+    },
+    {
+      "name": "roadmap-lesson.php?id=1: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Daily Words | Learning Roadmap; 1351/1351"
+    },
+    {
+      "name": "roadmap-lesson.php?id=1: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Roadmap Lesson: compact three-tab workspace renders",
+      "status": "PASS",
+      "details": "{\"tabs\":[{\"height\":46,\"active\":true},{\"height\":46,\"active\":false},{\"height\":46,\"active\":false}],\"shell\":1080,\"panel\":true,\"overflow\":0}"
+    },
+    {
+      "name": "student-auth.php?mode=register: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Student Login | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "student-auth.php?mode=register: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Student Register: balanced two-panel form and universal inputs",
+      "status": "PASS",
+      "details": "{\"grid\":1180,\"copy\":462.46875,\"card\":665.53125,\"fields\":7,\"radius\":14,\"height\":54,\"overflow\":0}"
+    },
+    {
+      "name": "about.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; About | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "about.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "About: cards have consistent professional spacing",
+      "status": "PASS",
+      "details": "{\"cards\":[{\"height\":170,\"gap\":\"15px\"},{\"height\":170,\"gap\":\"15px\"},{\"height\":170,\"gap\":\"15px\"}],\"director\":true}"
+    },
+    {
+      "name": "contact.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Contact | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "contact.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Contact: all actions use common Student Login button structure",
+      "status": "PASS",
+      "details": "[{\"visible\":true,\"radius\":999,\"after\":\"rgb(216, 166, 45)\",\"width\":332},{\"visible\":true,\"radius\":999,\"after\":\"rgb(216, 166, 45)\",\"width\":332},{\"visible\":true,\"radius\":999,\"after\":\"rgb(216, 166, 45)\",\"width\":332}]"
+    },
+    {
+      "name": "spoken-materials.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Spoken Practice Room | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "spoken-materials.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Materials: practice controls render",
+      "status": "PASS",
+      "details": "{\"tabs\":4,\"filters\":0,\"cards\":2,\"error\":false}"
+    },
+    {
+      "name": "Materials: practice API populates cards",
+      "status": "PASS",
+      "details": "{\"tabs\":4,\"filters\":0,\"cards\":2,\"error\":false}"
+    },
+    {
+      "name": "gallery.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Gallery | Well Fare English Spoken; 1351/1351"
+    },
+    {
+      "name": "gallery.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "1351/1351"
+    },
+    {
+      "name": "Gallery: lightbox opens and next works",
+      "status": "PASS",
+      "details": "{\"items\":2,\"open\":true,\"before\":\"1 / 2\",\"after\":\"2 / 2\"}"
+    },
+    {
+      "name": "index.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Well Fare English Spoken | Spoken English Classes; 390/390"
+    },
+    {
+      "name": "index.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "390/390"
+    },
+    {
+      "name": "Mobile: topbar remains visible",
+      "status": "PASS",
+      "details": "{\"topbarVisible\":true,\"drawerOpen\":true,\"drawerWidth\":374.390625,\"overflow\":0}"
+    },
+    {
+      "name": "Mobile: drawer opens in balanced width",
+      "status": "PASS",
+      "details": "{\"topbarVisible\":true,\"drawerOpen\":true,\"drawerWidth\":374.390625,\"overflow\":0}"
+    },
+    {
+      "name": "Mobile: no horizontal overflow",
+      "status": "PASS",
+      "details": "0"
+    },
+    {
+      "name": "Mobile: menu trigger has no background or border",
+      "status": "PASS",
+      "details": "{\"background\":\"rgba(0, 0, 0, 0)\",\"borderTop\":\"0px\",\"borderRight\":\"0px\",\"width\":40}"
+    },
+    {
+      "name": "courses.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Courses | Well Fare English Spoken; 390/390"
+    },
+    {
+      "name": "courses.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "390/390"
+    },
+    {
+      "name": "Mobile: course button labels are fully visible",
+      "status": "PASS",
+      "details": "[{\"text\":\"View Details\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":66,\"labelRight\":132.5,\"buttonLeft\":46,\"buttonRight\":191.5,\"height\":50},{\"text\":\"Join Course\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":218.5,\"labelRight\":285,\"buttonLeft\":198.5,\"buttonRight\":344,\"height\":50},{\"text\":\"View Details\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":66,\"labelRight\":132.5,\"buttonLeft\":46,\"buttonRight\":191.5,\"height\":50},{\"text\":\"Join Course\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":218.5,\"labelRight\":285,\"buttonLeft\":198.5,\"buttonRight\":344,\"height\":50},{\"text\":\"View Details\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":66,\"labelRight\":132.5,\"buttonLeft\":46,\"buttonRight\":191.5,\"height\":50},{\"text\":\"Join Course\",\"buttonWidth\":145.5,\"labelWidth\":66.5,\"labelLeft\":218.5,\"labelRight\":285,\"buttonLeft\":198.5,\"buttonRight\":344,\"height\":50}]"
+    },
+    {
+      "name": "roadmap-lesson.php?id=3: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Conversation Practice | Learning Roadmap; 390/390"
+    },
+    {
+      "name": "roadmap-lesson.php?id=3: no horizontal overflow",
+      "status": "PASS",
+      "details": "390/390"
+    },
+    {
+      "name": "Mobile Roadmap Practice: options use compact two-column frame",
+      "status": "PASS",
+      "details": "{\"mode\":true,\"choices\":4,\"rows\":2,\"panelTop\":141,\"panelBottom\":494.078125,\"soundHeight\":56,\"actionVisible\":true,\"overflow\":0}"
+    },
+    {
+      "name": "weekly-test.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Student Test Center | Well Fare English Spoken; 390/390"
+    },
+    {
+      "name": "weekly-test.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "390/390"
+    },
+    {
+      "name": "Mobile Weekly Test: selected setup replaces distant card flow",
+      "status": "PASS",
+      "details": "{\"focused\":true,\"formVisible\":true,\"formTop\":79.16604614257812,\"heroDisplay\":\"none\",\"inputHeight\":46,\"overflow\":0}"
+    },
+    {
+      "name": "spoken-materials.php: HTTP/DOM loaded",
+      "status": "PASS",
+      "details": "200; Spoken Practice Room | Well Fare English Spoken; 390/390"
+    },
+    {
+      "name": "spoken-materials.php: no horizontal overflow",
+      "status": "PASS",
+      "details": "390/390"
+    },
+    {
+      "name": "Mobile Materials: modes and practice controls stay compact",
+      "status": "PASS",
+      "details": "{\"tabs\":4,\"tabRows\":2,\"slideHeight\":496.75,\"progressHeight\":63.1875,\"actions\":3,\"actionRows\":1,\"overflow\":0}"
+    },
+    {
+      "name": "Browser: no JavaScript runtime errors",
+      "status": "PASS",
+      "details": "[]"
+    },
+    {
+      "name": "Browser: no application HTTP resource failures",
+      "status": "PASS",
+      "details": "[]"
+    },
+    {
+      "name": "Fixture PHP: no warnings/notices/fatals",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "browser_console_issues": [
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/banners/home-banner-speaking-desktop.webp",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/banners/home-banner-online-class-desktop.webp",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/gallery/gallery-20260621-200631-a4ba4e65.jpg",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/gallery/gallery-20260621-200314-5a90318d.jpg",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/gallery/gallery-20260621-200631-a4ba4e65.jpg",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/gallery/gallery-20260621-200314-5a90318d.jpg",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/wf-favicon.ico",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/wf-pwa-icon-32.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/wf-pwa-icon-192.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/banners/home-banner-speaking-mobile.webp",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/banners/home-banner-online-class-mobile.webp",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    },
+    {
+      "type": "error",
+      "text": "Not allowed to load local resource: file:///mnt/data/spoken_phase139_work/spoken/assets/uploads/brand/logo_20260708_164300_66b228d8.png",
+      "url": "about:blank"
+    }
+  ],
+  "network_issues": [
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    },
+    {
+      "status": "FAILED",
+      "url": "other"
+    }
+  ],
+  "php_errors": []
+}

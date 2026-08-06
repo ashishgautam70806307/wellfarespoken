@@ -1,0 +1,155 @@
+{
+  "passed": 8,
+  "failed": 0,
+  "cases": [
+    {
+      "name": "localhost auto",
+      "status": "PASS",
+      "expected": {
+        "runtime": "local",
+        "db_name": "wellfare_english",
+        "db_user": "root"
+      },
+      "actual": {
+        "runtime": "local",
+        "host": "localhost",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "wellfare_english",
+        "db_user": "root",
+        "has_password": false
+      },
+      "stderr": ""
+    },
+    {
+      "name": "127.0.0.1 auto",
+      "status": "PASS",
+      "expected": {
+        "runtime": "local",
+        "db_name": "wellfare_english",
+        "db_user": "root"
+      },
+      "actual": {
+        "runtime": "local",
+        "host": "127.0.0.1",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "wellfare_english",
+        "db_user": "root",
+        "has_password": false
+      },
+      "stderr": ""
+    },
+    {
+      "name": "live domain auto",
+      "status": "PASS",
+      "expected": {
+        "runtime": "live",
+        "db_name": "u790281974_wellfarespoken",
+        "db_user": "u790281974_wellfarespoken"
+      },
+      "actual": {
+        "runtime": "live",
+        "host": "spoken.example.com",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "u790281974_wellfarespoken",
+        "db_user": "u790281974_wellfarespoken",
+        "has_password": true
+      },
+      "stderr": ""
+    },
+    {
+      "name": "forced live",
+      "status": "PASS",
+      "expected": {
+        "runtime": "live",
+        "db_name": "u790281974_wellfarespoken"
+      },
+      "actual": {
+        "runtime": "live",
+        "host": "localhost",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "u790281974_wellfarespoken",
+        "db_user": "u790281974_wellfarespoken",
+        "has_password": true
+      },
+      "stderr": ""
+    },
+    {
+      "name": "live profile override",
+      "status": "PASS",
+      "expected": {
+        "runtime": "live",
+        "db_name": "custom_live",
+        "db_user": "custom_user",
+        "has_password": true
+      },
+      "actual": {
+        "runtime": "live",
+        "host": "spoken.example.com",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "custom_live",
+        "db_user": "custom_user",
+        "has_password": true
+      },
+      "stderr": ""
+    },
+    {
+      "name": "untrusted proxy ignored",
+      "status": "PASS",
+      "expected": {
+        "runtime": "live",
+        "host": "spoken.example.com"
+      },
+      "actual": {
+        "runtime": "live",
+        "host": "spoken.example.com",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "u790281974_wellfarespoken",
+        "db_user": "u790281974_wellfarespoken",
+        "has_password": true
+      },
+      "stderr": ""
+    },
+    {
+      "name": "trusted proxy host",
+      "status": "PASS",
+      "expected": {
+        "runtime": "local",
+        "host": "localhost"
+      },
+      "actual": {
+        "runtime": "local",
+        "host": "localhost",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "wellfare_english",
+        "db_user": "root",
+        "has_password": false
+      },
+      "stderr": ""
+    },
+    {
+      "name": "production CLI hint",
+      "status": "PASS",
+      "expected": {
+        "runtime": "live",
+        "db_name": "u790281974_wellfarespoken"
+      },
+      "actual": {
+        "runtime": "live",
+        "host": "",
+        "db_host": "localhost",
+        "db_port": "3306",
+        "db_name": "u790281974_wellfarespoken",
+        "db_user": "u790281974_wellfarespoken",
+        "has_password": true
+      },
+      "stderr": ""
+    }
+  ]
+}

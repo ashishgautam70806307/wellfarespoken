@@ -1,0 +1,15 @@
+Remove these obsolete Phase 138 runtime files after overwriting with Phase 139:
+
+assets/css/phase138-ui-system.css
+assets/css/phase138-ui-system.min.css
+assets/css/phase138-materials.css
+assets/css/phase138-materials.min.css
+assets/js/phase138-ui.js
+
+Do NOT remove `assets/css/phase138-admin-login.css` or its minified file; the approved Admin Login page still uses them.
+
+Then unregister the old service worker, clear site data and hard refresh. The active cache must be `wellfare-spoken-static-v139`.
+
+Generated verification logs may also be removed:
+storage/phase136-page-smoke.log
+storage/phase139-page-smoke.log

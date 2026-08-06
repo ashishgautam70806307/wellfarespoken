@@ -1,0 +1,7 @@
+Phase 138 requires no runtime PHP/CSS/JS file deletion.
+
+After overwrite:
+1. Unregister the old service worker.
+2. Clear browser site data/cache.
+3. Hard refresh once.
+4. Confirm the active cache name is wellfare-spoken-static-v138.

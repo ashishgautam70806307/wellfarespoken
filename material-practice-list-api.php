@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+private_no_store();
 header('Content-Type: application/json; charset=utf-8');
 function mpl_out(array $data, int $code = 200): void { http_response_code($code); echo json_encode($data, JSON_UNESCAPED_UNICODE); exit; }
 try {
@@ -8,9 +9,13 @@ try {
     $default = material_default_practice_collection_id();
     if ($collectionId <= 0) $collectionId = $default;
     $unitId = (int)($_GET['unit'] ?? 0);
-    $q = trim($_GET['q'] ?? '');
-    $goal = $_GET['goal'] ?? 'speak';
-    $direction = $_GET['direction'] ?? ($goal === 'english_to_hindi' ? 'english_to_hindi' : 'hindi_to_english');
+    $q = trim((string)($_GET['q'] ?? ''));
+    if (mb_strlen($q) > 120) $q = mb_substr($q, 0, 120);
+    $goal = strtolower(trim((string)($_GET['goal'] ?? 'speak')));
+    $allowedGoals = ['speak','revision','hindi_to_english','english_to_hindi'];
+    if (!in_array($goal, $allowedGoals, true)) $goal = 'speak';
+    $direction = strtolower(trim((string)($_GET['direction'] ?? ($goal === 'english_to_hindi' ? 'english_to_hindi' : 'hindi_to_english'))));
+    if (!in_array($direction, ['hindi_to_english','english_to_hindi'], true)) $direction = 'hindi_to_english';
     $limit = min(80, max(5, (int)($_GET['limit'] ?? 30)));
     $collections = fetch_material_practice_collections(300);
     $units = fetch_material_units($collectionId, 300);
@@ -37,5 +42,6 @@ try {
     }
     mpl_out(['success'=>true,'csrf'=>csrf_token(),'collection_id'=>$collectionId,'unit_id'=>$unitId,'goal'=>$goal,'direction'=>$direction,'collections'=>$collections,'units'=>$units,'items'=>$items,'count'=>count($items)]);
 } catch (Throwable $e) {
+    error_log('[material-practice-list-api] ' . $e->__toString());
     mpl_out(['success'=>false,'message'=>'Could not load practice records. Run Admin > System Check once.'],500);
 }

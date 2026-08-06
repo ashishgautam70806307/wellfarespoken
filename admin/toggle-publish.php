@@ -8,10 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_validate($_POST['csrf_token']
 }
 $table = safe_admin_table($_POST['table'] ?? '');
 $id = (int)($_POST['id'] ?? 0);
-$return = trim($_POST['return'] ?? 'dashboard.php');
+$return = safe_local_redirect((string)($_POST['return'] ?? 'dashboard.php'), 'dashboard.php');
 if (!$table || $id <= 0) {
     flash('error', 'Invalid publish toggle request.');
-    redirect($return ?: 'dashboard.php');
+    redirect($return);
 }
 $stmt = db()->prepare("SELECT published FROM `$table` WHERE id=?");
 $stmt->execute([$id]);
@@ -22,4 +22,4 @@ if ($current !== false) {
     $up->execute([$next, $id]);
     flash('success', 'Published status updated.');
 }
-redirect($return ?: 'dashboard.php');
+redirect($return);

@@ -42,7 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             redirect('gallery.php');
         }
     } catch (Throwable $e) {
-        flash('error', $e->getMessage());
+        error_log('[admin-gallery] ' . $e->__toString());
+        flash('error', 'Gallery item could not be saved. Check the image and upload permissions.');
         redirect('gallery.php' . ($action === 'update' ? '?edit=' . (int)($_POST['id'] ?? 0) : ''));
     }
 

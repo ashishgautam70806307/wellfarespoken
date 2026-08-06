@@ -1,0 +1,95 @@
+{
+  "phase": 134,
+  "scope": "stabilization_only_no_new_design",
+  "php": {
+    "files": 67,
+    "syntax_failures": 0
+  },
+  "javascript": {
+    "files": 7,
+    "syntax_failures": 0
+  },
+  "css": {
+    "files": 32,
+    "parse_failures": 0
+  },
+  "database_schema": {
+    "canonical_file": "sql/wellfare_english_complete.sql",
+    "sql_file_count": 1,
+    "tables": 40,
+    "reference_checks": 635,
+    "missing_tables": [],
+    "missing_columns": []
+  },
+  "assets": {
+    "declared_checks": 29,
+    "missing": [],
+    "service_worker_checks": 24,
+    "missing_service_worker_assets": []
+  },
+  "links": {
+    "literal_checks": 247,
+    "missing": []
+  },
+  "configuration_branches": {
+    "localhost": {
+      "runtime": "local",
+      "host": "localhost",
+      "port": "3306",
+      "name": "wellfare_english",
+      "user": "root",
+      "password_set": false
+    },
+    "loopback": {
+      "runtime": "local",
+      "host": "localhost",
+      "port": "3306",
+      "name": "wellfare_english",
+      "user": "root",
+      "password_set": false
+    },
+    "live_domain": {
+      "runtime": "live",
+      "host": "localhost",
+      "port": "3306",
+      "name": "u790281974_wellfarespoken",
+      "user": "u790281974_wellfarespoken",
+      "password_set": true
+    },
+    "forced_local": {
+      "runtime": "local",
+      "host": "localhost",
+      "port": "3306",
+      "name": "wellfare_english",
+      "user": "root",
+      "password_set": false
+    },
+    "manual": {
+      "runtime": "live",
+      "host": "db.example",
+      "port": "3307",
+      "name": "custom",
+      "user": "custom_user",
+      "password_set": true
+    },
+    "live_profile_override": {
+      "runtime": "live",
+      "host": "localhost",
+      "port": "3306",
+      "name": "override_db",
+      "user": "override_user",
+      "password_set": true
+    }
+  },
+  "security_checks": {
+    "admin_post_files_without_csrf": 0,
+    "destructive_get_patterns": 0,
+    "service_worker_cache": "wellfare-spoken-static-v134",
+    "runtime_schema_updates_default": false
+  },
+  "environment_limitations": [
+    "pdo_mysql_not_installed",
+    "no_user_mysql_database",
+    "no_live_browser_session"
+  ]
+}

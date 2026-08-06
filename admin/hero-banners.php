@@ -1,4 +1,5 @@
 <?php
+$admin_page_styles = ['assets/css/phase133-admin-hero-banners.css'];
 require_once __DIR__ . '/_header.php';
 ensure_schema_updates();
 
@@ -8,14 +9,22 @@ $responsiveColumnsReady = column_exists('hero_banners', 'desktop_image_url')
     && column_exists('hero_banners', 'content_position')
     && column_exists('hero_banners', 'overlay_strength');
 
-if (isset($_GET['delete']) && csrf_validate($_GET['token'] ?? '')) {
-    $id = (int)$_GET['delete'];
-    db()->prepare("UPDATE hero_banners SET published='No' WHERE id=?")->execute([$id]);
-    flash('success', 'Hero banner unpublished successfully.');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'unpublish') {
+    if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+        flash('error', 'Security check failed. Refresh and try again.');
+    } else {
+        $id = (int)($_POST['id'] ?? 0);
+        db()->prepare("UPDATE hero_banners SET published='No' WHERE id=?")->execute([$id]);
+        flash('success', 'Hero banner unpublished successfully.');
+    }
     redirect('hero-banners.php');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_validate($_POST['csrf_token'] ?? '')) {
+    flash('error', 'Security check failed. Refresh and try again.');
+    redirect('hero-banners.php');
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_POST['id'] ?? 0);
     $pageKey = trim($_POST['page_key'] ?? 'home') ?: 'home';
     $showContent = ($_POST['show_content'] ?? 'Yes') === 'No' ? 'No' : 'Yes';
@@ -117,7 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             redirect('hero-banners.php');
         }
     } catch (Throwable $e) {
-        flash('error', $e->getMessage());
+        error_log('[hero-banners] ' . $e->__toString());
+        flash('error', 'Banner could not be saved. Check Admin > System Check and the upload permissions.');
     }
 }
 
@@ -149,14 +159,14 @@ $pageOptions = [
 
 <?php if (!$responsiveColumnsReady): ?>
     <div class="alert alert-error">
-        Responsive banner columns are not installed yet. Run <code>sql/phase126_home_roadmap_upgrade.sql</code> once, or temporarily enable schema updates and open System Check.
+        Responsive banner columns are not installed yet. Run <code>sql/wellfare_english_complete.sql</code> once, or temporarily enable schema updates and open System Check.
     </div>
 <?php endif; ?>
 <?php if ($msg = flash('success')): ?><div class="alert alert-success"><?= e($msg) ?></div><?php endif; ?>
 <?php if ($msg = flash('error')): ?><div class="alert alert-error"><?= e($msg) ?></div><?php endif; ?>
 
-<div class="grid-2 hero-admin-grid-v126">
-    <div class="panel-card">
+<div class="hero-admin-stack-v133">
+    <div class="panel-card hero-editor-panel-v133">
         <div class="toolbar">
             <div><h2><?= $edit ? 'Edit' : 'Add' ?> Hero Banner</h2><p>Keep banner text short. Use image-only mode when artwork already contains text.</p></div>
         </div>
@@ -245,7 +255,7 @@ $pageOptions = [
         </form>
     </div>
 
-    <div class="panel-card table-wrap">
+    <div class="panel-card table-wrap hero-saved-panel-v133">
         <div class="toolbar"><div><h2>Saved Banners</h2><p>Published Home banners slide automatically. Sort order controls the sequence.</p></div></div>
         <table>
             <thead><tr><th>Page</th><th>Responsive Preview</th><th>Status</th><th>Action</th></tr></thead>
@@ -265,7 +275,7 @@ $pageOptions = [
                         </div>
                     </td>
                     <td><span class="badge <?= $row['published'] === 'Yes' ? 'badge-green' : 'badge-gray' ?>"><?= e($row['published']) ?></span></td>
-                    <td><div class="table-actions"><a class="btn btn-sm btn-soft" href="hero-banners.php?edit=<?= e((string)$row['id']) ?>">Edit</a><a class="btn btn-sm btn-danger confirm-action" href="hero-banners.php?delete=<?= e((string)$row['id']) ?>&token=<?= e(csrf_token()) ?>">Unpublish</a></div></td>
+                    <td><div class="table-actions"><a class="btn btn-sm btn-soft" href="hero-banners.php?edit=<?= e((string)$row['id']) ?>">Edit</a><form method="post" class="inline-form" onsubmit="return confirm('Unpublish this banner?')"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="unpublish"><input type="hidden" name="id" value="<?= e((string)$row['id']) ?>"><button class="btn btn-sm btn-danger" type="submit">Unpublish</button></form></div></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (!$banners): ?><tr><td colspan="4" class="empty-state">No hero banners added yet.</td></tr><?php endif; ?>
@@ -274,9 +284,6 @@ $pageOptions = [
     </div>
 </div>
 
-<style>
-.hero-admin-grid-v126{align-items:start}.hero-upload-guide-v126{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hero-upload-guide-v126 article{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #dfe7f0;border-radius:14px;background:#f8fbff}.hero-upload-guide-v126 i{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#eaf1fb;color:#123b73}.hero-upload-guide-v126 b,.hero-upload-guide-v126 span{display:block}.hero-upload-guide-v126 span{margin-top:3px;color:#65758a;font-size:12px}.hero-preview-v126{min-height:130px;display:grid;place-items:center;overflow:hidden}.hero-preview-v126 img{width:100%;height:100%;object-fit:cover}.hero-preview-desktop-v126{aspect-ratio:16/6}.hero-preview-mobile-v126{width:min(100%,260px);aspect-ratio:3/4}.hero-preview-v126>span{display:grid;place-items:center;gap:8px;color:#65758a}.hero-fallback-v126{padding:12px;border:1px solid #dfe7f0;border-radius:14px;background:#fbfcfe}.hero-fallback-v126 summary{cursor:pointer;font-weight:800;color:#123b73}.banner-copy-fields-v126.is-hidden{display:none}.hero-table-previews-v126{display:flex;align-items:end;gap:8px;margin-top:8px}.hero-table-previews-v126 span{display:grid;gap:3px}.hero-table-previews-v126 img{width:105px;aspect-ratio:16/6;object-fit:cover;border-radius:8px;border:1px solid #dfe7f0}.hero-table-previews-v126 .is-mobile img{width:42px;aspect-ratio:3/4}.hero-table-previews-v126 small{color:#65758a;font-size:9px;text-align:center}@media(max-width:700px){.hero-upload-guide-v126{grid-template-columns:1fr}.hero-preview-mobile-v126{width:180px}}
-</style>
 <script>
 (function(){
     document.querySelectorAll('[data-preview-target]').forEach(function(input){

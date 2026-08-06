@@ -15,7 +15,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 <section class="section revision-room-section">
     <div class="container">
-        <div class="student-dashboard-hero revision-hero">
+        <div class="student-dashboard-hero revision-hero wf-surface-dark">
             <div>
                 <span class="eyebrow">Mistake Revision</span>
                 <h1>Repeat your wrong answers</h1>

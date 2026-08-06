@@ -82,7 +82,7 @@ wf_page_hero([
 </section>
 
 <section class="section about-promise-v2">
-    <div class="container promise-card-v2" data-reveal>
+    <div class="container promise-card-v2 wf-surface-dark" data-reveal>
         <div>
             <span class="eyebrow">Teaching Promise</span>
             <h2><?= e(about_dynamic_value('about_promise_title', 'One clear next step for every student.')) ?></h2>

@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             db()->prepare("UPDATE weekly_test_attempts SET status_deleted=1, deleted_at=NOW() WHERE id=?")->execute([$id]);
             flash('success', 'Attempt hidden. It will be permanently cleaned after 15 days.');
         }
-        redirect($_SERVER['REQUEST_URI'] ?? 'weekly-tests.php#student-copies');
+        redirect(safe_local_redirect((string)($_SERVER['REQUEST_URI'] ?? ''), 'weekly-tests.php#student-copies'));
     }
 }
 

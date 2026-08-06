@@ -1,0 +1,32 @@
+Phase 138 changed/new files
+===========================
+
+Code and assets
+---------------
+README.md
+admin/_footer.php
+admin/_header.php
+admin/login.php
+assets/css/phase133-controlled-ui.css
+assets/css/phase133-controlled-ui.min.css
+assets/css/phase138-mobile-ux.css
+assets/css/phase138-mobile-ux.min.css
+assets/js/phase138-mobile-ux.js
+includes/footer.php
+includes/header.php
+sw.js
+weekly-exam-room.php
+
+Phase documentation
+-------------------
+README_PHASE138_MOBILE_UX.md
+PHASE138_MOBILE_UX_REPORT.md
+PHASE138_BROWSER_TEST_CHECKLIST.md
+PHASE138_CHANGED_FILES.txt
+PHASE138_VALIDATION.json
+
+Cleanup performed
+-----------------
+- Removed the obsolete Phase 133 mobile topbar/right-drawer override block.
+- Regenerated the corresponding Phase 133 minified stylesheet.
+- Kept all desktop, backend, database, authentication, practice, roadmap, and exam dependencies intact.

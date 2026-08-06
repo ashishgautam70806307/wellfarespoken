@@ -15,7 +15,20 @@ if (!empty($_GET['edit'])) {
     $stmt->execute([(int)$_GET['edit']]);
     $edit = $stmt->fetch() ?: null;
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+        flash('error', 'Security check failed. Refresh and try again.');
+    } else {
+        db()->prepare('DELETE FROM content_blocks WHERE id = ?')->execute([(int)($_POST['id'] ?? 0)]);
+        flash('success', 'Content block deleted.');
+    }
+    redirect('content.php?type=' . urlencode($type));
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_validate($_POST['csrf_token'] ?? '')) {
+    flash('error', 'Security check failed. Refresh and try again.');
+    redirect('content.php?type=' . urlencode($type));
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_POST['id'] ?? 0);
     $data = [
         trim($_POST['block_type'] ?? $type),
@@ -44,12 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
         redirect('content.php?type=' . urlencode($data[0]));
     }
 }
-if (!empty($_GET['delete']) && csrf_validate($_GET['token'] ?? '')) {
-    $stmt = db()->prepare('DELETE FROM content_blocks WHERE id = ?');
-    $stmt->execute([(int)$_GET['delete']]);
-    flash('success', 'Content block deleted.');
-    redirect('content.php?type=' . urlencode($type));
-}
 $stmt = db()->prepare('SELECT * FROM content_blocks WHERE block_type = ? ORDER BY sort_order ASC, id DESC');
 $stmt->execute([$type]);
 $rows = $stmt->fetchAll();
@@ -77,5 +84,5 @@ $rows = $stmt->fetchAll();
         <div class="field full"><button class="btn btn-primary"><?= $edit ? 'Update Block' : 'Save Block' ?></button><?php if ($edit): ?><a class="btn btn-soft" href="content.php?type=<?= e($type) ?>">Cancel</a><?php endif; ?></div>
     </div>
 </form>
-<div class="table-card"><table class="admin-table"><thead><tr><th>Order</th><th>Content</th><th>Type</th><th>Published</th><th>Actions</th></tr></thead><tbody><?php foreach ($rows as $row): ?><tr><td><?= e((string)$row['sort_order']) ?></td><td><strong><?= e(($row['icon'] ? $row['icon'] . ' ' : '') . $row['title']) ?></strong><br><small><?= e($row['subtitle'] ?: $row['body'] ?: 'No extra text') ?></small></td><td><?= e($types[$row['block_type']] ?? $row['block_type']) ?></td><td><span class="badge <?= $row['published'] === 'Yes' ? 'badge-green' : 'badge-gray' ?>"><?= e($row['published']) ?></span></td><td><a class="btn btn-sm btn-soft" href="content.php?type=<?= e($type) ?>&edit=<?= e((string)$row['id']) ?>">Edit</a> <a class="btn btn-sm btn-danger" onclick="return confirm('Delete this content block?')" href="content.php?type=<?= e($type) ?>&delete=<?= e((string)$row['id']) ?>&token=<?= e(csrf_token()) ?>">Delete</a></td></tr><?php endforeach; if (!$rows): ?><tr><td colspan="5">No content blocks found.</td></tr><?php endif; ?></tbody></table></div>
+<div class="table-card"><table class="admin-table"><thead><tr><th>Order</th><th>Content</th><th>Type</th><th>Published</th><th>Actions</th></tr></thead><tbody><?php foreach ($rows as $row): ?><tr><td><?= e((string)$row['sort_order']) ?></td><td><strong><?= e(($row['icon'] ? $row['icon'] . ' ' : '') . $row['title']) ?></strong><br><small><?= e($row['subtitle'] ?: $row['body'] ?: 'No extra text') ?></small></td><td><?= e($types[$row['block_type']] ?? $row['block_type']) ?></td><td><span class="badge <?= $row['published'] === 'Yes' ? 'badge-green' : 'badge-gray' ?>"><?= e($row['published']) ?></span></td><td><a class="btn btn-sm btn-soft" href="content.php?type=<?= e($type) ?>&edit=<?= e((string)$row['id']) ?>">Edit</a> <form method="post" class="inline-form" onsubmit="return confirm('Delete this content block?')"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= e((string)$row['id']) ?>"><button class="btn btn-sm btn-danger" type="submit">Delete</button></form></td></tr><?php endforeach; if (!$rows): ?><tr><td colspan="5">No content blocks found.</td></tr><?php endif; ?></tbody></table></div>
 <?php require_once __DIR__ . '/_footer.php'; ?>

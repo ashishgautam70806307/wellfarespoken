@@ -1,0 +1,867 @@
+/* Phase 141 — focused mobile repair for the three core learning entry pages.
+   Scope is intentionally limited to Spoken Materials, Learning Roadmap and Weekly Test. */
+.wf141-mobile-copy{display:none}
+
+@media (max-width:700px){
+  /* Learning pages need the maximum usable viewport. The announcement and floating
+     support bubble are redundant because call/help actions remain in navigation. */
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui .wf127-topbar,
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui .wf127-contact-dock,
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui .wf127-contact-toggle{
+    display:none!important;
+  }
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui .wf141-desktop-copy{display:none!important}
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui .wf141-mobile-copy{display:inline!important}
+  body:is(.page-spoken-materials,.page-learning-roadmap,.page-weekly-test).wf138-mobile-ui #mainContent{
+    min-width:0!important;
+    overflow-x:hidden!important;
+  }
+
+  /* --------------------------------------------------------------------------
+     WEEKLY TEST — three usable choices with no text or icon escaping a card.
+     -------------------------------------------------------------------------- */
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero{
+    min-height:56px!important;
+    padding:8px 0!important;
+    overflow:visible!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero-inner{
+    min-height:40px!important;
+    grid-template-columns:minmax(0,1fr) 34px!important;
+    align-items:center!important;
+    gap:7px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero .wf-section-kicker,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero p,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-profile>div{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero h1{
+    max-width:none!important;
+    margin:0!important;
+    color:#fff!important;
+    font-size:16px!important;
+    line-height:1.16!important;
+    letter-spacing:-.025em!important;
+    overflow:visible!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-profile{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:11px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-profile>span{
+    width:28px!important;
+    height:28px!important;
+    border-radius:9px!important;
+    font-size:11px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-page{
+    padding:8px 0 94px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:4px!important;
+    margin:0 0 8px!important;
+    padding:4px!important;
+    overflow:hidden!important;
+    border-radius:13px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow span{
+    min-width:0!important;
+    min-height:34px!important;
+    display:grid!important;
+    grid-template-columns:18px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:3px!important;
+    padding:3px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow b{
+    width:18px!important;
+    height:18px!important;
+    font-size:7px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow i{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow em{
+    min-width:0!important;
+    overflow:hidden!important;
+    color:#26364e!important;
+    font-size:7px!important;
+    line-height:1.1!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading{
+    display:block!important;
+    margin:0 0 7px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading .wf-section-kicker{
+    font-size:7.5px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading h2{
+    margin:2px 0 0!important;
+    font-size:15px!important;
+    line-height:1.15!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading>p{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    align-items:stretch!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card,
+  body.wf133-site.page-weekly-test .wf129-test-card{
+    min-width:0!important;
+    min-height:126px!important;
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:34px 24px 30px!important;
+    align-content:start!important;
+    justify-items:stretch!important;
+    gap:5px!important;
+    padding:7px 5px!important;
+    overflow:hidden!important;
+    border-radius:13px!important;
+    background:linear-gradient(155deg,#fff,#f7faff)!important;
+    box-shadow:0 7px 18px rgba(6,26,56,.07)!important;
+    transform:none!important;
+    text-align:center!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming{
+    background:linear-gradient(155deg,#fffdf8,#fff5d9)!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.is-selected{
+    border-color:#d8a62d!important;
+    box-shadow:inset 0 0 0 1px #d8a62d,0 8px 20px rgba(216,166,45,.15)!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card::after{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-top{
+    grid-row:1!important;
+    min-width:0!important;
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:28px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:4px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-icon{
+    width:28px!important;
+    height:28px!important;
+    min-width:28px!important;
+    border-radius:9px!important;
+    font-size:11px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-status{
+    position:static!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:20px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    padding:2px 4px!important;
+    overflow:hidden!important;
+    border-radius:7px!important;
+    font-size:0!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-status i{flex:0 0 auto!important;font-size:5px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-status::after{
+    content:attr(data-mobile-status);
+    min-width:0;
+    overflow:hidden;
+    font-size:6.7px;
+    font-weight:850;
+    line-height:1;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card>small,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card>p,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-meta{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card h3{
+    grid-row:2!important;
+    min-width:0!important;
+    min-height:24px!important;
+    margin:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+    color:#071d3e!important;
+    font-size:9.5px!important;
+    line-height:1.15!important;
+    text-align:center!important;
+    overflow-wrap:anywhere!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action{
+    grid-row:3!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:30px!important;
+    margin:0!important;
+    padding:3px 4px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+    font-size:7.5px!important;
+    box-shadow:none!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action::before,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action::after{display:none!important;content:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf-btn-label{
+    width:100%!important;
+    min-width:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf-btn-label i{
+    flex:0 0 auto!important;
+    font-size:7px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf139-mobile-action{
+    min-width:0!important;
+    overflow:hidden!important;
+    font-size:7.5px!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-setup{
+    margin-top:8px!important;
+    overflow:hidden!important;
+    border-radius:15px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-setup :where(input,select){min-width:0!important}
+
+  /* --------------------------------------------------------------------------
+     LEARNING ROADMAP — current action first; every row stays within the screen.
+     -------------------------------------------------------------------------- */
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-page{
+    padding:7px 0 94px!important;
+    overflow-x:hidden!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-shell{min-width:0!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-hero{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:7px!important;
+    padding:9px!important;
+    overflow:hidden!important;
+    border-radius:15px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-back{
+    width:28px!important;
+    min-height:28px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:9px!important;
+    font-size:0!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-back i{font-size:9px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-eyebrow{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-hero h1{
+    margin:3px 0 0!important;
+    font-size:17px!important;
+    line-height:1.14!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-hero-copy>p{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:4px!important;
+    margin-top:7px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how>i{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how span{
+    min-width:0!important;
+    min-height:34px!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    place-items:center!important;
+    gap:2px!important;
+    padding:3px 2px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+    font-size:6.8px!important;
+    line-height:1!important;
+    text-align:center!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how span i{font-size:9px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how span b{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-card{
+    min-width:0!important;
+    display:grid!important;
+    grid-template-columns:43px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:7px!important;
+    padding:7px!important;
+    overflow:hidden!important;
+    border-radius:12px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-ring{
+    width:43px!important;
+    height:43px!important;
+    min-width:43px!important;
+    padding:4px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-ring strong{font-size:10px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-ring small{font-size:5.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy{min-width:0!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy small{font-size:6.8px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy b{
+    min-width:0!important;
+    display:block!important;
+    overflow:hidden!important;
+    font-size:9px!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy a{
+    width:100%!important;
+    min-width:0!important;
+    min-height:27px!important;
+    margin-top:4px!important;
+    padding:3px 7px!important;
+    justify-content:space-between!important;
+    overflow:hidden!important;
+    border-radius:8px!important;
+    font-size:7.5px!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:4px!important;
+    margin:6px 0!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary article{
+    min-width:0!important;
+    min-height:39px!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    place-items:center!important;
+    gap:1px!important;
+    padding:4px 2px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary article>i{font-size:9px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary span{min-width:0!important;text-align:center!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary b{font-size:9px!important;line-height:1!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary small{
+    display:block!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    font-size:5.8px!important;
+    line-height:1.05!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stages{gap:8px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage{
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:14px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head{
+    grid-template-columns:30px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:7px!important;
+    overflow:hidden!important;
+    border-radius:12px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-icon{
+    width:30px!important;
+    height:30px!important;
+    border-radius:9px!important;
+    font-size:10px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head>div{min-width:0!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head small{font-size:6.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head h2{
+    min-width:0!important;
+    margin-top:1px!important;
+    overflow:hidden!important;
+    font-size:11.5px!important;
+    line-height:1.12!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-count{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-path{
+    gap:6px!important;
+    padding:6px!important;
+    overflow:hidden!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step{
+    min-width:0!important;
+    grid-template-columns:31px minmax(0,1fr)!important;
+    gap:5px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-node{
+    width:31px!important;
+    height:31px!important;
+    min-width:31px!important;
+    font-size:9px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step::after{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step.is-left .rm126-level-card,
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step.is-right .rm126-level-card{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:8px!important;
+    overflow:hidden!important;
+    border-radius:11px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-top{
+    min-width:0!important;
+    gap:4px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-top>span:first-child{font-size:6.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-status{
+    min-width:0!important;
+    max-width:60px!important;
+    padding:3px 4px!important;
+    overflow:hidden!important;
+    border-radius:6px!important;
+    font-size:0!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-status i{font-size:6px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step.is-current .rm126-status::after{content:"Current"}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step.is-done .rm126-status::after{content:"Done"}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-step.is-locked .rm126-status::after{content:"Locked"}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-status::after{
+    min-width:0;
+    overflow:hidden;
+    font-size:6.5px;
+    font-weight:850;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-card h3{
+    min-width:0!important;
+    min-height:27px!important;
+    margin:4px 0 3px!important;
+    display:-webkit-box!important;
+    overflow:hidden!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-card>p{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-meta{
+    min-width:0!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:3px!important;
+    margin:3px 0 5px!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-meta span{
+    min-width:0!important;
+    justify-content:center!important;
+    padding:3px!important;
+    overflow:hidden!important;
+    border-radius:6px!important;
+    font-size:6.5px!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-meta span:nth-child(3){display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-action{margin-top:0!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-action :where(a,button){
+    min-width:0!important;
+    min-height:29px!important;
+    padding:3px 7px!important;
+    overflow:hidden!important;
+    border-radius:8px!important;
+    font-size:7.5px!important;
+    white-space:nowrap!important;
+  }
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-locked span{display:none!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-locked::after{content:"Locked";font-size:7.5px;font-weight:850}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-tools{margin-top:8px!important}
+
+  /* --------------------------------------------------------------------------
+     SPOKEN MATERIALS — setup fits as a compact control panel; session stays above
+     the fixed bottom navigation and scrolls only inside the active task.
+     -------------------------------------------------------------------------- */
+  body.page-spoken-materials.wf138-mobile-ui .wf-page-hero,
+  body.page-spoken-materials.wf138-mobile-ui .ajax-practice-room>.container>.wf-section-heading{
+    display:none!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .ajax-practice-room{
+    padding:7px 0 94px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-command-center{
+    overflow:hidden!important;
+    border-radius:15px!important;
+    box-shadow:0 8px 22px rgba(6,26,56,.075)!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-command-center::after{display:none!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-intro{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:5px!important;
+    padding:7px 8px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-kicker{font-size:6.5px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-intro h3{
+    min-width:0!important;
+    margin:1px 0 0!important;
+    overflow:hidden!important;
+    font-size:12px!important;
+    line-height:1.15!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-intro p{display:none!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-status{
+    max-width:90px!important;
+    padding:4px 6px!important;
+    overflow:hidden!important;
+    border-radius:8px!important;
+    font-size:6.5px!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .goal-tabs.ajax-goal-tabs{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:5px!important;
+    padding:6px!important;
+    overflow:hidden!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .goal-tabs.ajax-goal-tabs .goal-tab{
+    min-width:0!important;
+    min-height:48px!important;
+    display:grid!important;
+    grid-template-columns:25px minmax(0,1fr)!important;
+    grid-template-rows:1fr!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:5px!important;
+    overflow:hidden!important;
+    border-radius:10px!important;
+    box-shadow:none!important;
+    transform:none!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-number,
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-check,
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-copy small{display:none!important}
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-icon{
+    grid-row:auto!important;
+    width:25px!important;
+    height:25px!important;
+    min-width:25px!important;
+    border-radius:8px!important;
+    font-size:9px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-copy{min-width:0!important;align-self:center!important}
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-copy b{
+    min-width:0!important;
+    overflow:hidden!important;
+    font-size:8.5px!important;
+    line-height:1.15!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .ajax-practice-filter{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:end!important;
+    gap:5px!important;
+    padding:7px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-field{min-width:0!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-field label{
+    min-width:0!important;
+    margin-bottom:3px!important;
+    overflow:hidden!important;
+    font-size:7px!important;
+    line-height:1!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-field label span{font-size:6px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-control{
+    min-width:0!important;
+    min-height:36px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-control :where(input,select){
+    min-width:0!important;
+    min-height:36px!important;
+    padding:6px 24px 6px 25px!important;
+    overflow:hidden!important;
+    font-size:10px!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-search{
+    grid-column:1/-1!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-start-btn{
+    grid-column:1/-1!important;
+    width:100%!important;
+    min-height:36px!important;
+    padding:5px 8px!important;
+    border-radius:10px!important;
+    font-size:9px!important;
+    box-shadow:none!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui .practice-start-btn::before,
+  body.page-spoken-materials.wf138-mobile-ui .practice-start-btn::after{display:none!important;content:none!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-loader,
+  body.page-spoken-materials.wf138-mobile-ui .practice-empty{
+    margin-top:7px!important;
+    padding:10px!important;
+    border-radius:13px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .ajax-practice-room{
+    height:calc(100dvh - 142px)!important;
+    min-height:260px!important;
+    padding:5px 0!important;
+    overflow:hidden!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .ajax-practice-room>.container{
+    min-height:0!important;
+    gap:5px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .wf139-session-bar{
+    min-height:34px!important;
+    padding:5px 7px!important;
+    overflow:hidden!important;
+    border-radius:10px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .wf139-session-bar span{
+    min-width:0!important;
+    font-size:7.5px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .wf139-session-bar button{
+    min-width:58px!important;
+    min-height:28px!important;
+    padding:4px 6px!important;
+    font-size:7.5px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .enhanced-practice-shell{
+    min-height:0!important;
+    gap:5px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-progress-card{
+    grid-template-columns:auto minmax(0,1fr)!important;
+    min-width:0!important;
+    padding:5px 7px!important;
+    overflow:hidden!important;
+    border-radius:10px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-progress-summary{
+    min-width:0!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-stepper{
+    min-width:0!important;
+    min-height:0!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-slide.active{
+    min-width:0!important;
+    gap:5px!important;
+    padding:7px!important;
+    overflow:auto!important;
+    border-radius:13px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-slide-head{
+    min-width:0!important;
+    padding:0 0 5px!important;
+    overflow:hidden!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .question-type{
+    max-width:170px!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-question-panel{
+    min-width:0!important;
+    padding:8px!important;
+    overflow:hidden!important;
+    border-radius:11px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-question-panel h3{
+    max-width:100%!important;
+    margin:4px 0!important;
+    overflow-wrap:anywhere!important;
+    font-size:15px!important;
+    line-height:1.2!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-primary-actions,
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .translation-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:4px!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session :is(.practice-primary-actions,.translation-actions) .btn{
+    min-width:0!important;
+    min-height:34px!important;
+    padding:4px!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+    font-size:7.5px!important;
+    line-height:1.1!important;
+    white-space:normal!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session :is(.practice-primary-actions,.translation-actions) .btn::before,
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session :is(.practice-primary-actions,.translation-actions) .btn::after{display:none!important;content:none!important}
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .practice-answer-block textarea{
+    min-width:0!important;
+    min-height:58px!important;
+    max-height:76px!important;
+    padding:8px!important;
+    font-size:13px!important;
+  }
+}
+
+@media (max-width:380px){
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-grid{gap:4px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card{min-height:119px!important;padding-inline:4px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf-btn-label i{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card h3{font-size:8.8px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary small{font-size:5.3px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-search{display:none!important}
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-copy b{font-size:8px!important}
+}
+
+/* Phase 141 final phone refinement: preserve readable type and use layout changes,
+   rather than shrinking important labels below a comfortable mobile size. */
+@media (max-width:520px){
+  /* Weekly Test: two clear primary cards plus one full-width official-test card. */
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero{
+    min-height:42px!important;
+    padding:5px 0!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-hero-inner{
+    min-height:32px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-flow{display:none!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-page{padding-top:6px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading{margin-bottom:6px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading .wf-section-kicker{font-size:8px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-heading h2{font-size:14px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card,
+  body.wf133-site.page-weekly-test .wf129-test-card{
+    min-height:98px!important;
+    grid-template-rows:30px 25px 31px!important;
+    gap:4px!important;
+    padding:6px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-top{
+    grid-template-columns:27px minmax(0,1fr)!important;
+    gap:5px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-icon{
+    width:27px!important;
+    height:27px!important;
+    min-width:27px!important;
+    font-size:10px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-status::after{font-size:8px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card h3{
+    min-height:25px!important;
+    font-size:10.5px!important;
+    overflow-wrap:normal!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf139-mobile-action{
+    font-size:9px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf-btn-label{
+    white-space:normal!important;
+    line-height:1.05!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming{
+    grid-column:1/-1!important;
+    min-height:68px!important;
+    grid-template-columns:minmax(0,1fr) 92px!important;
+    grid-template-rows:29px 25px!important;
+    align-items:center!important;
+    column-gap:7px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming .wf129-test-card-top{
+    grid-column:1!important;
+    grid-row:1!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming h3{
+    grid-column:1!important;
+    grid-row:2!important;
+    justify-content:flex-start!important;
+    min-height:22px!important;
+    padding-left:1px!important;
+    text-align:left!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming .wf129-test-card-action{
+    grid-column:2!important;
+    grid-row:1/3!important;
+    min-height:54px!important;
+    height:100%!important;
+  }
+
+  /* Roadmap: keep the compact path but restore readable supporting labels. */
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-eyebrow{font-size:8.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-how span{font-size:8px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy small{font-size:8px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy b{font-size:10.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-progress-copy a{font-size:9px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-summary small{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head small{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-stage-head h2{font-size:12px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-top>span:first-child{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-status::after{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-card h3{font-size:11.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-meta span{font-size:7.5px!important}
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-level-action :where(a,button),
+  body.page-learning-roadmap.wf138-mobile-ui .rm126-locked::after{font-size:9px!important}
+
+  /* Spoken Materials: compact does not mean microscopic. */
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-kicker{font-size:8px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-intro h3{font-size:13px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-mode-status{font-size:8px!important}
+  body.page-spoken-materials.wf138-mobile-ui .goal-tab-copy b{font-size:10px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-field label{font-size:8.5px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-filter-field label span{font-size:7px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-control :where(input,select){font-size:11px!important}
+  body.page-spoken-materials.wf138-mobile-ui .practice-start-btn{font-size:10px!important}
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .ajax-practice-room{
+    height:calc(100dvh - 170px)!important;
+  }
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .wf139-session-bar span,
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session .wf139-session-bar button{font-size:9px!important}
+  body.page-spoken-materials.wf138-mobile-ui.wf139-practice-session :is(.practice-primary-actions,.translation-actions) .btn{font-size:9px!important}
+}
+
+@media (max-width:340px){
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card.type-upcoming{
+    grid-template-columns:minmax(0,1fr) 82px!important;
+  }
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card h3{font-size:10px!important}
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action,
+  body.page-weekly-test.wf138-mobile-ui .wf129-test-card-action .wf139-mobile-action{font-size:8.5px!important}
+}

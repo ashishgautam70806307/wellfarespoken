@@ -200,8 +200,8 @@ $practiceTools = [
                             <?php if ($slide['subtitle'] !== ''): ?><p><?= e(wf_home_short($slide['subtitle'], 118)) ?></p><?php endif; ?>
                             <?php if (($slide['primary_text'] !== '' && $slide['primary_url'] !== '') || ($slide['secondary_text'] !== '' && $slide['secondary_url'] !== '')): ?>
                                 <div class="wf126-hero-actions">
-                                    <?php if ($slide['primary_text'] !== '' && $slide['primary_url'] !== ''): ?><a class="wf126-btn wf126-btn-primary" href="<?= e($slide['primary_url']) ?>"><?= e(wf_home_short($slide['primary_text'], 26)) ?><i class="fa-solid fa-arrow-right"></i></a><?php endif; ?>
-                                    <?php if ($slide['secondary_text'] !== '' && $slide['secondary_url'] !== ''): ?><a class="wf126-btn wf126-btn-ghost" href="<?= e($slide['secondary_url']) ?>"><?= e(wf_home_short($slide['secondary_text'], 26)) ?></a><?php endif; ?>
+                                    <?php if ($slide['primary_text'] !== '' && $slide['primary_url'] !== ''): ?><a class="wf126-btn wf126-btn-primary" href="<?= e(app_safe_href($slide['primary_url'])) ?>"><?= e(wf_home_short($slide['primary_text'], 26)) ?><i class="fa-solid fa-arrow-right"></i></a><?php endif; ?>
+                                    <?php if ($slide['secondary_text'] !== '' && $slide['secondary_url'] !== ''): ?><a class="wf126-btn wf126-btn-ghost" href="<?= e(app_safe_href($slide['secondary_url'])) ?>"><?= e(wf_home_short($slide['secondary_text'], 26)) ?></a><?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -229,7 +229,7 @@ $practiceTools = [
 <section class="wf126-quick-actions" aria-label="Student quick actions">
     <div class="container wf126-quick-grid">
         <?php foreach ($quickActions as $action): ?>
-            <a class="wf126-quick-card" href="<?= e($action['url']) ?>">
+            <a class="wf126-quick-card" href="<?= e(app_safe_href($action['url'])) ?>">
                 <span class="wf126-quick-icon"><i class="<?= e($action['icon']) ?>"></i></span>
                 <span><b><?= e($action['title']) ?></b><small><?= e($action['meta']) ?></small></span>
                 <i class="fa-solid fa-arrow-right"></i>
@@ -254,7 +254,7 @@ $practiceTools = [
         </header>
         <div class="wf126-feature-grid">
             <?php foreach ($cleanHomeFeatures as $feature): ?>
-                <a class="wf126-feature-card" href="<?= e($feature['url']) ?>" data-reveal>
+                <a class="wf126-feature-card" href="<?= e(app_safe_href($feature['url'])) ?>" data-reveal>
                     <span><i class="<?= e($feature['icon']) ?>"></i></span>
                     <div><h3><?= e($feature['title']) ?></h3><p><?= e($feature['subtitle']) ?></p></div>
                     <i class="fa-solid fa-arrow-right"></i>
@@ -324,7 +324,7 @@ $practiceTools = [
 
 <section class="wf126-section wf126-journey">
     <div class="container">
-        <div class="wf126-journey-card" data-reveal>
+        <div class="wf126-journey-card wf-surface-dark" data-reveal>
             <div class="wf126-journey-copy"><span class="wf126-label wf126-label-light"><i class="fa-solid fa-route"></i> Learning Path</span><h2>One clear action at every step.</h2><p>Complete the current level to unlock the next one.</p><a href="learning-roadmap.php">Open full roadmap<i class="fa-solid fa-arrow-right"></i></a></div>
             <div class="wf126-journey-steps" aria-label="Learning process">
                 <article><span>1</span><i class="fa-solid fa-book-open-reader"></i><b>Learn</b></article>
@@ -341,14 +341,14 @@ $practiceTools = [
     <div class="container">
         <header class="wf126-section-head" data-reveal><div><span class="wf126-label">Daily Practice</span><h2>Open a tool and start.</h2></div><a href="spoken-materials.php">All materials<i class="fa-solid fa-arrow-right"></i></a></header>
         <div class="wf126-tool-grid">
-            <?php foreach ($practiceTools as $tool): ?><a href="<?= e($tool['url']) ?>" data-reveal><span><i class="<?= e($tool['icon']) ?>"></i></span><div><b><?= e($tool['title']) ?></b><small><?= e($tool['meta']) ?></small></div><i class="fa-solid fa-arrow-right"></i></a><?php endforeach; ?>
+            <?php foreach ($practiceTools as $tool): ?><a href="<?= e(app_safe_href($tool['url'])) ?>" data-reveal><span><i class="<?= e($tool['icon']) ?>"></i></span><div><b><?= e($tool['title']) ?></b><small><?= e($tool['meta']) ?></small></div><i class="fa-solid fa-arrow-right"></i></a><?php endforeach; ?>
         </div>
     </div>
 </section>
 
 <?php if ($batches): ?>
 <section class="wf126-section wf126-batches">
-    <div class="container wf126-batch-wrap" data-reveal>
+    <div class="container wf126-batch-wrap wf-surface-dark" data-reveal>
         <div class="wf126-batch-copy"><span class="wf126-label wf126-label-light"><i class="fa-solid fa-calendar-check"></i> New Batches</span><h2>Choose a suitable class time.</h2><a href="admission.php">Reserve your seat<i class="fa-solid fa-arrow-right"></i></a></div>
         <div class="wf126-batch-list">
             <?php foreach ($batches as $index => $batch): ?>
@@ -405,7 +405,7 @@ $practiceTools = [
 
 <section class="wf126-section wf126-final">
     <div class="container">
-        <div class="wf126-final-card" data-reveal><div><span>Admission Open</span><h2>Start speaking English today.</h2></div><div><a class="wf126-btn wf126-btn-primary" href="admission.php">Join Now<i class="fa-solid fa-arrow-right"></i></a><a class="wf126-btn wf126-btn-ghost" href="tel:<?= e(str_replace(' ', '', app_setting('phone', APP_PHONE))) ?>"><i class="fa-solid fa-phone"></i>Call</a></div><i class="fa-solid fa-comments wf126-final-icon" aria-hidden="true"></i></div>
+        <div class="wf126-final-card wf-surface-dark" data-reveal><div><span>Admission Open</span><h2>Start speaking English today.</h2></div><div><a class="wf126-btn wf126-btn-primary" href="admission.php">Join Now<i class="fa-solid fa-arrow-right"></i></a><a class="wf126-btn wf126-btn-ghost" href="tel:<?= e(str_replace(' ', '', app_setting('phone', APP_PHONE))) ?>"><i class="fa-solid fa-phone"></i>Call</a></div><i class="fa-solid fa-comments wf126-final-icon" aria-hidden="true"></i></div>
     </div>
 </section>
 

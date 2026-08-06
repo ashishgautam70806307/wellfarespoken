@@ -47,7 +47,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="rm126-hero-copy">
                 <a class="rm126-back" href="index.php"><i class="fa-solid fa-arrow-left"></i><span>Home</span></a>
                 <span class="rm126-eyebrow"><i class="fa-solid fa-route"></i> Learning Roadmap</span>
-                <h1>Follow the path. Complete one level at a time.</h1>
+                <h1><span class="wf141-desktop-copy">Follow the path. Complete one level at a time.</span><span class="wf141-mobile-copy">Learn. Practice. Unlock.</span></h1>
                 <p>Current level complete hote hi next level unlock ho jayega.</p>
                 <div class="rm126-how" aria-label="Roadmap process">
                     <span><i class="fa-solid fa-book-open-reader"></i><b>Learn</b></span>

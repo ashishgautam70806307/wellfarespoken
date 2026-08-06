@@ -22,7 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 $uploaded = secure_image_upload($_FILES['student_image'], 'reviews', 'review', 2 * 1024 * 1024);
                 if ($uploaded) $imagePath = $uploaded;
             } catch (RuntimeException $e) {
-                flash('error', $e->getMessage());
+                error_log('[admin-testimonials] ' . $e->__toString());
+        flash('error', 'Student review could not be saved. Check the image and required fields.');
                 redirect('testimonials.php'.($id?'?edit='.$id:''));
             }
         }

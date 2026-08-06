@@ -75,7 +75,7 @@ wf_page_hero([
 <?php endif; ?>
 
 <section class="section section-soft">
-    <div class="container wf128-online-cta" data-reveal>
+    <div class="container wf128-online-cta wf-surface-dark" data-reveal>
         <div><span class="eyebrow">Admission Open</span><h2>Start with the suitable online batch.</h2><p>Share your current level and preferred timing.</p></div>
         <a class="btn btn-primary" href="admission.php?mode=online">Join Online Class</a>
     </div>

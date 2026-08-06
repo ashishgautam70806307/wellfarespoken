@@ -1,0 +1,191 @@
+/* Phase 133 controlled repair layer.
+   Scope: public frontend only. No admin selectors are changed here. */
+:root{
+  --wf133-navy:#061a38;
+  --wf133-navy-2:#0a2d5d;
+  --wf133-blue:#1f5c9f;
+  --wf133-blue-soft:#eaf3fc;
+  --wf133-gold:#d8a62d;
+  --wf133-gold-soft:#fff5d9;
+  --wf133-ink:#10213d;
+  --wf133-muted:#66758b;
+  --wf133-line:#d9e4f0;
+  --wf133-soft:#f7fafe;
+  --wf133-white:#fff;
+  --wf133-radius:16px;
+  --wf133-shadow:0 15px 34px rgba(6,26,56,.12);
+}
+
+body.wf133-site{color:var(--wf133-ink);font-family:"Manrope","Noto Sans Devanagari","Segoe UI",Arial,sans-serif}
+body.wf133-site :where(h1,h2,h3,h4,h5,h6){color:var(--wf133-navy)}
+body.wf133-site :where(p,.muted){color:var(--wf133-muted)}
+
+/* Keep home banner copy readable without touching image-only banners. */
+body.wf133-site.page-index .wf126-slide:not(.is-image-only) .wf126-slide-overlay{display:block;background:linear-gradient(90deg,rgba(3,16,38,.90) 0%,rgba(3,16,38,.74) 35%,rgba(3,16,38,.28) 67%,rgba(3,16,38,.06) 100%)}
+body.wf133-site.page-index .wf126-position-right:not(.is-image-only) .wf126-slide-overlay{background:linear-gradient(270deg,rgba(3,16,38,.90) 0%,rgba(3,16,38,.74) 35%,rgba(3,16,38,.28) 67%,rgba(3,16,38,.06) 100%)}
+body.wf133-site.page-index .wf126-position-center:not(.is-image-only) .wf126-slide-overlay{background:linear-gradient(90deg,rgba(3,16,38,.40),rgba(3,16,38,.86) 50%,rgba(3,16,38,.40))}
+body.wf133-site.page-index .wf126-slide-copy :is(h1,h2,p,span){color:#fff}
+body.wf133-site.page-index .wf126-slide-copy :is(h1,h2){text-shadow:0 5px 28px rgba(0,0,0,.48)}
+body.wf133-site.page-index .wf126-slide-copy p{text-shadow:0 2px 15px rgba(0,0,0,.34)}
+
+/* ------------------------------------------------------------------
+   CTA buttons: same family as Student Login, but utility controls are excluded.
+   ------------------------------------------------------------------ */
+body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button):not(.wf127-nav-trigger):not(.wf127-menu-toggle):not(.wf127-contact-toggle){
+  position:relative;
+  isolation:isolate;
+  min-height:50px;
+  max-width:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:7px 58px 7px 19px;
+  border:1px solid var(--wf133-navy);
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--wf133-navy),var(--wf133-blue));
+  color:#fff;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.2;
+  text-align:center;
+  text-decoration:none;
+  white-space:nowrap;
+  box-shadow:0 12px 28px rgba(6,26,56,.18);
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button):not(.wf127-nav-trigger):not(.wf127-menu-toggle):not(.wf127-contact-toggle)::after{
+  content:"\f061";
+  position:absolute;
+  right:6px;
+  top:50%;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--wf133-gold);
+  color:var(--wf133-navy);
+  font-family:"Font Awesome 6 Free";
+  font-size:12px;
+  font-weight:900;
+  transform:translateY(-50%);
+  transition:transform .2s ease,background .2s ease;
+}
+body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button):not(.wf127-nav-trigger):not(.wf127-menu-toggle):not(.wf127-contact-toggle):hover{transform:translateY(-2px);box-shadow:0 17px 36px rgba(6,26,56,.23);filter:saturate(1.05)}
+body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button):not(.wf127-nav-trigger):not(.wf127-menu-toggle):not(.wf127-contact-toggle):hover::after{transform:translateY(-50%) translateX(3px);background:#f1cc72}
+body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):focus-visible{outline:3px solid rgba(216,166,45,.35);outline-offset:3px}
+body.wf133-site :is(.wf-btn-secondary,.wf126-btn-ghost,.wf126-btn-secondary,.btn-soft,.btn-light){background:#fff;color:var(--wf133-navy);border-color:var(--wf133-line);box-shadow:0 9px 22px rgba(6,26,56,.08)}
+body.wf133-site :is(.wf-btn-secondary,.wf126-btn-ghost,.wf126-btn-secondary,.btn-soft,.btn-light)::after{background:var(--wf133-blue-soft);color:var(--wf133-blue)}
+body.wf133-site :is(.wf-btn-success,.btn-green){background:linear-gradient(135deg,#11734a,#1b9b64);border-color:#11734a;color:#fff}
+body.wf133-site :is(.wf-btn-success,.btn-green)::after{background:#fff;color:#11734a}
+body.wf133-site :is(.wf-btn-danger,.btn-danger){background:linear-gradient(135deg,#9b2828,#c94a4a);border-color:#9b2828;color:#fff}
+body.wf133-site :is(.wf-btn-danger,.btn-danger)::after{background:#fff;color:#9b2828}
+body.wf133-site :is(.wf-btn,.btn)[aria-disabled="true"],body.wf133-site :is(.wf-btn,.btn):disabled{opacity:.52;pointer-events:none;cursor:not-allowed;box-shadow:none;transform:none}
+body.wf133-site .wf-btn-label{min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;overflow:hidden;text-overflow:ellipsis}
+
+/* Utility controls must remain compact and never become CTA pills. */
+body.wf133-site :is(.wf127-nav-trigger,.wf127-menu-toggle,.wf127-drawer-head>button,.wf127-drawer-group>button,.wf127-contact-toggle,.wf127-contact-actions button,.wf126-slider-arrow,.wf126-slider-toggle,.wf126-slider-dots button,.duo-lesson-tabs button,.duo-sound-row button,.duo-choice,.gallery-lightbox button,.auth-tabs a,.wf133-icon-control){box-shadow:none}
+body.wf133-site .wf133-icon-control{width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid var(--wf133-line);border-radius:13px;background:#f3f7fc;color:var(--wf133-navy);cursor:pointer}
+
+/* ------------------------------------------------------------------
+   Frontend form controls. Visual-only rules; grid/layout remains page-owned.
+   ------------------------------------------------------------------ */
+body.wf133-site main form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),select,textarea){
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:50px;
+  margin:0;
+  padding:12px 15px;
+  border:1px solid #cfdbe8;
+  border-radius:14px;
+  outline:0;
+  background:#fbfdff;
+  color:var(--wf133-ink);
+  font:600 14px/1.35 "Manrope","Segoe UI",Arial,sans-serif;
+  box-shadow:0 6px 16px rgba(6,26,56,.035),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease,transform .18s ease;
+}
+body.wf133-site main form textarea{min-height:108px;line-height:1.55;resize:vertical}
+body.wf133-site main form select{appearance:none;padding-right:43px;background-image:linear-gradient(45deg,transparent 50%,var(--wf133-blue) 50%),linear-gradient(135deg,var(--wf133-blue) 50%,transparent 50%);background-position:calc(100% - 20px) 22px,calc(100% - 14px) 22px;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+body.wf133-site main form :is(input,textarea)::placeholder{color:#98a5b6;font-size:12px;font-weight:500;opacity:1}
+body.wf133-site main form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea):hover{border-color:#aebed0;background:#fff}
+body.wf133-site main form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea):focus{border-color:var(--wf133-blue);background:#fff;box-shadow:0 0 0 4px rgba(31,92,159,.10),0 10px 24px rgba(6,26,56,.07),inset 0 0 0 1px rgba(216,166,45,.18)}
+body.wf133-site main form :is(input,select,textarea):disabled{background:#eef3f8;color:#7b899c;cursor:not-allowed}
+body.wf133-site main form input[type="file"]{min-height:auto;padding:8px;border-style:dashed;background:#f7fafe;font-size:12px}
+body.wf133-site main form input[type="file"]::file-selector-button{margin-right:10px;padding:9px 13px;border:0;border-radius:10px;background:var(--wf133-blue-soft);color:var(--wf133-navy);font-weight:800;cursor:pointer}
+body.wf133-site main form :is(label,.field,.wf-field,.wf129-field){min-width:0}
+body.wf133-site main form label{color:var(--wf133-navy);font-size:12px;font-weight:800;line-height:1.4}
+body.wf133-site main form label>span:first-child{display:flex;align-items:center;gap:7px;margin-bottom:7px;color:var(--wf133-navy);font-size:12px;font-weight:800}
+body.wf133-site main form .password-wrap{position:relative}
+body.wf133-site main form .password-wrap input{padding-right:50px}
+
+/* Phase 138 now owns the public mobile topbar and right drawer.
+   The former Phase 133 mobile blocks were removed to avoid duplicate CSS. */
+
+/* ------------------------------------------------------------------
+   Weekly Test: progressive-enhancement layout and mobile clarity.
+   ------------------------------------------------------------------ */
+body.wf133-site.page-weekly-test .wf129-test-page{background:linear-gradient(180deg,#f4f8fd,#fff);padding:32px 0 68px}
+body.wf133-site.page-weekly-test .wf133-test-alert{display:flex;align-items:flex-start;gap:10px;margin:0 0 18px;padding:13px 15px;border:1px solid #f3c2c2;border-radius:14px;background:#fff1f1;color:#8f2929;font-size:12px;font-weight:700}
+body.wf133-site.page-weekly-test .wf129-test-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
+body.wf133-site.page-weekly-test .wf129-test-card{display:flex;min-height:310px;flex-direction:column;padding:20px;border:1px solid var(--wf133-line);border-radius:22px;background:#fff;box-shadow:0 14px 35px rgba(6,26,56,.08);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+body.wf133-site.page-weekly-test .wf129-test-card:hover,body.wf133-site.page-weekly-test .wf129-test-card.is-selected{transform:translateY(-4px);border-color:#e7c458;box-shadow:0 20px 42px rgba(6,26,56,.13)}
+body.wf133-site.page-weekly-test .wf129-test-card h3{margin:10px 0 6px;font-size:22px}
+body.wf133-site.page-weekly-test .wf129-test-card p{margin:0;min-height:44px;font-size:12px;line-height:1.55}
+body.wf133-site.page-weekly-test .wf129-test-card-action{width:100%;margin-top:auto}
+body.wf133-site.page-weekly-test .wf129-test-setup{margin-top:24px;border:1px solid var(--wf133-line);border-radius:24px;background:#fff;box-shadow:0 22px 55px rgba(6,26,56,.12);overflow:hidden}
+body.wf133-site.page-weekly-test .wf129-test-setup[hidden]{display:none}
+body.wf133-site.page-weekly-test .wf129-test-setup>header{display:grid;grid-template-columns:52px minmax(0,1fr) 42px;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--wf133-line);background:linear-gradient(135deg,#f9fbff,#fff7df)}
+body.wf133-site.page-weekly-test .wf129-test-setup-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;padding:20px}
+body.wf133-site.page-weekly-test .wf129-test-paper-field{grid-column:auto}
+body.wf133-site.page-weekly-test .wf129-test-safety{margin:0 20px 18px}
+body.wf133-site.page-weekly-test .wf129-test-setup>footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-top:1px solid var(--wf133-line);background:#fbfdff}
+body.wf133-site.page-weekly-test .wf129-test-setup>footer p{margin:0;font-size:12px}
+body.wf133-site.page-weekly-test .wf129-test-setup>footer p.is-error{color:#a72f2f}
+body.wf133-site.page-weekly-test .wf129-test-setup>footer p.is-ready{color:#14784d}
+body.wf133-site.page-weekly-test .wf133-noscript-note{margin:0;padding:10px 20px 16px;color:var(--wf133-muted);font-size:11px}
+
+/* Review marquee remains working after Phase 132 is removed. */
+body.wf133-site .wf127-review-row{animation-duration:var(--wf-review-duration,36s)}
+body.wf133-site .wf127-review-row:not(.is-reverse){animation-name:wf133ReviewLeft}
+body.wf133-site .wf127-review-row.is-reverse{animation-name:wf133ReviewRight}
+@keyframes wf133ReviewLeft{from{transform:translateX(0)}to{transform:translateX(var(--wf-review-distance-negative,-50%))}}
+@keyframes wf133ReviewRight{from{transform:translateX(var(--wf-review-distance-negative,-50%))}to{transform:translateX(0)}}
+
+@media(max-width:900px){
+  body.wf133-site.page-weekly-test .wf129-test-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.wf133-site.page-weekly-test .wf129-test-card:last-child{grid-column:1/-1}
+  body.wf133-site.page-weekly-test .wf129-test-setup-grid{grid-template-columns:1fr 1fr}
+  body.wf133-site.page-weekly-test .wf129-test-paper-field{grid-column:1/-1}
+}
+@media(max-width:680px){
+  body.wf133-site.page-index .wf126-slide:not(.is-image-only) .wf126-slide-overlay,body.wf133-site.page-index .wf126-position-right:not(.is-image-only) .wf126-slide-overlay,body.wf133-site.page-index .wf126-position-center:not(.is-image-only) .wf126-slide-overlay{background:linear-gradient(180deg,rgba(3,16,38,.03) 0%,rgba(3,16,38,.30) 42%,rgba(3,16,38,.94) 100%)}
+  body.wf133-site main form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea){font-size:16px}
+  body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button){min-height:48px;padding:6px 52px 6px 15px;font-size:12px}
+  body.wf133-site :is(a.wf-btn,button.wf-btn,a.wf126-btn,button.wf126-btn,a.btn,button.btn,main form button[type="submit"]):not(.btn-icon):not(.wf133-icon-control):not(.eye-toggle):not(.gallery-lightbox button):not(.duo-lesson-tabs button)::after{width:36px;height:36px}
+  body.wf133-site.page-weekly-test .wf129-test-page{padding:22px 0 54px}
+  body.wf133-site.page-weekly-test .wf129-test-flow{margin-bottom:18px}
+  body.wf133-site.page-weekly-test .wf129-test-card-grid{grid-template-columns:1fr;gap:11px}
+  body.wf133-site.page-weekly-test .wf129-test-card:last-child{grid-column:auto}
+  body.wf133-site.page-weekly-test .wf129-test-card{min-height:0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:7px 12px;padding:15px}
+  body.wf133-site.page-weekly-test .wf129-test-card-top{grid-row:1/5;display:block}
+  body.wf133-site.page-weekly-test .wf129-test-card-icon{width:50px;height:50px}
+  body.wf133-site.page-weekly-test .wf129-test-status{position:absolute;top:12px;right:12px;max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.wf133-site.page-weekly-test .wf129-test-card>small,body.wf133-site.page-weekly-test .wf129-test-card h3,body.wf133-site.page-weekly-test .wf129-test-card p,body.wf133-site.page-weekly-test .wf129-test-meta,body.wf133-site.page-weekly-test .wf129-test-card-action{grid-column:2}
+  body.wf133-site.page-weekly-test .wf129-test-card h3{margin:0;font-size:18px}
+  body.wf133-site.page-weekly-test .wf129-test-card p{display:none}
+  body.wf133-site.page-weekly-test .wf129-test-meta{margin:4px 0 5px}
+  body.wf133-site.page-weekly-test .wf129-test-card-action{width:100%;margin:0}
+  body.wf133-site.page-weekly-test .wf129-test-setup{border-radius:20px}
+  body.wf133-site.page-weekly-test .wf129-test-setup>header{grid-template-columns:45px minmax(0,1fr) 40px;padding:15px}
+  body.wf133-site.page-weekly-test .wf129-test-setup-grid{grid-template-columns:1fr;padding:15px}
+  body.wf133-site.page-weekly-test .wf129-test-paper-field{grid-column:auto}
+  body.wf133-site.page-weekly-test .wf129-test-safety{margin:0 15px 14px;grid-template-columns:repeat(3,1fr)}
+  body.wf133-site.page-weekly-test .wf129-test-setup>footer{align-items:stretch;flex-direction:column;padding:14px 15px}
+  body.wf133-site.page-weekly-test .wf129-test-setup>footer .wf-btn{width:100%}
+}
+@media(prefers-reduced-motion:reduce){body.wf133-site .wf127-review-row{animation-play-state:paused}}

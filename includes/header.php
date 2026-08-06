@@ -36,6 +36,8 @@ $siteLogo = site_asset_url(app_setting('site_logo', ''));
 $siteName = app_setting('site_name', APP_NAME);
 $phoneRaw = app_setting('phone', APP_PHONE);
 $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
+$shortAddress = trim((string)app_setting('mobile_short_address', 'Mariahu, Jaunpur'));
+if ($shortAddress === '') $shortAddress = 'Mariahu, Jaunpur';
 ?>
 <!doctype html>
 <html lang="en">
@@ -47,7 +49,7 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
     <?php if (defined('APP_REMOTE_FONTS') && APP_REMOTE_FONTS): ?>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <?php endif; ?>
     <?php
     $headerFavicon = site_asset_url(app_setting('site_favicon', 'assets/uploads/brand/wf-favicon.ico'));
@@ -65,6 +67,7 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
     <?php $headerAppleIcon = site_asset_url(app_setting('site_pwa_icon_180', 'assets/uploads/brand/wf-pwa-icon-180.png')); if ($headerAppleIcon !== ''): ?><link rel="apple-touch-icon" href="<?= e($headerAppleIcon) ?>"><?php endif; ?>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-design-tokens.css'))) ?>">
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path($lightweightLayout ? 'assets/css/phase123-shell.css' : 'assets/css/style.css'))) ?>">
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase123-ui-core.css'))) ?>">
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase130-design-system.css'))) ?>">
@@ -72,19 +75,26 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
     <?php foreach ($pageStyles as $pageStyle): ?>
         <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path((string)$pageStyle))) ?>">
     <?php endforeach; ?>
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase133-controlled-ui.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-components.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase137-visual-repair.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase141-learning-pages-mobile.css'))) ?>">
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase142-interaction-fixes.css'))) ?>">
 </head>
-<body class="page-<?= e($pageSlug) ?> wf130-site">
+<body class="page-<?= e($pageSlug) ?> wf130-site wf133-site wf138-mobile-ui wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>
 
 <div class="wf127-topbar">
     <div class="container wf127-topbar-inner">
-        <a class="wf127-topbar-place" href="<?= e(app_setting('map_url', GOOGLE_MAP_URL)) ?>" target="_blank" rel="noopener">
-            <i class="fa-solid fa-location-dot" aria-hidden="true"></i><span><?= e(app_setting('address', APP_ADDRESS)) ?></span>
+        <a class="wf127-topbar-place" href="<?= e(app_safe_href(app_setting('map_url', GOOGLE_MAP_URL), '#', true)) ?>" target="_blank" rel="noopener">
+            <i class="fa-solid fa-location-dot" aria-hidden="true"></i><span class="wf133-place-full"><?= e(app_setting('address', APP_ADDRESS)) ?></span><span class="wf133-place-short"><?= e($shortAddress) ?></span>
         </a>
         <div class="wf127-announcement" aria-label="Institute announcement">
             <div class="wf127-announcement-track"><span><i class="fa-solid fa-bullhorn" aria-hidden="true"></i><?= e($topAnnouncement) ?></span><span aria-hidden="true"><i class="fa-solid fa-bullhorn"></i><?= e($topAnnouncement) ?></span></div>
         </div>
-        <div class="wf129-topbar-actions"><a class="wf129-institute-link" href="admin/login.php"><i class="fa-solid fa-building-shield" aria-hidden="true"></i><span>Institute Login</span></a><a class="wf127-topbar-phone" href="tel:<?= e($phoneClean) ?>"><i class="fa-solid fa-phone" aria-hidden="true"></i><span><?= e($phoneRaw) ?></span></a></div>
+        <div class="wf129-topbar-actions"><a class="wf129-institute-link" href="admin/login.php" aria-label="Institute Login"><i class="fa-solid fa-building-shield" aria-hidden="true"></i><span>Institute Login</span></a><a class="wf127-topbar-phone" href="tel:<?= e($phoneClean) ?>" aria-label="Call <?= e($phoneRaw) ?>"><i class="fa-solid fa-phone" aria-hidden="true"></i><span><?= e($phoneRaw) ?></span></a></div>
     </div>
 </div>
 
@@ -112,7 +122,7 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
                         </button>
                         <div class="wf127-mega-panel" id="<?= e($desktopPanelId) ?>">
                             <?php foreach ($item['children'] as $child): ?>
-                                <a href="<?= e((string)$child['url']) ?>">
+                                <a href="<?= e(app_safe_href((string)$child['url'])) ?>">
                                     <span><i class="<?= e((string)$child['icon']) ?>" aria-hidden="true"></i></span>
                                     <div><b><?= e((string)$child['label']) ?></b><small><?= e((string)($child['text'] ?? '')) ?></small></div>
                                     <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
@@ -121,7 +131,7 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
                         </div>
                     </div>
                 <?php else: ?>
-                    <a class="wf127-nav-link <?= $active ? 'is-active' : '' ?>" href="<?= e((string)$item['url']) ?>"><?= e((string)$item['label']) ?></a>
+                    <a class="wf127-nav-link <?= $active ? 'is-active' : '' ?>" href="<?= e(app_safe_href((string)$item['url'])) ?>"><?= e((string)$item['label']) ?></a>
                 <?php endif; ?>
             <?php endforeach; ?>
         </nav>
@@ -155,19 +165,22 @@ $phoneClean = preg_replace('/[^0-9+]/', '', $phoneRaw);
                             <span><i class="<?= e((string)$item['icon']) ?>" aria-hidden="true"></i><?= e((string)$item['label']) ?></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
                         <div id="<?= e($drawerId) ?>" class="wf127-drawer-children" <?= $active ? '' : 'hidden' ?>>
-                            <?php foreach ($item['children'] as $child): ?><a href="<?= e((string)$child['url']) ?>"><i class="<?= e((string)$child['icon']) ?>" aria-hidden="true"></i><span><b><?= e((string)$child['label']) ?></b><small><?= e((string)($child['text'] ?? '')) ?></small></span></a><?php endforeach; ?>
+                            <?php foreach ($item['children'] as $child): ?><a href="<?= e(app_safe_href((string)$child['url'])) ?>"><i class="<?= e((string)$child['icon']) ?>" aria-hidden="true"></i><span><b><?= e((string)$child['label']) ?></b><small><?= e((string)($child['text'] ?? '')) ?></small></span></a><?php endforeach; ?>
                         </div>
                     </div>
                 <?php else: ?>
-                    <a class="wf127-drawer-link <?= $active ? 'is-active' : '' ?>" href="<?= e((string)$item['url']) ?>"><i class="<?= e((string)$item['icon']) ?>" aria-hidden="true"></i><span><?= e((string)$item['label']) ?></span></a>
+                    <a class="wf127-drawer-link <?= $active ? 'is-active' : '' ?>" href="<?= e(app_safe_href((string)$item['url'])) ?>"><i class="<?= e((string)$item['icon']) ?>" aria-hidden="true"></i><span><?= e((string)$item['label']) ?></span></a>
                 <?php endif; ?>
             <?php endforeach; ?>
         </nav>
     </div>
     <div class="wf127-drawer-actions">
-        <a href="<?= e($studentCtaUrl) ?>"><i class="fa-solid fa-user-graduate" aria-hidden="true"></i><?= e($studentCtaLabel) ?></a>
-        <a href="admission.php"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Admission</a>
-        <a class="wf129-drawer-institute" href="admin/login.php"><i class="fa-solid fa-building-shield" aria-hidden="true"></i>Institute Login</a>
+        <div class="wf133-drawer-primary-actions">
+            <a class="wf133-drawer-student" href="<?= e($studentCtaUrl) ?>"><span><i class="fa-solid fa-user-graduate" aria-hidden="true"></i><?= e($studentCtaLabel) ?></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="wf133-drawer-admission" href="admission.php"><span><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Admission</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="wf138-drawer-call" href="tel:<?= e($phoneClean) ?>"><span><i class="fa-solid fa-phone" aria-hidden="true"></i>Call Now</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <a class="wf129-drawer-institute" href="admin/login.php"><i class="fa-solid fa-building-shield" aria-hidden="true"></i><span>Institute Login</span></a>
     </div>
 </aside>
 <main id="mainContent">
