@@ -62,64 +62,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if($siteFavicon !== ''): ?><link rel="icon" href="../<?= e($siteFavicon) ?>"><?php else: ?><link rel="icon" href="../assets/uploads/brand/wf-favicon.ico"><?php endif; ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-design-tokens.css'))) ?>">
-<link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase137-admin-login.css'))) ?>">
-<link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
+<link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase146-admin-login.css'))) ?>">
 </head>
-<body class="admin-login-single wf138-admin-login wf138-mobile-ui">
+<body class="admin-login-page">
 <main class="admin-login-shell">
-  <a class="admin-login-home" href="../index.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to website</a>
+  <a class="admin-login-home" href="../index.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to website</span></a>
 
-  <form class="admin-login-card admin-login-form" method="post" autocomplete="on" novalidate>
-    <header class="admin-login-brand">
-      <span class="admin-login-logo">
-        <?php if($siteLogo !== ''): ?><img src="../<?= e($siteLogo) ?>" alt="<?= e($siteName) ?>"><?php else: ?><span><?= e($brandShort) ?></span><?php endif; ?>
-      </span>
-      <div>
-        <b><?= e($siteName) ?></b>
-        <small>Institute control centre</small>
+  <section class="admin-login-card" aria-label="Institute administrator login">
+    <aside class="admin-login-brand-panel">
+      <div class="admin-login-brand-top">
+        <span class="admin-login-logo">
+          <?php if($siteLogo !== ''): ?><img src="../<?= e($siteLogo) ?>" alt="<?= e($siteName) ?>"><?php else: ?><span><?= e($brandShort) ?></span><?php endif; ?>
+        </span>
+        <div class="admin-login-brand-name"><b><?= e($siteName) ?></b><small>Institute Control Centre</small></div>
       </div>
-      <span class="admin-login-secure-badge"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure access</span>
-    </header>
 
-    <section class="admin-login-intro">
-      <span class="admin-login-kicker"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Authorised staff only</span>
-      <h1>Welcome back.</h1>
-      <p><?= e($loginSubtitle) ?></p>
-    </section>
+      <div class="admin-login-brand-copy">
+        <span class="admin-login-brand-kicker"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> One secure workspace</span>
+        <h2>Run the institute with clarity.</h2>
+        <p><?= e($loginSubtitle) ?></p>
+      </div>
 
-    <?php if ($msg = flash('error')): ?>
-      <div class="admin-login-alert" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span><?= e($msg) ?></span></div>
-    <?php endif; ?>
+      <div class="admin-login-feature-list" aria-label="Control centre highlights">
+        <span><i class="fa-solid fa-user-graduate" aria-hidden="true"></i><b>Students</b><small>Admissions & progress</small></span>
+        <span><i class="fa-solid fa-route" aria-hidden="true"></i><b>Learning</b><small>Roadmap & practice</small></span>
+        <span><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i><b>Tests</b><small>Attempts & results</small></span>
+      </div>
 
-    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+      <div class="admin-login-brand-foot"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Rate-limited access · No page caching</span></div>
+    </aside>
 
-    <label class="admin-login-field" for="adminEmail">Email address
-      <span class="admin-login-control">
+    <form class="admin-login-form-panel" method="post" autocomplete="on" novalidate>
+      <header class="admin-login-form-head">
+        <span class="admin-login-secure-badge"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure access</span>
+        <span class="admin-login-kicker">Authorised staff only</span>
+        <h1>Welcome back</h1>
+        <p>Enter your institute credentials to continue.</p>
+      </header>
+
+      <?php if ($msg = flash('error')): ?>
+        <div class="admin-login-alert" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span><?= e($msg) ?></span></div>
+      <?php endif; ?>
+
+      <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+
+      <label class="admin-login-field" for="adminEmail">
+        <span>Email address</span>
         <input id="adminEmail" type="email" name="email" value="<?= e((string)($_POST['email'] ?? '')) ?>" placeholder="Enter authorised email" autocomplete="username" inputmode="email" required autofocus>
-      </span>
-    </label>
+      </label>
 
-    <label class="admin-login-field" for="adminPassword">Password
-      <span class="admin-login-control">
-        <input id="adminPassword" type="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
-        <button type="button" id="togglePassword" class="admin-login-eye" aria-label="Show password">
-          <i class="fa-solid fa-eye" aria-hidden="true"></i>
-        </button>
-      </span>
-      <small id="capsHint" class="admin-login-caps">Caps Lock is on</small>
-    </label>
+      <label class="admin-login-field" for="adminPassword">
+        <span>Password</span>
+        <span class="admin-login-password-wrap">
+          <input id="adminPassword" type="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
+          <button type="button" id="togglePassword" class="admin-login-eye" aria-label="Show password"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
+        </span>
+        <small id="capsHint" class="admin-login-caps">Caps Lock is on</small>
+      </label>
 
-    <input class="admin-login-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <input class="admin-login-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-    <button class="admin-login-submit" type="submit"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Enter Control Centre</button>
+      <button class="admin-login-submit" type="submit"><span>Enter Control Centre</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
 
-    <div class="admin-login-meta">
-      <span><i class="fa-solid fa-shield" aria-hidden="true"></i> Attempts remaining: <?= e((string)$failedLeft) ?></span>
-      <span><i class="fa-solid fa-laptop" aria-hidden="true"></i> Use a trusted device</span>
-    </div>
+      <div class="admin-login-meta">
+        <span><i class="fa-solid fa-shield" aria-hidden="true"></i><?= e((string)$failedLeft) ?> attempts remaining</span>
+        <span><i class="fa-solid fa-laptop" aria-hidden="true"></i>Trusted device only</span>
+      </div>
 
-    <div class="admin-login-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>For your security, this page is not cached. Always sign out after completing institute work.</span></div>
-  </form>
+      <div class="admin-login-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Always sign out after completing institute work.</span></div>
+    </form>
+  </section>
 </main>
 <script>
 (function(){

@@ -1,0 +1,32 @@
+{
+  "php_files": 68,
+  "js_and_sw_files": 11,
+  "css_files": 54,
+  "css_bad": [],
+  "duplicate_literal_ids": {},
+  "service_worker_assets": 39,
+  "service_worker_missing": [],
+  "required_checks": {
+    "voice_toggle_markup": true,
+    "no_filter_form": true,
+    "tts": true,
+    "speech_input": true,
+    "repeat_command": true,
+    "single_shot_recognition": true,
+    "auto_check_after_voice": true,
+    "correct_answer_audio": true,
+    "cache_v144": true
+  },
+  "mock_voice_flow": {
+    "listFetches": 1,
+    "answerFetches": 1,
+    "recognitionStarts": 2,
+    "speechStarts": 3,
+    "appHidden": false,
+    "question": "I am at home.",
+    "answer": "I am at home.",
+    "resultClass": "wf143-result is-correct",
+    "resultHTML": "<span class=\"wf143-result-icon\"><i class=\"fa-solid fa-circle-check\" aria-hidden=\"true\"></i></span><div><strong>Correct answer</strong><p>Your sentence matches the accepted answer.</p></div>",
+    "status": "Correct. Continue when you are ready."
+  }
+}

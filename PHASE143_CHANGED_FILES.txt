@@ -1,0 +1,26 @@
+Phase 143 - Practice Logic Reset
+
+ADDED
+- assets/css/phase143-practice-stability.css
+- assets/css/phase143-practice-stability.min.css
+- assets/css/phase143-roadmap-practice.css
+- assets/css/phase143-roadmap-practice.min.css
+- assets/js/phase143-spoken-practice.js
+- assets/js/phase143-roadmap-practice.js
+- README_PHASE143_PRACTICE_LOGIC_RESET.md
+- PHASE143_PRACTICE_LOGIC_REPORT.md
+- PHASE143_BROWSER_TEST_CHECKLIST.md
+- PHASE143_CHANGED_FILES.txt
+- PHASE143_VALIDATION.json
+
+MODIFIED
+- spoken-materials.php
+- roadmap-lesson.php
+- material-practice-list-api.php
+- includes/header.php
+- includes/footer.php
+- sw.js
+- README.md
+
+DATABASE
+- No schema or SQL migration change.

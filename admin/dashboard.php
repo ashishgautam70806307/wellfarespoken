@@ -1,5 +1,7 @@
 <?php
+$admin_page_final_styles = ['assets/css/phase147-student-accounts.css'];
 require_once __DIR__ . '/_header.php';
+student_account_ensure_schema();
 
 // Phase 46: dashboard uses prepared statements only and never crashes when optional module tables are missing.
 function dashboard_table_exists(string $table): bool
@@ -105,6 +107,10 @@ $batches = dashboard_count_available('batch_timings', ['status_deleted'], ['publ
 $faqs = dashboard_count_available('faqs', ['status_deleted'], ['published']);
 $navs = dashboard_count_available('nav_menus', ['status_deleted'], ['published']);
 $students = dashboard_count_available('students');
+$studentActive = dashboard_count('students', "status_deleted=0 AND published='Yes'");
+$studentInactive = dashboard_count('students', "status_deleted=0 AND published='No'");
+$studentNeverLogin = dashboard_count('students', 'status_deleted=0 AND last_login_at IS NULL');
+$studentRecentLogin = dashboard_count('students', 'status_deleted=0 AND last_login_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)');
 $admissions = dashboard_count_available('admissions');
 $admissionDue = dashboard_count('admissions', 'status_deleted=0 AND (total_fee-discount_amount-paid_amount)>0');
 $materials = dashboard_first_count([
@@ -130,6 +136,22 @@ $dashDirectorRole = trim(app_setting('director_designation','')) ?: 'Director & 
 $dashDirectorPhoto = site_asset_url(app_setting('director_photo',''));
 $dashLogo = site_asset_url(app_setting('site_logo',''));
 ?>
+<section class="panel-card wf147-dashboard-account-control">
+    <div class="wf147-dashboard-account-copy">
+        <span class="dash-mini">Student Account Control</span>
+        <h2>Manage every student login from one secure place.</h2>
+        <p>Activate or suspend accounts, reset forgotten passwords, force sign-out, update learning settings and review test/practice history.</p>
+        <div class="admin-actions"><a class="btn btn-primary" href="students.php"><i class="fa-solid fa-users-gear"></i> Open Student Accounts</a><a class="btn btn-soft" href="students.php?login=never"><i class="fa-solid fa-user-clock"></i> Never Logged In</a></div>
+    </div>
+    <div class="wf147-dashboard-account-metrics">
+        <a href="students.php"><b><?= e((string)$students) ?></b><span>Total</span></a>
+        <a href="students.php?status=Yes"><b><?= e((string)$studentActive) ?></b><span>Active</span></a>
+        <a href="students.php?status=No"><b><?= e((string)$studentInactive) ?></b><span>Inactive</span></a>
+        <a href="students.php?login=recent"><b><?= e((string)$studentRecentLogin) ?></b><span>7-Day Login</span></a>
+        <a href="students.php?login=never"><b><?= e((string)$studentNeverLogin) ?></b><span>Never Login</span></a>
+    </div>
+</section>
+
 <div class="panel-card director-dashboard-preview">
     <div class="director-dashboard-media">
         <?php if($dashDirectorPhoto !== ''): ?><img src="../<?= e($dashDirectorPhoto) ?>" alt="<?= e($dashDirectorName) ?>">
@@ -148,7 +170,7 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
     <a class="card dash-card dash-link" href="enquiries.php?status=New"><span class="dash-mini">Today</span><strong><?= e((string)$today) ?></strong><p>Today’s Enquiries</p></a>
     <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">CRM</span><strong><?= e((string)$admissions) ?></strong><p>Admissions</p></a>
     <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">Fee</span><strong><?= e((string)$admissionDue) ?></strong><p>Fee Due</p></a>
-    <a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Students</p></a>
+    <a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Student Accounts</p></a>
     <a class="card dash-card dash-link" href="courses.php"><span class="dash-mini">Edit</span><strong><?= e((string)$courses) ?></strong><p>Published Courses</p></a>
     <a class="card dash-card dash-link" href="materials.php"><span class="dash-mini">Practice</span><strong><?= e((string)$materials) ?></strong><p>Practice Sentences</p></a>
     <a class="card dash-card dash-link" href="weekly-tests.php"><span class="dash-mini">Tests</span><strong><?= e((string)$weeklyTests) ?></strong><p>Weekly Tests</p></a>

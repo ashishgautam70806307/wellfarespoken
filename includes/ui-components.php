@@ -39,10 +39,9 @@ if (!function_exists('wf_public_nav_items')) {
             [
                 'label' => 'Test & Practice',
                 'icon' => 'fa-solid fa-clipboard-check',
-                'pages' => ['weekly-test.php', 'weekly-result.php', 'weekly-exam-room.php', 'student-revision.php'],
+                'pages' => ['weekly-test.php', 'weekly-result.php', 'weekly-exam-room.php'],
                 'children' => [
                     ['label' => 'Weekly Test', 'icon' => 'fa-solid fa-clipboard-check', 'url' => 'weekly-test.php', 'text' => 'Practice or official exam'],
-                    ['label' => 'Revision', 'icon' => 'fa-solid fa-rotate-left', 'url' => 'student-revision.php', 'text' => 'Repeat wrong answers'],
                 ],
             ],
             [

@@ -1074,6 +1074,146 @@ function ensure_schema_updates(): void
     }
 }
 
+function student_account_ensure_schema(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (defined('APP_ALLOW_SCHEMA_UPDATES') && !APP_ALLOW_SCHEMA_UPDATES) return;
+    try {
+        ensure_schema_updates();
+        if (!column_exists('students', 'auth_version')) {
+            db_exec_safe("ALTER TABLE students ADD auth_version INT UNSIGNED NOT NULL DEFAULT 1 AFTER password_hash");
+        }
+        if (!column_exists('students', 'password_changed_at')) {
+            db_exec_safe("ALTER TABLE students ADD password_changed_at DATETIME NULL AFTER auth_version");
+        }
+        db_exec_safe("CREATE TABLE IF NOT EXISTS student_account_events (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            student_id INT UNSIGNED NOT NULL,
+            admin_id INT UNSIGNED NULL,
+            event_type VARCHAR(60) NOT NULL,
+            event_title VARCHAR(180) NOT NULL,
+            event_note TEXT NULL,
+            ip_address VARCHAR(45) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_student_account_event (student_id, created_at),
+            KEY idx_student_account_type (event_type, created_at),
+            KEY idx_student_account_admin (admin_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Throwable $e) {
+        error_log('[student-account-schema] ' . $e->__toString());
+    }
+}
+
+function student_account_has_auth_version(): bool
+{
+    static $supported = null;
+    if ($supported !== null) return $supported;
+    student_account_ensure_schema();
+    return $supported = column_exists('students', 'auth_version');
+}
+
+function student_account_has_password_changed_at(): bool
+{
+    static $supported = null;
+    if ($supported !== null) return $supported;
+    student_account_ensure_schema();
+    return $supported = column_exists('students', 'password_changed_at');
+}
+
+function student_account_session_signature(array $student): string
+{
+    $sessionVersion = array_key_exists('auth_version', $student)
+        ? (string)($student['auth_version'] ?? 1)
+        : (string)($student['updated_at'] ?? '');
+    return hash('sha256', implode('|', [
+        (string)($student['password_hash'] ?? ''),
+        $sessionVersion,
+        (string)($student['published'] ?? 'No'),
+        (string)($student['status_deleted'] ?? 0),
+    ]));
+}
+
+function student_account_invalidate_sessions(int $studentId): void
+{
+    if ($studentId <= 0) return;
+    if (student_account_has_auth_version()) {
+        db()->prepare('UPDATE students SET auth_version=auth_version+1, updated_at=NOW() WHERE id=?')->execute([$studentId]);
+    } else {
+        db()->prepare('UPDATE students SET updated_at=DATE_ADD(COALESCE(updated_at,NOW()), INTERVAL 1 SECOND) WHERE id=?')->execute([$studentId]);
+    }
+}
+
+function student_account_reset_password(int $studentId, string $passwordHash): bool
+{
+    if ($studentId <= 0 || $passwordHash === '') return false;
+    $sets = ['password_hash=?', 'updated_at=NOW()'];
+    if (student_account_has_auth_version()) $sets[] = 'auth_version=auth_version+1';
+    if (student_account_has_password_changed_at()) $sets[] = 'password_changed_at=NOW()';
+    $stmt = db()->prepare('UPDATE students SET ' . implode(', ', $sets) . ' WHERE id=? AND status_deleted=0');
+    $stmt->execute([$passwordHash, $studentId]);
+    return $stmt->rowCount() === 1;
+}
+
+function student_account_log(int $studentId, string $eventType, string $eventTitle, string $eventNote = ''): void
+{
+    if ($studentId <= 0) return;
+    student_account_ensure_schema();
+    $adminName = trim((string)($_SESSION['admin_name'] ?? 'System')) ?: 'System';
+    try {
+        if (table_exists('student_account_events')) {
+            $stmt = db()->prepare('INSERT INTO student_account_events (student_id,admin_id,event_type,event_title,event_note,ip_address) VALUES (?,?,?,?,?,?)');
+            $stmt->execute([
+                $studentId,
+                !empty($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null,
+                mb_substr(trim($eventType) ?: 'account_update', 0, 60),
+                mb_substr(trim($eventTitle) ?: 'Student account updated', 0, 180),
+                trim($eventNote) ?: null,
+                client_ip(),
+            ]);
+            return;
+        }
+        $stmt = db()->prepare('INSERT INTO student_activity_logs (student_id,activity_type,activity_title,note) VALUES (?,?,?,?)');
+        $stmt->execute([
+            $studentId,
+            'account_' . mb_substr(preg_replace('/[^a-z0-9_]+/i', '_', trim($eventType)) ?: 'update', 0, 60),
+            mb_substr(trim($eventTitle) ?: 'Student account updated', 0, 180),
+            trim(($eventNote !== '' ? $eventNote . ' ' : '') . 'Admin: ' . $adminName),
+        ]);
+    } catch (Throwable $e) {
+        error_log('[student-account-log] ' . $e->__toString());
+    }
+}
+
+function student_account_events(int $studentId, int $limit = 20): array
+{
+    if ($studentId <= 0) return [];
+    student_account_ensure_schema();
+    $limit = max(1, min(100, $limit));
+    try {
+        if (table_exists('student_account_events')) {
+            $stmt = db()->prepare('SELECT e.*, a.name admin_name FROM student_account_events e LEFT JOIN admins a ON a.id=e.admin_id WHERE e.student_id=? ORDER BY e.id DESC LIMIT ' . $limit);
+            $stmt->execute([$studentId]);
+            return $stmt->fetchAll();
+        }
+        $stmt = db()->prepare("SELECT id,student_id,NULL admin_id,REPLACE(activity_type,'account_','') event_type,activity_title event_title,note event_note,NULL ip_address,created_at,NULL admin_name FROM student_activity_logs WHERE student_id=? AND activity_type LIKE 'account_%' ORDER BY id DESC LIMIT " . $limit);
+        $stmt->execute([$studentId]);
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function student_password_error(string $password): string
+{
+    $length = strlen($password);
+    if ($length < 8) return 'Password must be at least 8 characters so it works with student login.';
+    if ($length > 128) return 'Password must not exceed 128 characters.';
+    if (trim($password) === '') return 'Password cannot contain only spaces.';
+    return '';
+}
+
 function is_student(): bool
 {
     return !empty($_SESSION['student_id']);
@@ -1086,15 +1226,17 @@ function current_student_id(): int
 
 function student_session_login(array $student): void
 {
+    student_account_ensure_schema();
     session_regenerate_id(true);
     $_SESSION['student_id'] = (int)$student['id'];
     $_SESSION['student_name'] = (string)($student['full_name'] ?? 'Student');
+    $_SESSION['student_auth_signature'] = student_account_session_signature($student);
     $_SESSION['student_last_activity'] = time();
 }
 
 function student_session_logout(): void
 {
-    unset($_SESSION['student_id'], $_SESSION['student_name'], $_SESSION['student_last_activity']);
+    unset($_SESSION['student_id'], $_SESSION['student_name'], $_SESSION['student_auth_signature'], $_SESSION['student_last_activity']);
     session_regenerate_id(true);
 }
 
@@ -1108,13 +1250,21 @@ function require_student(): void
         redirect('student-auth.php?expired=1');
     }
     try {
-        $stmt = db()->prepare("SELECT id, full_name, published, status_deleted FROM students WHERE id=? LIMIT 1");
+        student_account_ensure_schema();
+        $stmt = db()->prepare("SELECT id, full_name, password_hash, published, status_deleted, updated_at" . (student_account_has_auth_version() ? ", auth_version" : "") . " FROM students WHERE id=? LIMIT 1");
         $stmt->execute([current_student_id()]);
         $student = $stmt->fetch();
         if (!$student || (int)($student['status_deleted'] ?? 0) !== 0 || ($student['published'] ?? 'No') !== 'Yes') {
             student_session_logout();
             redirect('student-auth.php?inactive=1');
         }
+        $databaseSignature = student_account_session_signature($student);
+        $sessionSignature = (string)($_SESSION['student_auth_signature'] ?? '');
+        if ($sessionSignature !== '' && !hash_equals($databaseSignature, $sessionSignature)) {
+            student_session_logout();
+            redirect('student-auth.php?reset=1');
+        }
+        $_SESSION['student_auth_signature'] = $databaseSignature;
         $_SESSION['student_name'] = (string)$student['full_name'];
         $_SESSION['student_last_activity'] = time();
     } catch (Throwable $e) {
@@ -1127,12 +1277,12 @@ function fetch_current_student(): ?array
 {
     if (!is_student()) return null;
     try {
-        ensure_schema_updates();
+        student_account_ensure_schema();
         $stmt = db()->prepare("SELECT * FROM students WHERE id=? AND status_deleted=0 AND published='Yes' LIMIT 1");
         $stmt->execute([current_student_id()]);
         $student = $stmt->fetch();
         if (!$student) {
-            unset($_SESSION['student_id'], $_SESSION['student_name'], $_SESSION['student_last_activity']);
+            unset($_SESSION['student_id'], $_SESSION['student_name'], $_SESSION['student_auth_signature'], $_SESSION['student_last_activity']);
             return null;
         }
         return $student;

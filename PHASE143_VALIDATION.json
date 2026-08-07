@@ -1,0 +1,48 @@
+{
+  "phase": 143,
+  "php": {
+    "files": 68,
+    "failures": []
+  },
+  "javascript": {
+    "files": 11,
+    "failures": []
+  },
+  "css": {
+    "files": 54,
+    "failures": []
+  },
+  "duplicate_literal_ids": [],
+  "service_worker": {
+    "assets": 39,
+    "missing": [],
+    "cache": "v143"
+  },
+  "new_files_missing": [],
+  "regression_checks": {
+    "practice_filter_form_removed": true,
+    "no_spoken_inline_script": true,
+    "one_question_renderer": true,
+    "no_continuous_microphone": true,
+    "no_mic_restart_loop": true,
+    "no_auto_typing_check": true,
+    "explicit_mode_load": true,
+    "stale_requests_aborted": true,
+    "revision_uses_latest_unresolved_attempt": true,
+    "roadmap_inline_engine_removed": true,
+    "roadmap_json_config": true,
+    "roadmap_no_auto_question_speech": true,
+    "roadmap_no_endless_choice_loop": true,
+    "roadmap_result_normal_flow_css": true,
+    "service_worker_v143": true
+  },
+  "all_static_checks_passed": true,
+  "runtime_limitations": [
+    "No MySQL server was available for database-backed API execution.",
+    "No reliable interactive browser/microphone session was available in the container."
+  ],
+  "literal_local_references": {
+    "checked": 183,
+    "missing": []
+  }
+}

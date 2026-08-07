@@ -5,6 +5,7 @@ if (!ob_get_level()) {
 require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_schema_updates();
 $adminPageSlug = preg_replace('/[^a-z0-9-]+/i', '-', pathinfo(basename($_SERVER['PHP_SELF'] ?? 'admin'), PATHINFO_FILENAME));
 $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $admin_page_styles : [];
+$adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_final_styles) ? $admin_page_final_styles : [];
 ?>
 <!doctype html>
 <html lang="en">
@@ -33,6 +34,9 @@ $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-components.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>">
+    <?php foreach ($adminPageFinalStyles as $adminPageFinalStyle): ?>
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path((string)$adminPageFinalStyle))) ?>">
+    <?php endforeach; ?>
 </head>
 <body class="admin-body page-admin-<?= e($adminPageSlug) ?> wf138-admin-mobile wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>
@@ -51,7 +55,7 @@ $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $
             <a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a>
             <a class="<?= active_nav('enquiries.php') ?>" href="enquiries.php"><span class="menu-ico"><i class="fa-solid fa-phone-volume"></i></span><span>Enquiries</span></a>
             <a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['admissions.php','admission-view.php'], true) ? 'active' : '' ?>" href="admissions.php"><span class="menu-ico"><i class="fa-solid fa-user-plus"></i></span><span>Admissions</span></a>
-            <a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['students.php','student-view.php'], true) ? 'active' : '' ?>" href="students.php"><span class="menu-ico"><i class="fa-solid fa-user-graduate"></i></span><span>Students</span></a>
+            <a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['students.php','student-view.php'], true) ? 'active' : '' ?>" href="students.php"><span class="menu-ico"><i class="fa-solid fa-user-graduate"></i></span><span>Student Accounts</span></a>
             <a class="<?= active_nav('courses.php') ?>" href="courses.php"><span class="menu-ico"><i class="fa-solid fa-book-open"></i></span><span>Courses</span></a>
             <a class="<?= active_nav('testimonials.php') ?>" href="testimonials.php"><span class="menu-ico"><i class="fa-solid fa-star"></i></span><span>Testimonials</span></a>
             <a class="<?= active_nav('faculty.php') ?>" href="faculty.php"><span class="menu-ico"><i class="fa-solid fa-chalkboard-user"></i></span><span>Faculty</span></a>
@@ -91,7 +95,7 @@ $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $
             ['Dashboard', 'dashboard.php', 'Main', 'fa-solid fa-gauge-high'],
             ['Enquiries', 'enquiries.php', 'Main', 'fa-solid fa-phone-volume'],
             ['Admissions', 'admissions.php', 'Main', 'fa-solid fa-user-plus'],
-            ['Students', 'students.php', 'Main', 'fa-solid fa-user-graduate'],
+            ['Student Accounts', 'students.php', 'Main', 'fa-solid fa-user-graduate'],
             ['Courses', 'courses.php', 'Main', 'fa-solid fa-book-open'],
             ['Testimonials', 'testimonials.php', 'Main', 'fa-solid fa-star'],
             ['Videos', 'videos.php', 'Main', 'fa-solid fa-circle-play'],

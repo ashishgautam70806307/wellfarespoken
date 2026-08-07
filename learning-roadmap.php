@@ -43,7 +43,7 @@ require_once __DIR__ . '/includes/header.php';
 <section class="rm126-page" id="roadmapPath">
     <div class="container rm126-shell">
         <?php if (isset($_GET['locked'])): ?><div class="alert alert-error"><i class="fa-solid fa-lock"></i> Complete the previous level before opening this lesson.</div><?php endif; ?>
-        <header class="rm126-hero">
+        <header class="rm126-hero wf-surface-dark" data-wf-surface="dark">
             <div class="rm126-hero-copy">
                 <a class="rm126-back" href="index.php"><i class="fa-solid fa-arrow-left"></i><span>Home</span></a>
                 <span class="rm126-eyebrow"><i class="fa-solid fa-route"></i> Learning Roadmap</span>

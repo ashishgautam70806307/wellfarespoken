@@ -4,16 +4,22 @@ private_no_store();
 ensure_schema_updates();
 weekly_test_ensure_schema();
 
-$attemptId = (int)($_GET['attempt_id'] ?? 0);
+$attemptId = max(0, (int)($_GET['attempt_id'] ?? 0));
 $resultToken = trim((string)($_GET['token'] ?? ''));
 $attempt = $attemptId > 0 ? weekly_test_attempt_detail($attemptId) : null;
+$lightweight_layout = true;
+$page_title = 'Weekly Test Result | ' . app_setting('site_name', APP_NAME);
+$meta_description = 'Secure weekly-test score, attempt details and answer review.';
 
 if (!$attempt) {
     http_response_code(404);
-    $page_title = 'Result Not Found';
-    $lightweight_layout = true;
-require_once __DIR__ . '/includes/header.php';
-    echo '<section class="section"><div class="container"><div class="card"><h1>Result not found</h1><p>This test result does not exist.</p><a class="btn btn-primary" href="weekly-test.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Test Center</a></div></div></section>';
+    $page_title = 'Result Not Found | ' . app_setting('site_name', APP_NAME);
+    require_once __DIR__ . '/includes/header.php';
+    ?>
+    <section class="wf145-result-page wf145-result-missing">
+        <div class="container"><div class="wf145-result-empty"><i class="fa-solid fa-file-circle-xmark" aria-hidden="true"></i><h1>Result not found</h1><p>This test result does not exist or is no longer available.</p><a class="wf-btn wf-btn-primary" href="weekly-test.php"><span class="wf-btn-label"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to Test Center</span></span></a></div></div>
+    </section>
+    <?php
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
@@ -27,63 +33,116 @@ if ($isGuestAttempt) {
     }
 } else {
     require_student();
-    if ((int)$attempt['student_id'] !== current_student_id()) {
+    if ((int)($attempt['student_id'] ?? 0) !== current_student_id()) {
         http_response_code(403);
         exit('Access denied.');
     }
 }
 
-$page_title = 'Weekly Test Result | ' . app_setting('site_name', APP_NAME);
 $score = $attempt['admin_score'] !== null ? $attempt['admin_score'] : $attempt['auto_score'];
-$status = weekly_test_status_badge((string)$attempt['status']);
-$canShowExpected = (($attempt['test_type'] ?? 'basic') === 'basic') || (($attempt['status'] ?? '') === 'checked');
+$totalMarks = (float)($attempt['total_marks'] ?? 0);
+$percentage = ($score !== null && $totalMarks > 0)
+    ? max(0, min(100, (int)round(((float)$score / $totalMarks) * 100)))
+    : null;
+$statusKey = strtolower(trim((string)($attempt['status'] ?? '')));
+$status = weekly_test_status_badge($statusKey);
+$canShowExpected = (($attempt['test_type'] ?? 'basic') === 'basic') || $statusKey === 'checked';
+$answers = is_array($attempt['answers'] ?? null) ? $attempt['answers'] : [];
 $answeredCount = 0;
-foreach (($attempt['answers'] ?? []) as $answer) {
+$correctCount = 0;
+$wrongCount = 0;
+$reviewCount = 0;
+foreach ($answers as $answer) {
     if (trim((string)($answer['answer_text'] ?? '')) !== '') $answeredCount++;
+    $correctState = strtolower(trim((string)($answer['is_correct'] ?? 'review')));
+    if ($correctState === 'yes') $correctCount++;
+    elseif ($correctState === 'no') $wrongCount++;
+    else $reviewCount++;
 }
+
+$dateValue = trim((string)((($attempt['submitted_at'] ?? '') ?: ($attempt['started_at'] ?? '') ?: ($attempt['created_at'] ?? ''))));
+$attemptTimestamp = $dateValue !== '' ? strtotime($dateValue) : false;
+$startedTimestamp = !empty($attempt['started_at']) ? strtotime((string)$attempt['started_at']) : false;
+$submittedTimestamp = !empty($attempt['submitted_at']) ? strtotime((string)$attempt['submitted_at']) : false;
+$durationSeconds = ($startedTimestamp && $submittedTimestamp && $submittedTimestamp >= $startedTimestamp)
+    ? ($submittedTimestamp - $startedTimestamp)
+    : 0;
+$durationText = $durationSeconds > 0
+    ? ((int)floor($durationSeconds / 60) . 'm ' . ($durationSeconds % 60) . 's')
+    : 'Not available';
+$studentName = trim((string)(($attempt['student_name'] ?? '') ?: ($attempt['guest_name'] ?? 'Student')));
+$testType = ucfirst((string)($attempt['test_type'] ?? 'Test')) . ' Test';
+$statusClass = $statusKey === 'checked' ? 'is-checked' : ($statusKey === 'submitted' ? 'is-pending' : 'is-progress');
+
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="section weekly-result-page">
-  <div class="container">
-    <div class="result-hero card">
-      <span class="eyebrow"><i class="fa-solid fa-trophy" aria-hidden="true"></i> Test Result</span>
-      <h1><?= e($attempt['test_title']) ?></h1>
-      <p>Status: <strong><?= e($status) ?></strong></p>
-      <div class="result-score"><strong><?= e($score !== null ? (string)$score : '-') ?></strong><span>/ <?= e((string)($attempt['total_marks'] ?? '-')) ?> Marks</span></div>
-      <div class="exam-legend">
-        <span><i class="fa-solid fa-list-check" aria-hidden="true"></i> <?= e((string)$answeredCount) ?> answered</span>
-        <span><i class="fa-regular fa-clock" aria-hidden="true"></i> <?= e((string)($attempt['submission_reason'] ?? 'submitted')) ?></span>
-        <span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Secure result</span>
-      </div>
-      <?php if (!empty($attempt['penalty_marks']) && (float)$attempt['penalty_marks'] > 0): ?>
-        <p class="teacher-mini-hint"><b>Security penalty:</b> -<?= e((string)$attempt['penalty_marks']) ?> mark(s).</p>
-      <?php endif; ?>
-      <?php if (!empty($attempt['admin_note'])): ?><p class="teacher-mini-hint"><b>Teacher note:</b> <?= e($attempt['admin_note']) ?></p><?php endif; ?>
-      <?php if (!$canShowExpected): ?><p class="teacher-mini-hint"><i class="fa-solid fa-lock" aria-hidden="true"></i> Correct answers will appear after teacher checking.</p><?php endif; ?>
-      <div class="mini-action-row">
-        <a class="btn btn-primary" href="weekly-test.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Test Center</a>
-        <?php if (!$isGuestAttempt): ?><a class="btn btn-soft" href="student-dashboard.php"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard</a><?php endif; ?>
-      </div>
-    </div>
+<section class="wf145-result-page">
+    <div class="container wf145-result-shell">
+        <nav class="wf145-result-breadcrumb" aria-label="Result navigation">
+            <a href="weekly-test.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Test Center</a>
+            <span><?= e($testType) ?></span>
+        </nav>
 
-    <div class="card">
-      <h2><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Answer Review</h2>
-      <?php foreach (($attempt['answers'] ?? []) as $i => $ans):
-          $state = ($ans['is_correct'] ?? 'Review') === 'Yes' ? 'ok' : 'review';
-      ?>
-        <div class="result-answer-card <?= e($state) ?>">
-          <div>
-            <b>Q<?= $i + 1 ?>. <?= e((string)$ans['question_type']) ?><?= !empty($ans['topic_name']) ? ' • ' . e($ans['topic_name']) : '' ?></b>
-            <span><?= e((string)($ans['marks_awarded'] ?? 0)) ?>/<?= e((string)$ans['marks']) ?> marks</span>
-          </div>
-          <p><strong>Question:</strong> <?= e($ans['question_text']) ?></p>
-          <p><strong>Your Answer:</strong> <?= e(trim((string)$ans['answer_text']) !== '' ? $ans['answer_text'] : 'No answer') ?></p>
-          <?php if ($canShowExpected): ?><p><strong>Expected Answer:</strong> <?= e($ans['expected_answer']) ?></p><?php endif; ?>
-          <?php if (!empty($ans['admin_note'])): ?><p class="muted"><strong>Teacher Feedback:</strong> <?= e($ans['admin_note']) ?></p><?php endif; ?>
+        <article class="wf145-result-hero wf-surface-dark <?= e($statusClass) ?>" data-wf-surface="dark">
+            <div class="wf145-result-copy">
+                <div class="wf145-result-badges"><span><?= e($testType) ?></span><strong><?= e($status) ?></strong></div>
+                <h1><?= e((string)($attempt['test_title'] ?? 'Weekly Test Result')) ?></h1>
+                <p><?= e($studentName !== '' ? $studentName : 'Student') ?> completed this attempt on <?= $attemptTimestamp ? e(date('d M Y', $attemptTimestamp)) : 'an unavailable date' ?> at <?= $attemptTimestamp ? e(date('h:i A', $attemptTimestamp)) : 'an unavailable time' ?>.</p>
+                <div class="wf145-result-actions">
+                    <a class="wf-btn wf-btn-gold" href="weekly-test.php"><span class="wf-btn-label"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i><span>Test Center</span></span></a>
+                    <?php if (!$isGuestAttempt): ?><a class="wf-btn wf-btn-secondary" href="student-dashboard.php"><span class="wf-btn-label"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i><span>Dashboard</span></span></a><?php endif; ?>
+                    <?php if (!$isGuestAttempt): ?><a class="wf145-result-logout" href="student-logout.php"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Logout</a><?php endif; ?>
+                </div>
+            </div>
+            <div class="wf145-score-orbit" style="--score:<?= e((string)($percentage ?? 0)) ?>" aria-label="<?= $percentage !== null ? e((string)$percentage) . ' percent' : 'Percentage pending' ?>">
+                <div><strong><?= $percentage !== null ? e((string)$percentage) . '%' : '—' ?></strong><span><?= $score !== null ? e((string)$score) : '—' ?> / <?= e((string)($attempt['total_marks'] ?? '—')) ?> marks</span></div>
+            </div>
+        </article>
+
+        <div class="wf145-result-stat-grid" aria-label="Attempt summary">
+            <article><i class="fa-solid fa-list-check" aria-hidden="true"></i><div><strong><?= e((string)$answeredCount) ?>/<?= e((string)count($answers)) ?></strong><span>Answered</span></div></article>
+            <article><i class="fa-solid fa-circle-check" aria-hidden="true"></i><div><strong><?= e((string)$correctCount) ?></strong><span>Correct</span></div></article>
+            <article><i class="fa-solid fa-clock" aria-hidden="true"></i><div><strong><?= e($durationText) ?></strong><span>Time used</span></div></article>
+            <article><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><div><strong><?= e(ucwords(str_replace('_', ' ', (string)($attempt['submission_reason'] ?? 'submitted')))) ?></strong><span>Submission</span></div></article>
         </div>
-      <?php endforeach; ?>
-      <?php if (empty($attempt['answers'])): ?><p class="muted">No answers were saved for this attempt.</p><?php endif; ?>
+
+        <?php if ((!empty($attempt['penalty_marks']) && (float)$attempt['penalty_marks'] > 0) || !empty($attempt['admin_note']) || !$canShowExpected): ?>
+            <div class="wf145-result-notices">
+                <?php if (!empty($attempt['penalty_marks']) && (float)$attempt['penalty_marks'] > 0): ?><p class="is-warning"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span><b>Security penalty:</b> -<?= e((string)$attempt['penalty_marks']) ?> mark(s).</span></p><?php endif; ?>
+                <?php if (!empty($attempt['admin_note'])): ?><p><i class="fa-solid fa-comment-dots" aria-hidden="true"></i><span><b>Teacher note:</b> <?= e((string)$attempt['admin_note']) ?></span></p><?php endif; ?>
+                <?php if (!$canShowExpected): ?><p><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Correct answers will appear after teacher checking.</span></p><?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <section class="wf145-answer-review" aria-labelledby="answerReviewTitle">
+            <header class="wf145-answer-review-head">
+                <div><span class="wf-section-kicker">Question by question</span><h2 id="answerReviewTitle">Answer Review</h2><p>Check what you answered and where another practice round may help.</p></div>
+                <div class="wf145-review-summary"><span class="is-correct"><b><?= e((string)$correctCount) ?></b> correct</span><span class="is-wrong"><b><?= e((string)$wrongCount) ?></b> wrong</span><span class="is-review"><b><?= e((string)$reviewCount) ?></b> review</span></div>
+            </header>
+
+            <?php if ($answers): ?>
+                <div class="wf145-answer-list">
+                    <?php foreach ($answers as $index => $answer):
+                        $answerState = strtolower(trim((string)($answer['is_correct'] ?? 'review')));
+                        $stateClass = $answerState === 'yes' ? 'is-correct' : ($answerState === 'no' ? 'is-wrong' : 'is-review');
+                        $stateLabel = $answerState === 'yes' ? 'Correct' : ($answerState === 'no' ? 'Incorrect' : 'Teacher review');
+                        $answerText = trim((string)($answer['answer_text'] ?? ''));
+                    ?>
+                        <article class="wf145-answer-card <?= e($stateClass) ?>">
+                            <header><span>Q<?= e((string)($index + 1)) ?></span><div><b><?= e((string)($answer['topic_name'] ?? $answer['question_type'] ?? 'Question')) ?></b><small><?= e((string)($answer['marks_awarded'] ?? 0)) ?>/<?= e((string)($answer['marks'] ?? 0)) ?> marks</small></div><strong><?= e($stateLabel) ?></strong></header>
+                            <h3><?= e((string)($answer['question_text'] ?? '')) ?></h3>
+                            <div class="wf145-answer-comparison">
+                                <div><span>Your answer</span><p><?= e($answerText !== '' ? $answerText : 'No answer submitted') ?></p></div>
+                                <?php if ($canShowExpected): ?><div><span>Expected answer</span><p><?= e((string)($answer['expected_answer'] ?? '')) ?></p></div><?php endif; ?>
+                            </div>
+                            <?php if (!empty($answer['admin_note'])): ?><p class="wf145-answer-note"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i><span><?= e((string)$answer['admin_note']) ?></span></p><?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="wf145-result-empty"><i class="fa-solid fa-inbox" aria-hidden="true"></i><h3>No answers were saved</h3><p>This attempt does not contain answer records.</p></div>
+            <?php endif; ?>
+        </section>
     </div>
-  </div>
 </section>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

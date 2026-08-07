@@ -1,0 +1,23 @@
+PHASE 147 - CHANGED / ADDED FILES
+
+Modified
+- spoken/admin/_header.php
+- spoken/admin/dashboard.php
+- spoken/admin/student-view.php
+- spoken/admin/students.php
+- spoken/admin/system-check.php
+- spoken/includes/functions.php
+- spoken/sql/wellfare_english_complete.sql
+- spoken/student-auth.php
+- spoken/sw.js
+- spoken/README.md
+
+Added
+- spoken/assets/css/phase147-student-accounts.css
+- spoken/assets/css/phase147-student-accounts.min.css
+- spoken/sql/phase147_student_account_migration.sql
+- spoken/README_PHASE147_STUDENT_ACCOUNTS.md
+- spoken/PHASE147_BACKEND_AUDIT.md
+- spoken/PHASE147_BROWSER_DATABASE_CHECKLIST.md
+- spoken/PHASE147_CHANGED_FILES.txt
+- spoken/PHASE147_VALIDATION.json

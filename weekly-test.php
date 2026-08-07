@@ -6,7 +6,12 @@ weekly_test_ensure_schema();
 $page_title = 'Student Test Center | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Basic practice, previous paper practice, scheduled weekly exams and student results in one clear test center.';
 $page_styles = ['assets/css/phase130-weekly-test.css'];
-$page_scripts = ['assets/js/phase130-weekly-test.js'];
+$page_final_styles = ['assets/css/phase146-weekly-test.css'];
+$page_scripts = ['assets/js/phase146-weekly-test.js'];
+$skip_phase139_learning_css = true;
+$skip_phase141_learning_css = true;
+$skip_phase142_interaction_css = true;
+$skip_phase139_mobile_learning_script = true;
 $lightweight_layout = true;
 $csrf = csrf_token();
 
@@ -111,6 +116,10 @@ $cards = [
 $selectedType = $requestedType !== '' ? $requestedType : 'basic';
 $selectedTest = $preferred[$selectedType] ?? null;
 $setupOpen = $requestedType !== '';
+$selectedReady = $selectedTest
+    && (int)($selectedTest['ready_now'] ?? 0) === 1
+    && strtolower((string)($selectedTest['status'] ?? '')) === 'active'
+    && (int)($selectedTest['question_count'] ?? 0) > 0;
 $nativeError = flash('error');
 if ($nativeError === null && $invalidRequestedPaper) {
     $nativeError = 'The selected test paper is no longer available. Choose an available paper again.';
@@ -151,7 +160,9 @@ require_once __DIR__ . '/includes/header.php';
             <p>Choose one card to continue.</p>
         </header>
 
-        <div class="wf129-test-card-grid">
+        <div class="wf145-test-carousel" data-test-carousel>
+            <button class="wf145-test-arrow is-prev" type="button" aria-label="Previous test option" data-test-prev><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+            <div class="wf129-test-card-grid" data-test-track>
             <?php foreach ($cards as $type => $card):
                 $test = $preferred[$type];
                 [$statusText, $statusClass] = wf133_test_status($test, $type);
@@ -162,7 +173,7 @@ require_once __DIR__ . '/includes/header.php';
                 <article class="wf129-test-card type-<?= e($type) ?> <?= $requestedType === $type ? 'is-selected' : '' ?>" data-test-card="<?= e($type) ?>">
                     <div class="wf129-test-card-top">
                         <span class="wf129-test-card-icon"><i class="<?= e($card['icon']) ?>"></i></span>
-                        <span class="wf129-test-status <?= e($statusClass) ?>" data-mobile-status="<?= e($mobileStatus) ?>"><i class="fa-solid fa-circle"></i><?= e($statusText) ?></span>
+                        <span class="wf129-test-status <?= e($statusClass) ?>"><i class="fa-solid fa-circle" aria-hidden="true"></i><span class="wf146-status-full"><?= e($statusText) ?></span><span class="wf146-status-short"><?= e($mobileStatus) ?></span></span>
                     </div>
                     <small><?= e($card['eyebrow']) ?></small>
                     <h3><?= e($card['title']) ?></h3>
@@ -174,12 +185,27 @@ require_once __DIR__ . '/includes/header.php';
                     <?php if ($requiresLogin && !$student): ?>
                         <a class="wf-btn wf-btn-primary wf129-test-card-action" href="student-auth.php?redirect=<?= e(rawurlencode($cardUrl)) ?>"><span class="wf-btn-label"><i class="fa-solid fa-user-lock"></i><span class="wf139-desktop-action">Login for Test</span><span class="wf139-mobile-action">Login</span></span></a>
                     <?php else: ?>
-                        <a class="wf-btn wf-btn-primary wf129-test-card-action <?= !$test ? 'is-disabled' : '' ?>" href="<?= $test ? e($cardUrl) : '#' ?>" data-select-test="<?= e($type) ?>" aria-disabled="<?= $test ? 'false' : 'true' ?>"><span class="wf-btn-label"><i class="<?= e($card['icon']) ?>"></i><span class="wf139-desktop-action"><?= e($card['button']) ?></span><span class="wf139-mobile-action"><?= e($card['mobile_button']) ?></span></span></a>
+                        <a class="wf-btn wf-btn-primary wf129-test-card-action <?= !$test ? 'is-disabled' : '' ?>" href="<?= $test ? e($cardUrl) : '#' ?>" aria-disabled="<?= $test ? 'false' : 'true' ?>"><span class="wf-btn-label"><i class="<?= e($card['icon']) ?>"></i><span class="wf139-desktop-action"><?= e($card['button']) ?></span><span class="wf139-mobile-action"><?= e($card['mobile_button']) ?></span></span></a>
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
+            </div>
+            <button class="wf145-test-arrow is-next" type="button" aria-label="Next test option" data-test-next><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+            <div class="wf145-test-dots" aria-label="Test option navigation"><span></span><span></span><span></span></div>
         </div>
 
+        <?php
+        $selectedRequiresLogin = $selectedTest && ($selectedType === 'upcoming' || strtolower((string)($selectedTest['requires_login'] ?? 'no')) === 'yes');
+        $selectedReturnUrl = 'weekly-test.php?type=' . rawurlencode($selectedType) . ($selectedTest ? '&test_id=' . (int)$selectedTest['id'] : '') . '#wfTestSetup';
+        ?>
+        <?php if ($setupOpen && $selectedRequiresLogin && !$student): ?>
+            <section class="wf129-test-setup wf145-test-login-gate is-open" id="wfTestSetupGate" data-test-setup-gate aria-labelledby="wfLoginGateTitle">
+                <span class="wf145-test-login-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>
+                <div><span class="wf-section-kicker">Student login required</span><h2 id="wfLoginGateTitle">Login before starting this official test.</h2><p>Your attempt, timer and result history will be safely linked to your student account.</p></div>
+                <a class="wf-btn wf-btn-primary" href="student-auth.php?redirect=<?= e(rawurlencode($selectedReturnUrl)) ?>"><span class="wf-btn-label"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i><span>Login and Continue</span></span></a>
+                <a class="wf145-test-gate-back" href="weekly-test.php"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Choose another test</a>
+            </section>
+        <?php else: ?>
         <form class="wf129-test-setup <?= $setupOpen ? 'is-open' : '' ?>" id="wfTestSetup" method="post" action="weekly-test-api.php" <?= $setupOpen ? '' : 'hidden' ?> aria-live="polite">
             <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
             <input type="hidden" name="action" value="start">
@@ -197,7 +223,14 @@ require_once __DIR__ . '/includes/header.php';
                     <select id="wfTestPaper" name="test_id" required>
                         <?php $selectedPool = $testPools[$selectedType] ?? []; ?>
                         <?php if ($selectedPool): foreach ($selectedPool as $paper): ?>
-                            <option value="<?= (int)$paper['id'] ?>" <?= $selectedTest && (int)$selectedTest['id'] === (int)$paper['id'] ? 'selected' : '' ?>><?= e((string)$paper['title']) ?> · <?= e((string)($paper['question_count'] ?? 0)) ?>Q · <?= e((string)($paper['duration_minutes'] ?? 0)) ?> min</option>
+                            <option value="<?= (int)$paper['id'] ?>"
+                                data-title="<?= e((string)$paper['title']) ?>"
+                                data-questions="<?= e((string)($paper['question_count'] ?? 0)) ?>"
+                                data-duration="<?= e((string)($paper['duration_minutes'] ?? 0)) ?>"
+                                data-batch="<?= e((string)($paper['batch_name'] ?? '')) ?>"
+                                data-ready="<?= e((string)($paper['ready_now'] ?? 0)) ?>"
+                                data-status="<?= e((string)($paper['status'] ?? '')) ?>"
+                                <?= $selectedTest && (int)$selectedTest['id'] === (int)$paper['id'] ? 'selected' : '' ?>><?= e((string)$paper['title']) ?> · <?= e((string)($paper['question_count'] ?? 0)) ?>Q · <?= e((string)($paper['duration_minutes'] ?? 0)) ?> min</option>
                         <?php endforeach; else: ?>
                             <option value="">No paper available</option>
                         <?php endif; ?>
@@ -218,31 +251,41 @@ require_once __DIR__ . '/includes/header.php';
             </div>
 
             <footer>
-                <p id="wfTestMessage"><?= $selectedTest ? 'Complete the details and start the selected paper.' : 'No test paper is available.' ?></p>
-                <button class="wf-btn wf-btn-primary" id="wfStartTest" type="submit" <?= $selectedTest ? '' : 'disabled' ?>><span class="wf-btn-label"><i class="fa-solid fa-play"></i>Start Test</span></button>
+                <p id="wfTestMessage"><?php if (!$selectedTest): ?>No test paper is available.<?php elseif (!$selectedReady): ?>This paper is not open yet. Check its schedule or ask the institute.<?php else: ?>Ready. Start the selected paper when you are comfortable.<?php endif; ?></p>
+                <button class="wf-btn wf-btn-primary" id="wfStartTest" type="submit" <?= $selectedReady ? '' : 'disabled' ?>><span class="wf-btn-label"><i class="fa-solid fa-play"></i>Start Test</span></button>
             </footer>
             <noscript><p class="wf133-noscript-note"><i class="fa-solid fa-circle-info"></i>JavaScript is off. The form will still open the secure test room after submission.</p></noscript>
         </form>
+        <?php endif; ?>
 
         <?php if ($student): ?>
-            <section class="wf129-test-results" id="my-results">
-                <header><div><span class="wf-section-kicker">My progress</span><h2>Test history and results</h2></div><span><?= e((string)count($studentAttempts)) ?> attempts</span></header>
+            <section class="wf129-test-results wf145-history-section" id="my-results" aria-labelledby="testHistoryTitle">
+                <header class="wf145-history-head"><div><span class="wf-section-kicker">Saved attempts</span><h2 id="testHistoryTitle">Test history and results</h2><p>Every attempt with exact date, time, score and status.</p></div><span><?= e((string)count($studentAttempts)) ?> attempts</span></header>
                 <?php if ($studentAttempts): ?>
-                    <div class="wf129-test-result-list">
-                        <?php foreach ($studentAttempts as $attempt):
-                            $score = $attempt['admin_score'] ?? $attempt['auto_score'] ?? null;
-                            $status = weekly_test_status_badge((string)($attempt['status'] ?? ''));
+                    <div class="wf145-history-grid">
+                        <?php foreach ($studentAttempts as $index => $attempt):
+                            $attemptStatus = strtolower((string)($attempt['status'] ?? ''));
+                            $score = $attempt['admin_score'] !== null ? $attempt['admin_score'] : $attempt['auto_score'];
+                            $totalMarks = (float)($attempt['total_marks'] ?? 0);
+                            $percentage = ($score !== null && $totalMarks > 0) ? max(0, min(100, (int)round(((float)$score / $totalMarks) * 100))) : null;
+                            $dateValue = trim((string)((($attempt['submitted_at'] ?? '') ?: ($attempt['started_at'] ?? '') ?: ($attempt['created_at'] ?? ''))));
+                            $timeValue = $dateValue !== '' ? strtotime($dateValue) : false;
+                            $attemptUrl = in_array($attemptStatus, ['submitted', 'checked'], true)
+                                ? weekly_test_result_url($attempt)
+                                : ('weekly-exam-room.php?attempt_id=' . (int)$attempt['id'] . '&token=' . rawurlencode((string)($attempt['access_token'] ?? '')));
+                            $statusClass = $attemptStatus === 'checked' ? 'is-checked' : ($attemptStatus === 'started' ? 'is-progress' : 'is-pending');
                         ?>
-                            <a href="<?= e(weekly_test_result_url($attempt)) ?>">
-                                <span class="wf129-result-icon"><i class="fa-solid fa-chart-simple"></i></span>
-                                <div><small><?= e(ucfirst((string)($attempt['test_type'] ?? 'test'))) ?> test</small><b><?= e((string)($attempt['test_title'] ?? 'Test result')) ?></b><em><?= e($status) ?></em></div>
-                                <strong><?= $score !== null ? e((string)$score) : '—' ?><small>/<?= e((string)($attempt['total_marks'] ?? '—')) ?></small></strong>
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </a>
+                            <article class="wf145-history-card <?= e($statusClass) ?>">
+                                <div class="wf145-history-card-top"><span class="wf145-history-index">#<?= e((string)(count($studentAttempts) - $index)) ?></span><span class="wf145-history-type"><?= e(ucfirst((string)($attempt['test_type'] ?? 'test'))) ?> Test</span><span class="wf145-history-status"><?= e(weekly_test_status_badge((string)($attempt['status'] ?? ''))) ?></span></div>
+                                <h3><?= e((string)($attempt['test_title'] ?? 'Test result')) ?></h3>
+                                <div class="wf145-history-time"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i><?= $timeValue ? e(date('d M Y', $timeValue)) : 'Date unavailable' ?></span><span><i class="fa-regular fa-clock" aria-hidden="true"></i><?= $timeValue ? e(date('h:i A', $timeValue)) : 'Time unavailable' ?></span></div>
+                                <div class="wf145-history-score-row"><div><small>Score</small><strong><?= $score !== null ? e((string)$score) : '—' ?><span>/<?= e((string)($attempt['total_marks'] ?? '—')) ?></span></strong></div><div class="wf145-history-percent" style="--score:<?= e((string)($percentage ?? 0)) ?>"><span><?= $percentage !== null ? e((string)$percentage) . '%' : '—' ?></span></div></div>
+                                <a class="wf145-history-action" href="<?= e($attemptUrl) ?>"><span><?= $attemptStatus === 'started' ? 'Resume Test' : 'View Answer Review' ?></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                            </article>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <div class="wf129-test-empty"><i class="fa-solid fa-chart-line"></i><h3>No result yet</h3><p>Complete a basic or weekly test. Your result will appear here.</p></div>
+                    <div class="wf129-test-empty"><i class="fa-solid fa-chart-line"></i><h3>No result yet</h3><p>Complete a basic or weekly test. Your date, time and result will appear here.</p></div>
                 <?php endif; ?>
             </section>
         <?php else: ?>
@@ -251,10 +294,5 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<script id="wfWeeklyTestData" type="application/json"><?= json_encode([
-    'csrf' => $csrf,
-    'isStudent' => (bool)$student,
-    'pools' => $testPools,
-    'requestedType' => $requestedType,
-], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

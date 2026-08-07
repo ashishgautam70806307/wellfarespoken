@@ -115,12 +115,12 @@ body.wf130-site .caps-hint{display:none;color:var(--wf130-red);font-size:11px}
 .page-student-auth .form-stack label>i{color:var(--wf130-blue-600)}
 .page-student-auth .auth-card .btn{width:100%;margin-top:3px}
 
-/* Dashboard and revision */
-.page-student-dashboard .student-dash-section,.page-student-revision .revision-room-section{background:linear-gradient(180deg,#f4f7fb,#fff)}
-.page-student-dashboard .student-dashboard-hero,.page-student-revision .student-dashboard-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:26px;margin-bottom:20px;padding:30px;border-radius:27px;background:linear-gradient(135deg,var(--wf130-navy-950),var(--wf130-blue-700));color:#fff;box-shadow:var(--wf130-shadow)}
-.page-student-dashboard .student-dashboard-hero h1,.page-student-revision .student-dashboard-hero h1{margin:9px 0;color:#fff;font-size:clamp(32px,4vw,46px)}
-.page-student-dashboard .student-dashboard-hero p,.page-student-revision .student-dashboard-hero p{max-width:720px;margin:0;color:rgba(255,255,255,.75);font-size:13px}
-.page-student-dashboard .student-hero-actions,.page-student-revision .student-hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+/* Student dashboard */
+.page-student-dashboard .student-dash-section{background:linear-gradient(180deg,#f4f7fb,#fff)}
+.page-student-dashboard .student-dashboard-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:26px;margin-bottom:20px;padding:30px;border-radius:27px;background:linear-gradient(135deg,var(--wf130-navy-950),var(--wf130-blue-700));color:#fff;box-shadow:var(--wf130-shadow)}
+.page-student-dashboard .student-dashboard-hero h1{margin:9px 0;color:#fff;font-size:clamp(32px,4vw,46px)}
+.page-student-dashboard .student-dashboard-hero p{max-width:720px;margin:0;color:rgba(255,255,255,.75);font-size:13px}
+.page-student-dashboard .student-hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
 .page-student-dashboard .student-progress-ring{width:145px;height:145px;display:grid;place-items:center;border-radius:50%;background:conic-gradient(var(--wf130-gold-500) calc(var(--p) * 1%),rgba(255,255,255,.13) 0)}
 .page-student-dashboard .student-progress-ring>div{width:107px;height:107px;display:grid;place-items:center;align-content:center;border-radius:50%;background:var(--wf130-navy-950);text-align:center}
 .page-student-dashboard .student-progress-ring strong{color:var(--wf130-gold-300);font-size:28px}.page-student-dashboard .student-progress-ring span{color:rgba(255,255,255,.7);font-size:10px}
@@ -135,10 +135,6 @@ body.wf130-site .caps-hint{display:none;color:var(--wf130-red);font-size:11px}
 .page-student-dashboard .section-between{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
 .page-student-dashboard .student-checklist,.page-student-dashboard .module-check-list,.page-student-dashboard .activity-list,.page-student-dashboard .wrong-answer-list{display:grid;gap:9px;margin-top:14px}
 .page-student-dashboard .student-checklist a,.page-student-dashboard .module-check-list>div,.page-student-dashboard .attempt-row,.page-student-dashboard .wrong-answer-list>div{padding:11px;border:1px solid var(--wf130-line);border-radius:13px;background:#fbfdff}
-.page-student-revision .revision-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-.page-student-revision .revision-card{padding:22px}
-.page-student-revision .revision-answer-box{margin-top:11px;padding:12px;border-radius:13px;background:var(--wf130-gold-100)}
-.page-student-revision .revision-answer-box.correct{background:#eaf8f1}
 
 /* Reviews */
 .page-reviews .wf127-review-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
@@ -169,11 +165,11 @@ body.wf130-site .caps-hint{display:none;color:var(--wf130-red);font-size:11px}
   .page-about .about-highlight-grid-v2,.page-contact .contact-card-grid-v2,.page-reviews .wf127-review-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .page-about .director-detail-grid-v2,.page-faculty-profile .faculty-profile-grid,.page-student-auth .auth-grid{grid-template-columns:1fr}
   .page-about .director-large-photo-v2,.page-faculty-profile .faculty-profile-photo{max-width:480px;width:100%;margin:auto}
-  .page-student-dashboard .student-dashboard-hero,.page-student-revision .student-dashboard-hero{grid-template-columns:1fr}
+  .page-student-dashboard .student-dashboard-hero{grid-template-columns:1fr}
   .page-student-dashboard .student-progress-ring{width:124px;height:124px}.page-student-dashboard .student-progress-ring>div{width:92px;height:92px}
 }
 @media(max-width:620px){
-  .page-courses .course-card-grid,.page-about .about-highlight-grid-v2,.page-contact .contact-card-grid-v2,.page-reviews .wf127-review-page-grid,.page-student-revision .revision-grid{grid-template-columns:1fr}
+  .page-courses .course-card-grid,.page-about .about-highlight-grid-v2,.page-contact .contact-card-grid-v2,.page-reviews .wf127-review-page-grid{grid-template-columns:1fr}
   .page-courses .premium-course{display:grid;grid-template-columns:116px minmax(0,1fr)}
   .page-courses .course-image-box{height:100%;min-height:190px}
   .page-courses .course-card-body{padding:16px}

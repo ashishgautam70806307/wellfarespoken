@@ -1,0 +1,21 @@
+{
+  "phase": 146,
+  "base": "spoken_phase145_student_test_ux.zip",
+  "php_files_passed": 67,
+  "javascript_files_passed": 13,
+  "css_files_parsed": 60,
+  "duplicate_literal_ids": {
+    "weekly-test.php": [],
+    "admin/login.php": []
+  },
+  "service_worker_cache": "wellfare-spoken-static-v146",
+  "service_worker_assets": 41,
+  "service_worker_missing_assets": [],
+  "database_schema_changed": false,
+  "runtime_browser_mysql_tested": false,
+  "notes": [
+    "Admin login security logic preserved",
+    "Weekly Test business logic preserved",
+    "Phase 139/141/142 learning assets skipped only on weekly-test.php"
+  ]
+}

@@ -13,7 +13,7 @@ $studentCtaUrl = $headerStudent ? 'student-dashboard.php' : 'student-auth.php';
 $navItems = wf_public_nav_items((bool)$headerStudent);
 
 $extraHeaderMenus = function_exists('fetch_public_nav_menu') ? fetch_public_nav_menu('header') : [];
-$defaultNavKeys = ['index.php','courses.php','course-detail.php','online-class.php','spoken-materials.php','learning-roadmap.php','roadmap-lesson.php','weekly-test.php','weekly-result.php','weekly-exam-room.php','student-revision.php','admission.php','student-auth.php','student-dashboard.php','about.php','gallery.php','reviews.php','contact.php'];
+$defaultNavKeys = ['index.php','courses.php','course-detail.php','online-class.php','spoken-materials.php','learning-roadmap.php','roadmap-lesson.php','weekly-test.php','weekly-result.php','weekly-exam-room.php','admission.php','student-auth.php','student-dashboard.php','about.php','gallery.php','reviews.php','contact.php'];
 $extraChildren = [];
 foreach ($extraHeaderMenus as $menu) {
     $label = trim((string)($menu['label'] ?? ''));
@@ -79,9 +79,14 @@ if ($shortAddress === '') $shortAddress = 'Mariahu, Jaunpur';
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-components.css'))) ?>">
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase137-visual-repair.css'))) ?>">
     <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
-    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>">
-    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase141-learning-pages-mobile.css'))) ?>">
-    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase142-interaction-fixes.css'))) ?>">
+    <?php if (empty($skip_phase139_learning_css)): ?><link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>"><?php endif; ?>
+    <?php if (empty($skip_phase141_learning_css)): ?><link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase141-learning-pages-mobile.css'))) ?>"><?php endif; ?>
+    <?php if (empty($skip_phase142_interaction_css)): ?><link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase142-interaction-fixes.css'))) ?>"><?php endif; ?>
+    <?php $pageLateStyles = isset($page_late_styles) && is_array($page_late_styles) ? $page_late_styles : []; ?>
+    <?php foreach ($pageLateStyles as $pageLateStyle): ?><link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path((string)$pageLateStyle))) ?>"><?php endforeach; ?>
+    <link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase145-student-test.css'))) ?>">
+    <?php $pageFinalStyles = isset($page_final_styles) && is_array($page_final_styles) ? $page_final_styles : []; ?>
+    <?php foreach ($pageFinalStyles as $pageFinalStyle): ?><link rel="stylesheet" href="<?= e(app_asset_versioned(app_css_asset_path((string)$pageFinalStyle))) ?>"><?php endforeach; ?>
 </head>
 <body class="page-<?= e($pageSlug) ?> wf130-site wf133-site wf138-mobile-ui wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>
@@ -138,6 +143,7 @@ if ($shortAddress === '') $shortAddress = 'Mariahu, Jaunpur';
 
         <div class="wf127-header-actions">
             <a class="wf127-account-btn" href="<?= e($studentCtaUrl) ?>"><span><i class="<?= $headerStudent ? 'fa-solid fa-gauge-high' : 'fa-solid fa-user-graduate' ?>" aria-hidden="true"></i><?= e($studentCtaLabel) ?></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <?php if ($headerStudent): ?><a class="wf145-header-logout" href="student-logout.php" aria-label="Logout student account" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i></a><?php endif; ?>
             <button class="wf127-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-drawer-open><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
         </div>
     </div>
@@ -179,6 +185,7 @@ if ($shortAddress === '') $shortAddress = 'Mariahu, Jaunpur';
             <a class="wf133-drawer-student" href="<?= e($studentCtaUrl) ?>"><span><i class="fa-solid fa-user-graduate" aria-hidden="true"></i><?= e($studentCtaLabel) ?></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
             <a class="wf133-drawer-admission" href="admission.php"><span><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Admission</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
             <a class="wf138-drawer-call" href="tel:<?= e($phoneClean) ?>"><span><i class="fa-solid fa-phone" aria-hidden="true"></i>Call Now</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <?php if ($headerStudent): ?><a class="wf145-drawer-logout" href="student-logout.php"><span><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Logout</span><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a><?php endif; ?>
         </div>
         <a class="wf129-drawer-institute" href="admin/login.php"><i class="fa-solid fa-building-shield" aria-hidden="true"></i><span>Institute Login</span></a>
     </div>

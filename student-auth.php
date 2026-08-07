@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/functions.php';
 private_no_store();
 ensure_schema_updates();
+student_account_ensure_schema();
 $mode = (string)($_POST['mode'] ?? ($_GET['mode'] ?? 'login'));
 $mode = $mode === 'register' ? 'register' : 'login';
 $returnTo = safe_local_redirect((string)($_POST['redirect'] ?? ($_GET['redirect'] ?? 'student-dashboard.php')));
@@ -13,6 +14,7 @@ $meta_description = 'Student login and registration for spoken English practice,
 $errors = [];
 if (isset($_GET['expired'])) $errors[] = 'Session expired. Please login again.';
 if (isset($_GET['inactive'])) $errors[] = 'Your account is inactive. Please contact the institute.';
+if (isset($_GET['reset'])) $errors[] = 'Your account password or security settings were updated by the institute. Please login again.';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate($_POST['csrf_token'] ?? '')) {
@@ -47,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errors[] = 'This phone number is already registered. Please login.';
                         $mode = 'login';
                     } else {
+                        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
                         $stmt = db()->prepare('INSERT INTO students (full_name,phone,email,password_hash,current_level,target_goal,preferred_language,daily_goal_minutes,published) VALUES (?,?,?,?,?,?,?,?,?)');
-                        $stmt->execute([$name,$phone,$email ?: null,password_hash($password,PASSWORD_DEFAULT),$level,$goal ?: null,'Hindi',20,'Yes']);
-                        $student = ['id'=>(int)db()->lastInsertId(), 'full_name'=>$name];
+                        $stmt->execute([$name,$phone,$email ?: null,$passwordHash,$level,$goal ?: null,'Hindi',20,'Yes']);
+                        $student = ['id'=>(int)db()->lastInsertId(), 'full_name'=>$name, 'password_hash'=>$passwordHash, 'updated_at'=>null, 'published'=>'Yes', 'status_deleted'=>0];
+                        if (student_account_has_auth_version()) $student['auth_version'] = 1;
                         security_rate_limit_clear($rateKey);
                         student_session_login($student);
                         redirect($returnTo === 'student-dashboard.php' ? 'student-dashboard.php?welcome=1' : $returnTo);
@@ -72,9 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (password_needs_rehash((string)$student['password_hash'], PASSWORD_DEFAULT)) {
                         db()->prepare('UPDATE students SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), (int)$student['id']]);
                     }
+                    db()->prepare('UPDATE students SET last_login_at=NOW() WHERE id=?')->execute([(int)$student['id']]);
+                    $fresh = db()->prepare('SELECT * FROM students WHERE id=? LIMIT 1');
+                    $fresh->execute([(int)$student['id']]);
+                    $student = $fresh->fetch() ?: $student;
                     security_rate_limit_clear($rateKey);
                     student_session_login($student);
-                    db()->prepare('UPDATE students SET last_login_at=NOW() WHERE id=?')->execute([(int)$student['id']]);
                     redirect($returnTo);
                 }
             } catch (Throwable $e) {

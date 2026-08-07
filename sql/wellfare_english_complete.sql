@@ -279,6 +279,8 @@ CREATE TABLE IF NOT EXISTS `students` (
   `phone` VARCHAR(40) NOT NULL,
   `email` VARCHAR(160) NULL,
   `password_hash` VARCHAR(255) NOT NULL,
+  `auth_version` INT UNSIGNED NOT NULL DEFAULT 1,
+  `password_changed_at` DATETIME NULL,
   `current_level` VARCHAR(80) NOT NULL DEFAULT 'Zero Level',
   `target_goal` VARCHAR(180) NULL,
   `preferred_language` VARCHAR(40) NOT NULL DEFAULT 'Hindi',
@@ -292,6 +294,22 @@ CREATE TABLE IF NOT EXISTS `students` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_students_phone` (`phone`),
   KEY `idx_students_active` (`published`,`status_deleted`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: student_account_events
+CREATE TABLE IF NOT EXISTS `student_account_events` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` INT UNSIGNED NOT NULL,
+  `admin_id` INT UNSIGNED NULL,
+  `event_type` VARCHAR(60) NOT NULL,
+  `event_title` VARCHAR(180) NOT NULL,
+  `event_note` TEXT NULL,
+  `ip_address` VARCHAR(45) NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_student_account_event` (`student_id`,`created_at`),
+  KEY `idx_student_account_type` (`event_type`,`created_at`),
+  KEY `idx_student_account_admin` (`admin_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: student_activity_logs
@@ -818,6 +836,8 @@ ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `enquiry_status` VARCHAR(40) NO
 ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `lead_priority` VARCHAR(30) NOT NULL DEFAULT 'Normal';
 ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `follow_up_date` DATE NULL;
 ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `last_contacted_at` DATETIME NULL;
+ALTER TABLE `students` ADD COLUMN IF NOT EXISTS `auth_version` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `password_hash`;
+ALTER TABLE `students` ADD COLUMN IF NOT EXISTS `password_changed_at` DATETIME NULL AFTER `auth_version`;
 ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `admin_note` TEXT NULL;
 ALTER TABLE `enquiries` ADD COLUMN IF NOT EXISTS `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP;
 ALTER TABLE `gallery_images` ADD COLUMN IF NOT EXISTS `image_alt` VARCHAR(180) NULL;

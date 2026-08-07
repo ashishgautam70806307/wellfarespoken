@@ -88,7 +88,7 @@ foreach ($socialLinks as $social) {
 
         <div class="wf137-footer-nav">
             <nav aria-label="Learning links"><h3>Learn</h3><a href="courses.php">Courses</a><a href="online-class.php">Online Class</a><a href="learning-roadmap.php">Learning Roadmap</a><a href="spoken-materials.php">Practice Room</a></nav>
-            <nav aria-label="Test links"><h3>Practice &amp; Test</h3><a href="weekly-test.php?type=basic">Basic Test</a><a href="weekly-test.php?type=previous">Previous Test</a><a href="weekly-test.php?type=upcoming">Upcoming Test</a><a href="student-revision.php">Revision</a></nav>
+            <nav aria-label="Test links"><h3>Practice &amp; Test</h3><a href="weekly-test.php?type=basic">Basic Test</a><a href="weekly-test.php?type=previous">Previous Test</a><a href="weekly-test.php?type=upcoming">Upcoming Test</a></nav>
             <nav aria-label="Institute links"><h3>Institute</h3><a href="about.php">About Us</a><a href="gallery.php">Gallery</a><a href="reviews.php">Student Reviews</a><a href="contact.php">Contact</a></nav>
             <nav aria-label="Student links"><h3>Student</h3><a href="<?= e($footerAccountUrl) ?>"><?= e($footerAccountLabel) ?></a><a href="admission.php">Admission</a><a href="admin/login.php">Institute Login</a><a href="index.php">Home</a></nav>
         </div>
@@ -124,7 +124,7 @@ foreach ($socialLinks as $social) {
 <?php $wfPageScripts = isset($page_scripts) && is_array($page_scripts) ? $page_scripts : []; ?>
 <script src="<?= e(app_asset_versioned('assets/js/phase130-ui.js')) ?>" defer></script>
 <script src="<?= e(app_asset_versioned('assets/js/phase133-controlled-ui.js')) ?>" defer></script>
-<script src="<?= e(app_asset_versioned('assets/js/phase139-mobile-learning.js')) ?>" defer></script>
+<?php if (empty($skip_phase139_mobile_learning_script)): ?><script src="<?= e(app_asset_versioned('assets/js/phase139-mobile-learning.js')) ?>" defer></script><?php endif; ?>
 <?php foreach ($wfPageScripts as $wfPageScript): ?><script src="<?= e(app_asset_versioned((string)$wfPageScript)) ?>" defer></script><?php endforeach; ?>
 <script src="<?= e(app_asset_versioned('assets/js/main.js')) ?>" defer></script>
 <script>
