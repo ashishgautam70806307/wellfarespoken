@@ -1,0 +1,49 @@
+Phase 148 changed files compared with Phase 147
+
+CHANGED EXISTING FILES (24)
+.env.example
+README.md
+admin/_header.php
+admin/admission-view.php
+admin/admissions.php
+admin/batches.php
+admin/enquiries.php
+admin/enquiry-view.php
+admin/login.php
+admin/logout.php
+admin/password.php
+admin/student-view.php
+admin/students.php
+admin/system-check.php
+admin/toggle-publish.php
+admission.php
+assets/uploads/materials/.htaccess
+includes/config.php
+includes/db.php
+includes/functions.php
+sql/wellfare_english_complete.sql
+storage/.htaccess
+student-auth.php
+sw.js
+
+ADDED FILES (18)
+PHASE148_CHANGED_FILES.txt
+PHASE148_CRITICAL_BACKEND_HARDENING_REPORT.md
+PHASE148_DEPLOYMENT_CHECKLIST.md
+PHASE148_VALIDATION.json
+README_PHASE148_CRITICAL_BACKEND_HARDENING.md
+admin/admin-users.php
+admin/audit-log.php
+admin/roles.php
+admin/setup.php
+includes/phase148_backend.php
+includes/security.php
+material-file.php
+sql/migrations/20260807_001_phase148_critical_backend_hardening.sql
+sql/phase148_critical_backend_hardening.sql
+storage/private/.htaccess
+tests/phase148_database_smoke.php
+tests/run_phase148_static.php
+tools/migration-status.php
+
+DELETED FILES (0)

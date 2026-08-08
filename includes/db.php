@@ -8,6 +8,12 @@ function db(): PDO
         return $pdo;
     }
 
+    if (APP_RUNTIME_ENV === 'live' && (trim(DB_NAME) === '' || trim(DB_USER) === '')) {
+        error_log('[database] Missing live DB credentials. Configure DB_LIVE_NAME, DB_LIVE_USER and DB_LIVE_PASS in .env.');
+        http_response_code(500);
+        exit('Production database is not configured. Please set the live database credentials in the server .env file.');
+    }
+
     $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

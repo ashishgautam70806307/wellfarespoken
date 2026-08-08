@@ -6,6 +6,10 @@ require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_sch
 $adminPageSlug = preg_replace('/[^a-z0-9-]+/i', '-', pathinfo(basename($_SERVER['PHP_SELF'] ?? 'admin'), PATHINFO_FILENAME));
 $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $admin_page_styles : [];
 $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_final_styles) ? $admin_page_final_styles : [];
+$canMainMenu = admin_can('dashboard.view') || admin_can('enquiries.manage') || admin_can('admissions.manage') || admin_can('students.manage') || admin_can('courses.manage') || admin_can('content.manage');
+$canLearningMenu = admin_can('materials.manage') || admin_can('roadmap.manage') || admin_can('tests.manage') || admin_can('batches.manage') || admin_can('content.manage');
+$canWebsiteMenu = admin_can('content.manage') || admin_can('settings.manage');
+$phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schema_ready() : true;
 ?>
 <!doctype html>
 <html lang="en">
@@ -34,9 +38,11 @@ $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/wf-components.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase138-mobile-ux.css'))) ?>">
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase139-mobile-learning.css'))) ?>">
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase149-admin-resilience.css'))) ?>">
     <?php foreach ($adminPageFinalStyles as $adminPageFinalStyle): ?>
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path((string)$adminPageFinalStyle))) ?>">
     <?php endforeach; ?>
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase150-security-ui.css'))) ?>">
 </head>
 <body class="admin-body page-admin-<?= e($adminPageSlug) ?> wf138-admin-mobile wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>
@@ -51,36 +57,42 @@ $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_
             <button class="admin-menu-close" type="button" data-admin-menu-close>×</button>
         </div>
         <div class="admin-menu-scroll">
-            <div class="admin-menu-title">Main</div>
-            <a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a>
-            <a class="<?= active_nav('enquiries.php') ?>" href="enquiries.php"><span class="menu-ico"><i class="fa-solid fa-phone-volume"></i></span><span>Enquiries</span></a>
-            <a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['admissions.php','admission-view.php'], true) ? 'active' : '' ?>" href="admissions.php"><span class="menu-ico"><i class="fa-solid fa-user-plus"></i></span><span>Admissions</span></a>
-            <a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['students.php','student-view.php'], true) ? 'active' : '' ?>" href="students.php"><span class="menu-ico"><i class="fa-solid fa-user-graduate"></i></span><span>Student Accounts</span></a>
-            <a class="<?= active_nav('courses.php') ?>" href="courses.php"><span class="menu-ico"><i class="fa-solid fa-book-open"></i></span><span>Courses</span></a>
-            <a class="<?= active_nav('testimonials.php') ?>" href="testimonials.php"><span class="menu-ico"><i class="fa-solid fa-star"></i></span><span>Testimonials</span></a>
-            <a class="<?= active_nav('faculty.php') ?>" href="faculty.php"><span class="menu-ico"><i class="fa-solid fa-chalkboard-user"></i></span><span>Faculty</span></a>
-            <a class="<?= active_nav('videos.php') ?>" href="videos.php"><span class="menu-ico"><i class="fa-solid fa-circle-play"></i></span><span>Videos</span></a>
-            <a class="<?= active_nav('gallery.php') ?>" href="gallery.php"><span class="menu-ico"><i class="fa-solid fa-images"></i></span><span>Gallery</span></a>
+            <?php if ($canMainMenu): ?><div class="admin-menu-title">Main</div><?php endif; ?>
+            <?php if (admin_can('dashboard.view')): ?><a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a><?php endif; ?>
+            <?php if (admin_can('enquiries.manage')): ?><a class="<?= active_nav('enquiries.php') ?>" href="enquiries.php"><span class="menu-ico"><i class="fa-solid fa-phone-volume"></i></span><span>Enquiries</span></a><?php endif; ?>
+            <?php if (admin_can('admissions.manage')): ?><a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['admissions.php','admission-view.php'], true) ? 'active' : '' ?>" href="admissions.php"><span class="menu-ico"><i class="fa-solid fa-user-plus"></i></span><span>Admissions</span></a><?php endif; ?>
+            <?php if (admin_can('students.manage')): ?><a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['students.php','student-view.php'], true) ? 'active' : '' ?>" href="students.php"><span class="menu-ico"><i class="fa-solid fa-user-graduate"></i></span><span>Student Accounts</span></a><?php endif; ?>
+            <?php if (admin_can('courses.manage')): ?><a class="<?= active_nav('courses.php') ?>" href="courses.php"><span class="menu-ico"><i class="fa-solid fa-book-open"></i></span><span>Courses</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('testimonials.php') ?>" href="testimonials.php"><span class="menu-ico"><i class="fa-solid fa-star"></i></span><span>Testimonials</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('faculty.php') ?>" href="faculty.php"><span class="menu-ico"><i class="fa-solid fa-chalkboard-user"></i></span><span>Faculty</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('videos.php') ?>" href="videos.php"><span class="menu-ico"><i class="fa-solid fa-circle-play"></i></span><span>Videos</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('gallery.php') ?>" href="gallery.php"><span class="menu-ico"><i class="fa-solid fa-images"></i></span><span>Gallery</span></a><?php endif; ?>
 
-            <div class="admin-menu-title">Learning CMS</div>
-            <a class="<?= active_nav('materials.php') ?>" href="materials.php"><span class="menu-ico"><i class="fa-solid fa-folder-open"></i></span><span>Study Materials</span></a>
-            <a class="<?= active_nav('roadmap.php') ?>" href="roadmap.php"><span class="menu-ico"><i class="fa-solid fa-route"></i></span><span>Learning Roadmap</span></a>
-            <a class="<?= active_nav('weekly-tests.php') ?>" href="weekly-tests.php"><span class="menu-ico"><i class="fa-solid fa-clipboard-check"></i></span><span>Weekly Tests</span></a>
-            <a class="<?= active_nav('batches.php') ?>" href="batches.php"><span class="menu-ico"><i class="fa-solid fa-clock"></i></span><span>Batches</span></a>
-            <a class="<?= active_nav('faqs.php') ?>" href="faqs.php"><span class="menu-ico"><i class="fa-solid fa-circle-question"></i></span><span>FAQs</span></a>
+            <?php if ($canLearningMenu): ?><div class="admin-menu-title">Learning CMS</div><?php endif; ?>
+            <?php if (admin_can('materials.manage')): ?><a class="<?= active_nav('materials.php') ?>" href="materials.php"><span class="menu-ico"><i class="fa-solid fa-folder-open"></i></span><span>Study Materials</span></a><?php endif; ?>
+            <?php if (admin_can('roadmap.manage')): ?><a class="<?= active_nav('roadmap.php') ?>" href="roadmap.php"><span class="menu-ico"><i class="fa-solid fa-route"></i></span><span>Learning Roadmap</span></a><?php endif; ?>
+            <?php if (admin_can('tests.manage')): ?><a class="<?= active_nav('weekly-tests.php') ?>" href="weekly-tests.php"><span class="menu-ico"><i class="fa-solid fa-clipboard-check"></i></span><span>Weekly Tests</span></a><?php endif; ?>
+            <?php if (admin_can('batches.manage')): ?><a class="<?= active_nav('batches.php') ?>" href="batches.php"><span class="menu-ico"><i class="fa-solid fa-clock"></i></span><span>Batches</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('faqs.php') ?>" href="faqs.php"><span class="menu-ico"><i class="fa-solid fa-circle-question"></i></span><span>FAQs</span></a><?php endif; ?>
 
-            <div class="admin-menu-title">Website Control</div>
-            <a class="<?= active_nav('content.php') ?>" href="content.php"><span class="menu-ico"><i class="fa-solid fa-table-cells-large"></i></span><span>Content Blocks</span></a>
-            <a class="<?= active_nav('hero-banners.php') ?>" href="hero-banners.php"><span class="menu-ico"><i class="fa-solid fa-image"></i></span><span>Hero Banners</span></a>
-            <a class="<?= active_nav('form-options.php') ?>" href="form-options.php"><span class="menu-ico"><i class="fa-solid fa-square-check"></i></span><span>Form Options</span></a>
-            <a class="<?= active_nav('nav-menus.php') ?>" href="nav-menus.php"><span class="menu-ico"><i class="fa-solid fa-bars"></i></span><span>Navigation</span></a>
-            <a class="<?= active_nav('seo.php') ?>" href="seo.php"><span class="menu-ico"><i class="fa-solid fa-magnifying-glass"></i></span><span>SEO</span></a>
-            <a class="<?= active_nav('settings.php') ?>" href="settings.php"><span class="menu-ico"><i class="fa-solid fa-gear"></i></span><span>Site Settings</span></a>
+            <?php if ($canWebsiteMenu): ?><div class="admin-menu-title">Website Control</div><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('content.php') ?>" href="content.php"><span class="menu-ico"><i class="fa-solid fa-table-cells-large"></i></span><span>Content Blocks</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('hero-banners.php') ?>" href="hero-banners.php"><span class="menu-ico"><i class="fa-solid fa-image"></i></span><span>Hero Banners</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('form-options.php') ?>" href="form-options.php"><span class="menu-ico"><i class="fa-solid fa-square-check"></i></span><span>Form Options</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('nav-menus.php') ?>" href="nav-menus.php"><span class="menu-ico"><i class="fa-solid fa-bars"></i></span><span>Navigation</span></a><?php endif; ?>
+            <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('seo.php') ?>" href="seo.php"><span class="menu-ico"><i class="fa-solid fa-magnifying-glass"></i></span><span>SEO</span></a><?php endif; ?>
+            <?php if (admin_can('settings.manage')): ?><a class="<?= active_nav('settings.php') ?>" href="settings.php"><span class="menu-ico"><i class="fa-solid fa-gear"></i></span><span>Site Settings</span></a><?php endif; ?>
 
             <div class="admin-menu-title">System</div>
-            <a class="<?= active_nav('ui-library.php') ?>" href="ui-library.php"><span class="menu-ico"><i class="fa-solid fa-swatchbook"></i></span><span>UI Library</span></a>
-            <a class="<?= active_nav('password.php') ?>" href="password.php"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password</span></a>
+            <?php if ($phase148SchemaReady && admin_can('admins.manage')): ?>
+            <a class="<?= active_nav('admin-users.php') ?>" href="admin-users.php"><span class="menu-ico"><i class="fa-solid fa-user-shield"></i></span><span>Admin Users</span></a>
+            <?php if (admin_role_key() === 'super_admin'): ?><a class="<?= active_nav('roles.php') ?>" href="roles.php"><span class="menu-ico"><i class="fa-solid fa-shield-halved"></i></span><span>Roles & Permissions</span></a><?php endif; ?>
+            <a class="<?= active_nav('audit-log.php') ?>" href="audit-log.php"><span class="menu-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span>Admin Audit Log</span></a>
+            <?php endif; ?>
+            <?php if (admin_can('system.manage')): ?>
             <a class="<?= active_nav('system-check.php') ?>" href="system-check.php"><span class="menu-ico"><i class="fa-solid fa-screwdriver-wrench"></i></span><span>System Check</span></a>
+            <?php endif; ?>
+            <a class="<?= active_nav('password.php') ?>" href="password.php"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password & MFA</span></a>
             <a href="../index.php" target="_blank"><span class="menu-ico"><i class="fa-solid fa-globe"></i></span><span>View Website</span></a>
             <a href="logout.php"><span class="menu-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
         </div>
@@ -111,10 +123,18 @@ $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_
             ['Navigation', 'nav-menus.php', 'Website Control', 'fa-solid fa-bars'],
             ['SEO', 'seo.php', 'Website Control', 'fa-solid fa-magnifying-glass'],
             ['Site Settings', 'settings.php', 'Website Control', 'fa-solid fa-gear'],
-            ['UI Library', 'ui-library.php', 'System', 'fa-solid fa-swatchbook'],
-            ['Password', 'password.php', 'System', 'fa-solid fa-lock'],
+            ['Admin Users', 'admin-users.php', 'System', 'fa-solid fa-user-shield'],
+            ['Roles & Permissions', 'roles.php', 'System', 'fa-solid fa-shield-halved'],
+            ['Admin Audit Log', 'audit-log.php', 'System', 'fa-solid fa-clock-rotate-left'],
+            ['Password & MFA', 'password.php', 'System', 'fa-solid fa-lock'],
             ['System Check', 'system-check.php', 'System', 'fa-solid fa-screwdriver-wrench'],
         ];
+        $adminQuickLinks = array_values(array_filter($adminQuickLinks, static function(array $link) use ($phase148SchemaReady): bool {
+            if (!$phase148SchemaReady && in_array((string)$link[1], ['admin-users.php','roles.php','audit-log.php'], true)) return false;
+            if ((string)$link[1] === 'roles.php' && admin_role_key() !== 'super_admin') return false;
+            $permission = admin_page_permission((string)$link[1]);
+            return $permission === null || admin_can($permission);
+        }));
         ?>
         <div class="admin-topbar">
             <button class="admin-drawer-btn" type="button" data-admin-menu-open aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
@@ -142,3 +162,10 @@ $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_
             <strong><?= e(app_setting('brand_title', 'Admin')) ?></strong>
             <a class="btn btn-sm btn-soft" href="../index.php" target="_blank">View</a>
         </div>
+        <?php if (!$phase148SchemaReady && !in_array(basename((string)($_SERVER['PHP_SELF'] ?? '')), ['system-check.php','setup.php'], true)): ?>
+        <div class="wf149-schema-warning" role="alert">
+            <i class="fa-solid fa-database" aria-hidden="true"></i>
+            <div><b>Database upgrade is incomplete.</b><span>Phase 148 security tables/columns are missing. Import <code>sql/phase148_critical_backend_hardening.sql</code> before using Admin Users, Roles, Admissions lifecycle or other new backend controls.</span></div>
+            <a class="btn btn-sm btn-dark" href="system-check.php">Open System Check</a>
+        </div>
+        <?php endif; ?>

@@ -1,34 +1,40 @@
-# Well Fare English Spoken — Phase 147 Student Account Management
+# Well Fare English Spoken — Phase 148 Critical Backend Hardening
 
-This is the current cumulative working package. It preserves all approved fixes through Phase 146 and adds advanced administrator-controlled student account management plus a complete static backend audit.
+This is the current cumulative working package. It preserves the approved frontend/admin/mobile/voice/test/student-account work through Phase 147 and repairs the critical/high-risk backend findings from the Phase 147 audit.
 
-## Phase 147 focus
+## Phase 148 highlights
 
-- Added a dedicated **Student Account Control** section to the Admin Dashboard.
-- Upgraded **Admin → Student Accounts** with statistics, search, filters, bulk actions and responsive account cards.
-- Added full profile, access, learning, test and practice management for each student.
-- Added secure administrator-selected password reset without requiring the old password.
-- Added force sign-out and automatic session invalidation after password/status/security changes.
-- Added student account event history without storing passwords.
-- Added Phase 147 schema checks and migration support.
-- Added a detailed module-by-module backend audit for future correction phases.
-- Updated service-worker cache to `wellfare-spoken-static-v147`.
+- Secure environment-only production database credentials; no live secret fallback in source.
+- Secure first-Admin setup; fresh SQL contains no fixed administrator account.
+- Admin roles/permissions, audit log, session invalidation and optional free Authenticator/TOTP MFA.
+- Database-backed/fail-closed authentication rate limiting.
+- No-paid-OTP student model: mobile + student-created password, identity starts **Unverified**, optional Admin approval mode, manual staff verification before identity-sensitive linking.
+- Student official level starts at Zero Level / Unassessed.
+- Stable Enquiry → Admission → Student → Enrollment → Batch relationships and history.
+- Immutable admission payment/refund/adjustment ledger and receipt history.
+- Orphan audit and 51 planned foreign-key constraints.
+- Private authenticated learning-file delivery and access audit.
+- Formal schema migration registry, CLI migration status, static tests and database smoke test.
+- Service-worker cache namespace `wellfare-spoken-static-v148`.
 
-## Existing database installation
+## Existing Phase 147 database
 
-1. Back up the project files and database.
-2. Extract the cumulative ZIP into the web root, or apply the replace-only ZIP to an exact Phase 146 installation.
-3. Import `sql/phase147_student_account_migration.sql` once for an existing database.
-4. Open **Admin → System Check** and confirm the three Phase 147 student-account schema checks pass.
-5. Unregister the previous service worker, clear site storage and hard refresh.
-6. Complete `PHASE147_BROWSER_DATABASE_CHECKLIST.md` before production use.
+1. Back up DB/files.
+2. Rotate the previously exposed live DB password externally and configure the new secret only in server `.env`.
+3. Deploy Phase 148.
+4. Import `sql/phase148_critical_backend_hardening.sql` once.
+5. Open Admin → System Check.
+6. Complete `PHASE148_DEPLOYMENT_CHECKLIST.md` before production use.
 
-Fresh installations can import `sql/wellfare_english_complete.sql`.
+## Fresh installation
 
-## Documents
+Import `sql/wellfare_english_complete.sql`, configure `.env`, then create the first administrator through `admin/setup.php`.
 
-- `README_PHASE147_STUDENT_ACCOUNTS.md`
-- `PHASE147_BACKEND_AUDIT.md`
-- `PHASE147_BROWSER_DATABASE_CHECKLIST.md`
-- `PHASE147_CHANGED_FILES.txt`
-- `PHASE147_VALIDATION.json`
+## Documentation
+
+- `README_PHASE148_CRITICAL_BACKEND_HARDENING.md`
+- `PHASE148_CRITICAL_BACKEND_HARDENING_REPORT.md`
+- `PHASE148_DEPLOYMENT_CHECKLIST.md`
+- `tests/run_phase148_static.php`
+- `tests/phase148_database_smoke.php`
+- `tools/migration-status.php`

@@ -29,6 +29,7 @@ foreach ($batches as $batchRow) {
 $requestedCourse = $selectedBatch
     ? trim((string)($selectedBatch['course_name'] ?? ''))
     : trim((string)($_GET['course'] ?? $_POST['course'] ?? ''));
+$requestedCourseId = $selectedBatch ? (int)($selectedBatch['course_id'] ?? 0) : lifecycle_resolve_course_id($requestedCourse);
 $sourceLabel = $mode === 'online' ? 'Online Class Admission' : 'Website Admission Form';
 
 $validCourseTitles = array_values(array_unique(array_filter(array_map(static fn(array $course): string => trim((string)($course['title'] ?? '')), $courses))));
@@ -71,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('error', 'Too many requests were sent from this device. Please wait and try again.');
     } else {
         try {
-            $duplicate = db()->prepare("SELECT id FROM enquiries WHERE phone=? AND created_at>=DATE_SUB(NOW(), INTERVAL 5 MINUTE) ORDER BY id DESC LIMIT 1");
+            $duplicate = db()->prepare("SELECT id FROM enquiries WHERE status_deleted=0 AND phone=? AND created_at>=DATE_SUB(NOW(), INTERVAL 5 MINUTE) ORDER BY id DESC LIMIT 1");
             $duplicate->execute([$formValues['phone']]);
             if ($duplicate->fetchColumn()) {
                 flash('success', 'Your counselling request has already been received. The institute team will contact you.');
@@ -80,18 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect($return);
             }
 
-            $stmt = db()->prepare('INSERT INTO enquiries (name, phone, course_interest, current_level, preferred_batch, lead_source, message, enquiry_status, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-            $stmt->execute([
-                mb_substr($formValues['name'], 0, 120),
-                $formValues['phone'],
-                mb_substr($formValues['course'], 0, 160),
-                mb_substr($formValues['current_level'], 0, 120),
-                mb_substr($formValues['preferred_batch'], 0, 120),
-                mb_substr($sourceLabel, 0, 80),
-                mb_substr($formValues['message'], 0, 4000),
-                'New',
-                client_ip() === 'unknown' ? '' : client_ip()
-            ]);
+            $courseId = $requestedCourseId > 0 ? $requestedCourseId : lifecycle_resolve_course_id($formValues['course']);
+            $batchId = $requestedBatchId > 0 ? $requestedBatchId : lifecycle_resolve_batch_id($formValues['preferred_batch']);
+            if (column_exists('enquiries','course_id')) {
+                $stmt = db()->prepare('INSERT INTO enquiries (name, phone, course_id, batch_id, course_interest, current_level, preferred_batch, lead_source, message, enquiry_status, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([mb_substr($formValues['name'],0,120),$formValues['phone'],$courseId?:null,$batchId?:null,mb_substr($formValues['course'],0,160),mb_substr($formValues['current_level'],0,120),mb_substr($formValues['preferred_batch'],0,120),mb_substr($sourceLabel,0,80),mb_substr($formValues['message'],0,4000),'New',client_ip()==='unknown'?'':client_ip()]);
+            } else {
+                $stmt = db()->prepare('INSERT INTO enquiries (name, phone, course_interest, current_level, preferred_batch, lead_source, message, enquiry_status, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([mb_substr($formValues['name'],0,120),$formValues['phone'],mb_substr($formValues['course'],0,160),mb_substr($formValues['current_level'],0,120),mb_substr($formValues['preferred_batch'],0,120),mb_substr($sourceLabel,0,80),mb_substr($formValues['message'],0,4000),'New',client_ip()==='unknown'?'':client_ip()]);
+            }
             flash('success', 'Thank you! Your counselling request has been submitted.');
             $return = 'admission.php?submitted=1';
             if ($mode === 'online') $return .= '&mode=online';

@@ -50,26 +50,37 @@ foreach ($dbHeroSlides as $row) {
     $fallbackImage = wf_home_slide_asset($row['image_url'] ?? '');
     if ($desktopImage === '') $desktopImage = $fallbackImage;
     if ($fallbackImage === '') $fallbackImage = $desktopImage;
-    if ($desktopImage === '') continue;
+    $hasMedia = $desktopImage !== '' || $mobileImage !== '' || $fallbackImage !== '';
+    $hasCopy = trim((string)($row['eyebrow'] ?? '')) !== ''
+        || trim((string)($row['title'] ?? '')) !== ''
+        || trim((string)($row['subtitle'] ?? '')) !== ''
+        || (trim((string)($row['primary_text'] ?? '')) !== '' && trim((string)($row['primary_url'] ?? '')) !== '')
+        || (trim((string)($row['secondary_text'] ?? '')) !== '' && trim((string)($row['secondary_url'] ?? '')) !== '');
+    if (!$hasMedia && !$hasCopy) continue;
+
+    if ($fallbackImage === '' && $mobileImage !== '') $fallbackImage = $mobileImage;
+    if ($desktopImage === '' && $fallbackImage !== '') $desktopImage = $fallbackImage;
+    if ($desktopImage === '' && $mobileImage !== '') $desktopImage = $mobileImage;
 
     $rawPosition = strtolower(trim((string)($row['content_position'] ?? 'left')));
     $position = in_array($rawPosition, ['left', 'center', 'right'], true) ? $rawPosition : 'left';
-    $overlay = max(15, min(85, (int)($row['overlay_strength'] ?? 58)));
+    $overlay = max(0, min(85, (int)($row['overlay_strength'] ?? 58)));
     $showContent = ($row['show_content'] ?? 'Yes') !== 'No';
 
     $heroSlides[] = [
         'eyebrow' => trim((string)($row['eyebrow'] ?? '')),
-        'title' => trim((string)($row['title'] ?? '')) ?: 'Learn spoken English with confidence',
+        'title' => trim((string)($row['title'] ?? '')),
         'subtitle' => trim((string)($row['subtitle'] ?? '')),
         'desktop_image_url' => $desktopImage,
         'mobile_image_url' => $mobileImage,
         'fallback_image_url' => $fallbackImage,
-        'image_alt' => trim((string)($row['image_alt'] ?? '')) ?: trim((string)($row['title'] ?? 'Spoken English class banner')),
+        'image_alt' => trim((string)($row['image_alt'] ?? '')) ?: (trim((string)($row['title'] ?? '')) ?: app_setting('site_name', APP_NAME) . ' banner'),
         'primary_text' => trim((string)($row['primary_text'] ?? '')),
         'primary_url' => trim((string)($row['primary_url'] ?? '')),
         'secondary_text' => trim((string)($row['secondary_text'] ?? '')),
         'secondary_url' => trim((string)($row['secondary_url'] ?? '')),
-        'show_content' => $showContent,
+        'show_content' => $showContent || !$hasMedia,
+        'has_media' => $hasMedia,
         'content_position' => $position,
         'overlay_strength' => $overlay,
     ];
@@ -180,22 +191,26 @@ $practiceTools = [
 <section class="wf126-hero" data-home-slider aria-label="Homepage banners">
     <div class="wf126-slides">
         <?php foreach ($heroSlides as $index => $slide): ?>
-            <article class="wf126-slide <?= $index === 0 ? 'is-active' : '' ?> wf126-position-<?= e($slide['content_position']) ?> <?= $slide['show_content'] ? '' : 'is-image-only' ?>" data-home-slide aria-hidden="<?= $index === 0 ? 'false' : 'true' ?>" style="--overlay-strength:<?= e(number_format($slide['overlay_strength'] / 100, 2, '.', '')) ?>">
+            <article class="wf126-slide <?= $index === 0 ? 'is-active' : '' ?> wf126-position-<?= e($slide['content_position']) ?> <?= $slide['show_content'] ? '' : 'is-image-only' ?> <?= empty($slide['has_media']) ? 'is-text-only' : '' ?>" data-home-slide aria-hidden="<?= $index === 0 ? 'false' : 'true' ?>" style="--overlay-strength:<?= e(number_format($slide['overlay_strength'] / 100, 2, '.', '')) ?>">
+                <?php if (!empty($slide['has_media'])): ?>
                 <picture class="wf126-slide-media">
                     <?php if ($slide['mobile_image_url'] !== ''): ?><source media="(max-width: 767px)" srcset="<?= e($slide['mobile_image_url']) ?>"><?php endif; ?>
-                    <source media="(min-width: 768px)" srcset="<?= e($slide['desktop_image_url']) ?>">
-                    <img src="<?= e($slide['fallback_image_url']) ?>" <?= $index === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?> decoding="async" alt="<?= e($slide['image_alt']) ?>">
+                    <?php if ($slide['desktop_image_url'] !== ''): ?><source media="(min-width: 768px)" srcset="<?= e($slide['desktop_image_url']) ?>"><?php endif; ?>
+                    <img src="<?= e($slide['fallback_image_url'] ?: $slide['desktop_image_url'] ?: $slide['mobile_image_url']) ?>" <?= $index === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?> decoding="async" alt="<?= e($slide['image_alt']) ?>">
                 </picture>
+                <?php endif; ?>
                 <div class="wf126-slide-overlay" aria-hidden="true"></div>
 
                 <?php if ($slide['show_content']): ?>
                     <div class="container wf126-slide-inner">
                         <div class="wf126-slide-copy">
                             <?php if ($slide['eyebrow'] !== ''): ?><span class="wf126-kicker"><i class="fa-solid fa-star"></i><?= e(wf_home_short($slide['eyebrow'], 48)) ?></span><?php endif; ?>
-                            <?php if ($index === 0): ?>
-                                <h1><?= e(wf_home_short($slide['title'], 58)) ?></h1>
-                            <?php else: ?>
-                                <h2><?= e(wf_home_short($slide['title'], 58)) ?></h2>
+                            <?php if ($slide['title'] !== ''): ?>
+                                <?php if ($index === 0): ?>
+                                    <h1><?= e(wf_home_short($slide['title'], 58)) ?></h1>
+                                <?php else: ?>
+                                    <h2><?= e(wf_home_short($slide['title'], 58)) ?></h2>
+                                <?php endif; ?>
                             <?php endif; ?>
                             <?php if ($slide['subtitle'] !== ''): ?><p><?= e(wf_home_short($slide['subtitle'], 118)) ?></p><?php endif; ?>
                             <?php if (($slide['primary_text'] !== '' && $slide['primary_url'] !== '') || ($slide['secondary_text'] !== '' && $slide['secondary_url'] !== '')): ?>

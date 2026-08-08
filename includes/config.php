@@ -142,6 +142,11 @@ define('APP_EMAIL', (string)app_env('APP_EMAIL', 'wellfareenglishspoken@gmail.co
 define('APP_ADDRESS', (string)app_env('APP_ADDRESS', 'Station Road, Mariahu, Jaunpur, Uttar Pradesh'));
 define('GOOGLE_MAP_URL', (string)app_env('GOOGLE_MAP_URL', 'https://www.google.com/maps/search/?api=1&query=Well+Fare+English+Spoken+Station+Road+Mariahu+Jaunpur'));
 
+define('STUDENT_REGISTRATION_MODE', strtolower(trim((string)app_env('STUDENT_REGISTRATION_MODE', 'open'))));
+define('ADMIN_SETUP_KEY', (string)app_env('ADMIN_SETUP_KEY', ''));
+define('ADMIN_MFA_ISSUER', (string)app_env('ADMIN_MFA_ISSUER', APP_NAME));
+define('PRIVATE_STORAGE_PATH', rtrim((string)app_env('PRIVATE_STORAGE_PATH', dirname(__DIR__) . '/storage/private'), '/\\'));
+
 $localDbDefaults = [
     'host' => 'localhost',
     'port' => '3306',
@@ -150,11 +155,12 @@ $localDbDefaults = [
     'pass' => '',
 ];
 $liveDbDefaults = [
+    // Production credentials must never live in source code. Configure DB_LIVE_* in .env.
     'host' => 'localhost',
     'port' => '3306',
-    'name' => 'u790281974_wellfarespoken',
-    'user' => 'u790281974_wellfarespoken',
-    'pass' => '*3Q7H:Zx5',
+    'name' => '',
+    'user' => '',
+    'pass' => '',
 ];
 
 if ($dbConnectionMode === 'manual') {

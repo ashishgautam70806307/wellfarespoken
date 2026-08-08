@@ -33,6 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $goal = mb_substr(trim((string)($_POST['target_goal'] ?? '')), 0, 180);
             $note = trim((string)($_POST['admin_note'] ?? ''));
             $published = ($_POST['published'] ?? 'Yes') === 'No' ? 'No' : 'Yes';
+            $identityStatus = column_exists('students','identity_status') && ($_POST['identity_status'] ?? 'Unverified') === 'Verified' ? 'Verified' : 'Unverified';
+            $oldPhoneDigits = clean_phone_digits((string)($student['phone'] ?? ''));
+            if (strlen($oldPhoneDigits) > 10 && str_starts_with($oldPhoneDigits, '91')) $oldPhoneDigits = substr($oldPhoneDigits, -10);
+            $phoneChanged = $phone !== $oldPhoneDigits;
+            $oldIdentityStatus = (string)($student['identity_status'] ?? 'Unverified');
+            $verificationNote = mb_substr(trim((string)($_POST['identity_verification_note'] ?? '')), 0, 500);
+            if ($phoneChanged && column_exists('students','identity_status')) $identityStatus = 'Unverified';
+            if (!$phoneChanged && column_exists('students','identity_status') && $oldIdentityStatus !== 'Verified' && $identityStatus === 'Verified' && mb_strlen($verificationNote) < 3) throw new RuntimeException('Add a short verification note before marking the mobile Verified, for example: confirmed in person or called the registered number.');
             if (mb_strlen($name) < 2 || mb_strlen($name) > 100) throw new RuntimeException('Student name must contain 2 to 100 characters.');
             if (strlen($phone) !== 10) throw new RuntimeException('Please enter a valid 10 digit phone number.');
             if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Please enter a valid email address.');
@@ -42,16 +50,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $duplicate->execute([$phone, $id]);
             if ($duplicate->fetchColumn()) throw new RuntimeException('This phone number already belongs to another student account.');
             $invalidate = (string)$student['published'] === 'Yes' && $published === 'No';
-            db()->prepare('UPDATE students SET full_name=?, phone=?, email=?, current_level=?, preferred_language=?, daily_goal_minutes=?, target_goal=?, admin_note=?, published=? WHERE id=? AND status_deleted=0')
-                ->execute([$name,$phone,$email ?: null,$level,$language,$minutes,$goal ?: null,$note ?: null,$published,$id]);
-            if ($invalidate) student_account_invalidate_sessions($id);
+            if (column_exists('students','identity_status')) {
+                db()->prepare('UPDATE students SET full_name=?, phone=?, email=?, current_level=?, preferred_language=?, daily_goal_minutes=?, target_goal=?, admin_note=?, published=?, identity_status=? WHERE id=? AND status_deleted=0')
+                    ->execute([$name,$phone,$email ?: null,$level,$language,$minutes,$goal ?: null,$note ?: null,$published,$identityStatus,$id]);
+            } else {
+                db()->prepare('UPDATE students SET full_name=?, phone=?, email=?, current_level=?, preferred_language=?, daily_goal_minutes=?, target_goal=?, admin_note=?, published=? WHERE id=? AND status_deleted=0')
+                    ->execute([$name,$phone,$email ?: null,$level,$language,$minutes,$goal ?: null,$note ?: null,$published,$id]);
+            }
+            if ($invalidate || $phoneChanged) student_account_invalidate_sessions($id);
+            if (column_exists('students','identity_status') && $identityStatus === 'Verified') lifecycle_link_student_registration($id,$phone);
+            if (column_exists('students','identity_status') && !$phoneChanged && $oldIdentityStatus !== 'Verified' && $identityStatus === 'Verified') {
+                student_account_log($id, 'mobile_verified', 'Student mobile verified by institute', 'Verification note: ' . $verificationNote);
+                admin_audit_log('student.mobile_verified','student',$id,'Verification note: ' . $verificationNote);
+            }
+            if (column_exists('students','identity_status') && $oldIdentityStatus === 'Verified' && $identityStatus !== 'Verified') {
+                student_account_log($id, 'mobile_unverified', 'Student mobile marked unverified', $phoneChanged ? 'Verification reset because the mobile number changed.' : 'Institute removed the verified status.');
+                admin_audit_log('student.mobile_unverified','student',$id,$phoneChanged ? 'Verification reset after mobile change.' : 'Verified status removed by administrator.');
+            }
             student_account_log($id, 'profile_update', 'Student profile and account settings updated', 'Identity, contact, level, learning target, account status or admin note was updated.');
-            flash('success', $invalidate ? 'Student profile saved. Account was deactivated and existing sessions were signed out.' : 'Student profile and account settings saved.');
+            $profileMessage = $invalidate ? 'Student profile saved. Account was deactivated and existing sessions were signed out.' : 'Student profile and account settings saved.';
+            if ($phoneChanged && column_exists('students','identity_status')) $profileMessage .= ' Mobile verification was reset because the phone number changed.';
+            flash('success', $profileMessage);
             redirect('student-view.php?id=' . $id);
         }
         if ($action === 'reset_password') {
             $newPassword = (string)($_POST['new_password'] ?? '');
             $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+            $resetReason = mb_substr(trim((string)($_POST['reset_reason'] ?? '')), 0, 500);
+            if (mb_strlen($resetReason) < 3) throw new RuntimeException('Add a short reset reason, for example: student confirmed in person or by phone.');
             $passwordError = student_password_error($newPassword);
             if ($passwordError !== '') throw new RuntimeException($passwordError);
             if (!hash_equals($newPassword, $confirmPassword)) throw new RuntimeException('New password and confirmation do not match.');
@@ -60,7 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!student_account_reset_password($id, password_hash($newPassword, PASSWORD_DEFAULT))) {
                     throw new RuntimeException('Student account was not updated.');
                 }
-                student_account_log($id, 'password_reset', 'Student password reset by admin', 'All existing student sessions were invalidated. The password itself was not stored in logs.');
+                student_account_log($id, 'password_reset', 'Student password reset by admin', 'Reason: ' . $resetReason . ' All existing student sessions were invalidated. The password itself was not stored in logs.');
+                admin_audit_log('student.password_reset', 'student', $id, 'Reason: ' . $resetReason . '. Password value was not logged.');
                 db()->commit();
             } catch (Throwable $e) {
                 if (db()->inTransaction()) db()->rollBack();
@@ -122,7 +149,7 @@ function admin_student_datetime(?string $value, string $fallback='Never'): strin
 
 <div class="student-detail-hero-card wf147-student-hero">
   <div class="student-detail-avatar"><?= e(admin_student_initials($student)) ?></div>
-  <div class="wf147-student-identity"><span class="badge <?= $student['published']==='Yes'?'badge-yes':'badge-no' ?>"><?= $student['published']==='Yes'?'Active Account':'Inactive Account' ?></span><h2><?= e($student['current_level'] ?: 'Zero Level') ?></h2><p><?= e($student['target_goal'] ?: 'No learning goal saved yet') ?></p><div class="wf147-identity-meta"><span><i class="fa-solid fa-phone"></i><?= e($student['phone']) ?></span><?php if($student['email']): ?><span><i class="fa-solid fa-envelope"></i><?= e($student['email']) ?></span><?php endif; ?></div></div>
+  <div class="wf147-student-identity"><span class="badge <?= $student['published']==='Yes'?'badge-yes':'badge-no' ?>"><?= $student['published']==='Yes'?'Active Account':'Inactive Account' ?></span><?php if(column_exists('students','identity_status')): ?><span class="badge <?= ($student['identity_status']??'Unverified')==='Verified'?'badge-yes':'badge-no' ?>"><?= e(($student['identity_status']??'Unverified')==='Verified'?'Mobile Verified by Institute':'Mobile Unverified') ?></span><?php endif; ?><h2><?= e($student['current_level'] ?: 'Zero Level') ?></h2><p><?= e($student['target_goal'] ?: 'No learning goal saved yet') ?></p><div class="wf147-identity-meta"><span><i class="fa-solid fa-phone"></i><?= e($student['phone']) ?></span><?php if($student['email']): ?><span><i class="fa-solid fa-envelope"></i><?= e($student['email']) ?></span><?php endif; ?></div></div>
   <div class="student-progress-ring admin-ring" style="--p:<?= e((string)$progress) ?>"><div><strong><?= e((string)$progress) ?>%</strong><span>Progress</span></div></div>
 </div>
 
@@ -147,6 +174,7 @@ function admin_student_datetime(?string $value, string $fallback='Never'): strin
       <label><span>Daily Goal (minutes)</span><input type="number" min="5" max="180" name="daily_goal_minutes" value="<?= e((string)($student['daily_goal_minutes'] ?? 20)) ?>"></label>
       <label class="full"><span>Target Goal</span><input name="target_goal" value="<?= e($student['target_goal'] ?? '') ?>" maxlength="180" placeholder="Interview, fluency, grammar, confidence..."></label>
       <label><span>Account Access</span><select name="published"><option value="Yes" <?= $student['published']==='Yes'?'selected':'' ?>>Active</option><option value="No" <?= $student['published']==='No'?'selected':'' ?>>Inactive</option></select></label>
+      <?php if(column_exists('students','identity_status')): ?><label><span>Mobile Identity</span><select name="identity_status"><option value="Unverified" <?= ($student['identity_status']??'Unverified')==='Unverified'?'selected':'' ?>>Unverified</option><option value="Verified" <?= ($student['identity_status']??'Unverified')==='Verified'?'selected':'' ?>>Verified by Institute</option></select><small>Use Verified only after staff confirms the number belongs to the student/guardian. Changing the phone resets verification.</small></label><label><span>Verification Note</span><input name="identity_verification_note" maxlength="500" placeholder="Required when first marking Verified"><small>Example: confirmed in person / called registered mobile. Saved to the account audit timeline.</small></label><?php endif; ?>
       <label class="full"><span>Private Admin Note</span><textarea name="admin_note" rows="4" placeholder="Internal note visible only to admin"><?= e($student['admin_note'] ?? '') ?></textarea></label>
       <div class="full wf147-form-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Student Account</button></div>
     </form>
@@ -157,8 +185,10 @@ function admin_student_datetime(?string $value, string $fallback='Never'): strin
       <div class="wf147-card-heading"><span><i class="fa-solid fa-key"></i></span><div><h2>Reset Forgotten Password</h2><p>Set a new password chosen by the institute. The old password is not required.</p></div></div>
       <form method="post" class="wf147-password-form" data-confirm="Change this password and sign the student out from all existing sessions?">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="reset_password">
-        <label><span>New Password</span><div class="wf147-password-field"><input type="text" id="studentNewPassword" name="new_password" minlength="8" maxlength="128" autocomplete="new-password" required><button type="button" class="btn btn-soft" id="generateStudentPassword">Generate</button></div></label>
-        <label><span>Confirm Password</span><input type="text" id="studentConfirmPassword" name="confirm_password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+        <label><span>New Password</span><div class="wf147-password-field"><input type="password" id="studentNewPassword" name="new_password" minlength="8" maxlength="128" autocomplete="new-password" required><button type="button" class="btn btn-soft" id="generateStudentPassword">Generate</button></div></label>
+        <label><span>Confirm Password</span><input type="password" id="studentConfirmPassword" name="confirm_password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+        <label><span>Reset Reason</span><input name="reset_reason" maxlength="500" required placeholder="Example: student confirmed in person / on registered phone"></label>
+        <?php if(column_exists('students','identity_status') && ($student['identity_status']??'Unverified')!=='Verified'): ?><div class="alert alert-warning">This mobile number is still <strong>Unverified</strong>. Confirm the student/guardian identity manually before sharing the new password.</div><?php endif; ?>
         <div class="wf147-password-tools"><button type="button" class="btn btn-soft" id="copyStudentPassword"><i class="fa-regular fa-copy"></i> Copy Password</button><small>Minimum 8 characters. Share it privately with the student.</small></div>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-rotate"></i> Change Password</button>
       </form>

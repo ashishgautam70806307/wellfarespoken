@@ -7,7 +7,7 @@ This project now has a central UI foundation. New page CSS should not redefine b
 - `assets/css/wf-design-tokens.css` — brand colors, spacing, radius, shadows, control heights and font tokens.
 - `assets/css/wf-components.css` — reusable cards, buttons, form fields, badges, alerts, grids, tables and responsive rules.
 - `includes/ui-components.php` — reusable PHP render helpers.
-- `admin/ui-library.php` — live component preview for admins.
+- `admin/ui-library.php` — internal component preview retained for developers, intentionally hidden from the normal Admin navigation.
 
 Both public and admin headers load these files. Production automatically loads the `.min.css` copies.
 

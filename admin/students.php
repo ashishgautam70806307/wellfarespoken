@@ -64,6 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     foreach ($ids as $studentId) student_account_invalidate_sessions($studentId);
                     $eventType = 'account_deactivated'; $eventTitle = 'Student account deactivated in bulk';
                     flash('success', count($ids) . ' account(s) deactivated and signed out.');
+                } elseif ($bulkAction === 'unverify_mobile' && column_exists('students','identity_status')) {
+                    db()->prepare("UPDATE students SET identity_status='Unverified' WHERE id IN ($in) AND status_deleted=0")->execute($ids);
+                    $eventType = 'mobile_unverified'; $eventTitle = 'Student mobile marked unverified by institute';
+                    flash('success', count($ids) . ' student mobile number(s) marked Unverified.');
                 } elseif ($bulkAction === 'delete') {
                     db()->prepare("UPDATE students SET status_deleted=1, published='No' WHERE id IN ($in)")->execute($ids);
                     foreach ($ids as $studentId) student_account_invalidate_sessions($studentId);
@@ -88,6 +92,8 @@ $q = trim((string)($_GET['q'] ?? ''));
 $status = trim((string)($_GET['status'] ?? ''));
 $levelFilter = trim((string)($_GET['level'] ?? ''));
 $loginFilter = trim((string)($_GET['login'] ?? ''));
+$identityFilter = trim((string)($_GET['identity'] ?? ''));
+$hasIdentityStatus = column_exists('students','identity_status');
 $where = ['s.status_deleted=0'];
 $params = [];
 if ($q !== '') {
@@ -99,15 +105,19 @@ if (in_array($levelFilter, $levels, true)) { $where[] = 's.current_level=?'; $pa
 if ($loginFilter === 'never') $where[] = 's.last_login_at IS NULL';
 if ($loginFilter === 'recent') $where[] = 's.last_login_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)';
 if ($loginFilter === 'inactive') $where[] = '(s.last_login_at IS NULL OR s.last_login_at < DATE_SUB(NOW(), INTERVAL 30 DAY))';
+if ($hasIdentityStatus && in_array($identityFilter, ['Verified','Unverified'], true)) { $where[] = 's.identity_status=?'; $params[] = $identityFilter; }
 $sqlWhere = implode(' AND ', $where);
+$countStmt = db()->prepare("SELECT COUNT(*) FROM students s WHERE $sqlWhere");
+$countStmt->execute($params);
+$studentPager = admin_pagination_state((int)$countStmt->fetchColumn(), 24);
 $stmt = db()->prepare("SELECT s.*,
     (SELECT COUNT(*) FROM student_activity_logs a WHERE a.student_id=s.id) activity_count,
     (SELECT COUNT(*) FROM weekly_test_attempts w WHERE w.student_id=s.id AND COALESCE(w.status_deleted,0)=0) weekly_count
-    FROM students s WHERE $sqlWhere ORDER BY s.id DESC");
+    FROM students s WHERE $sqlWhere ORDER BY s.id DESC LIMIT {$studentPager['per_page']} OFFSET {$studentPager['offset']}");
 $stmt->execute($params);
 $students = $stmt->fetchAll();
 
-$stats = ['total'=>0,'active'=>0,'inactive'=>0,'never_login'=>0,'recent'=>0,'tests'=>0];
+$stats = ['total'=>0,'active'=>0,'inactive'=>0,'never_login'=>0,'recent'=>0,'tests'=>0,'unverified'=>0];
 try {
     $stats['total'] = (int)db()->query("SELECT COUNT(*) FROM students WHERE status_deleted=0")->fetchColumn();
     $stats['active'] = (int)db()->query("SELECT COUNT(*) FROM students WHERE status_deleted=0 AND published='Yes'")->fetchColumn();
@@ -115,6 +125,7 @@ try {
     $stats['never_login'] = (int)db()->query("SELECT COUNT(*) FROM students WHERE status_deleted=0 AND last_login_at IS NULL")->fetchColumn();
     $stats['recent'] = (int)db()->query("SELECT COUNT(*) FROM students WHERE status_deleted=0 AND last_login_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn();
     $stats['tests'] = (int)db()->query("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0")->fetchColumn();
+    if ($hasIdentityStatus) $stats['unverified'] = (int)db()->query("SELECT COUNT(*) FROM students WHERE status_deleted=0 AND identity_status='Unverified'")->fetchColumn();
 } catch (Throwable $e) {}
 
 function student_status_badge_class(string $status): string { return $status === 'Yes' ? 'badge-yes' : 'badge-no'; }
@@ -142,6 +153,7 @@ function student_admin_date(?string $value, string $fallback = 'Never'): string 
   <a href="students.php"><i class="fa-solid fa-users"></i><b><?= e((string)$stats['total']) ?></b><span>Total Accounts</span></a>
   <a href="students.php?status=Yes"><i class="fa-solid fa-circle-check"></i><b><?= e((string)$stats['active']) ?></b><span>Active</span></a>
   <a href="students.php?status=No"><i class="fa-solid fa-user-lock"></i><b><?= e((string)$stats['inactive']) ?></b><span>Inactive</span></a>
+  <?php if($hasIdentityStatus): ?><a href="students.php?identity=Unverified"><i class="fa-solid fa-mobile-screen-button"></i><b><?= e((string)$stats['unverified']) ?></b><span>Mobile Unverified</span></a><?php endif; ?>
   <a href="students.php?login=never"><i class="fa-solid fa-user-clock"></i><b><?= e((string)$stats['never_login']) ?></b><span>Never Logged In</span></a>
   <a href="students.php?login=recent"><i class="fa-solid fa-arrow-trend-up"></i><b><?= e((string)$stats['recent']) ?></b><span>Active in 7 Days</span></a>
   <a href="weekly-tests.php#student-copies"><i class="fa-solid fa-clipboard-check"></i><b><?= e((string)$stats['tests']) ?></b><span>Test Attempts</span></a>
@@ -151,6 +163,7 @@ function student_admin_date(?string $value, string $fallback = 'Never'): string 
   <form method="get" class="student-filter-form wf147-student-filter">
     <label><span>Search student</span><input name="q" value="<?= e($q) ?>" placeholder="Name, phone, email or goal"></label>
     <label><span>Account status</span><select name="status"><option value="">All Status</option><option value="Yes" <?= $status==='Yes'?'selected':'' ?>>Active</option><option value="No" <?= $status==='No'?'selected':'' ?>>Inactive</option></select></label>
+    <?php if($hasIdentityStatus): ?><label><span>Mobile identity</span><select name="identity"><option value="">All Identity</option><option value="Unverified" <?= $identityFilter==='Unverified'?'selected':'' ?>>Unverified</option><option value="Verified" <?= $identityFilter==='Verified'?'selected':'' ?>>Verified by Institute</option></select></label><?php endif; ?>
     <label><span>Learning level</span><select name="level"><option value="">All Levels</option><?php foreach($levels as $lv): ?><option value="<?= e($lv) ?>" <?= $levelFilter===$lv?'selected':'' ?>><?= e($lv) ?></option><?php endforeach; ?></select></label>
     <label><span>Login activity</span><select name="login"><option value="">All Login Activity</option><option value="recent" <?= $loginFilter==='recent'?'selected':'' ?>>Last 7 days</option><option value="never" <?= $loginFilter==='never'?'selected':'' ?>>Never logged in</option><option value="inactive" <?= $loginFilter==='inactive'?'selected':'' ?>>Inactive 30+ days</option></select></label>
     <div class="wf147-filter-actions"><button class="btn btn-dark" type="submit">Apply Filters</button><a class="btn btn-soft" href="students.php">Reset</a></div>
@@ -160,7 +173,7 @@ function student_admin_date(?string $value, string $fallback = 'Never'): string 
 <form method="post" id="studentBulkForm" class="student-bulk-bar wf147-bulk-bar" data-confirm="Apply selected account action? Deactivate and hide actions will sign students out.">
   <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="bulk">
   <label class="checkline"><input type="checkbox" id="selectAllStudents"> Select visible students</label>
-  <select name="bulk_action" required><option value="">Choose bulk action</option><option value="approve">Activate accounts</option><option value="not_approve">Deactivate + sign out</option><option value="delete">Hide accounts safely</option></select>
+  <select name="bulk_action" required><option value="">Choose bulk action</option><option value="approve">Activate accounts</option><option value="not_approve">Deactivate + sign out</option><?php if($hasIdentityStatus): ?><option value="unverify_mobile">Mark mobile Unverified</option><?php endif; ?><option value="delete">Hide accounts safely</option></select>
   <button class="btn btn-soft" type="submit">Apply</button>
 </form>
 
@@ -173,6 +186,7 @@ function student_admin_date(?string $value, string $fallback = 'Never'): string 
       <div class="student-avatar-admin"><?= e(student_initials($student)) ?></div>
       <div class="student-main-info"><h2><?= e($student['full_name']) ?></h2><p><?= e($student['phone']) ?><?= $student['email'] ? ' • '.e($student['email']) : '' ?></p></div>
       <span class="badge <?= e(student_status_badge_class((string)$student['published'])) ?>"><?= $student['published']==='Yes'?'Active':'Inactive' ?></span>
+      <?php if($hasIdentityStatus): ?><span class="badge <?= ($student['identity_status']??'Unverified')==='Verified'?'badge-yes':'badge-no' ?>"><?= e($student['identity_status']??'Unverified') ?></span><?php endif; ?>
     </div>
     <div class="student-mini-metrics wf147-account-metrics">
       <div><b><?= e($student['current_level'] ?: 'Zero Level') ?></b><span>Level</span></div>
@@ -207,6 +221,7 @@ function student_admin_date(?string $value, string $fallback = 'Never'): string 
   </article>
   <?php endforeach; ?>
 </div>
+<?= admin_pagination_html($studentPager) ?>
 <script>
 document.getElementById('selectAllStudents')?.addEventListener('change', function(){
   document.querySelectorAll('.student-card-check input[type="checkbox"]').forEach(cb => { cb.checked = this.checked; });

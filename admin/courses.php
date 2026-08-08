@@ -126,7 +126,7 @@ $stmt = db()->prepare($sql);$stmt->execute($params);$rows=$stmt->fetchAll();
         <div class="field"><label>Lessons / Classes</label><input type="number" name="lessons_count" value="<?= e((string)($edit['lessons_count'] ?? 0)) ?>"></div>
         <div class="field"><label>Sort Order</label><input type="number" name="sort_order" value="<?= e((string)($edit['sort_order'] ?? 0)) ?>"></div>
         <div class="field"><label>Published</label><select name="published"><option <?= (($edit['published'] ?? 'Yes')==='Yes')?'selected':'' ?>>Yes</option><option <?= (($edit['published'] ?? '')==='No')?'selected':'' ?>>No</option></select></div>
-        <div class="field"><label>Course Image</label><input type="file" name="course_image" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif"><?php if (!empty($edit['course_image'])): ?><small class="help">Current: <?= e($edit['course_image']) ?></small><?php endif; ?></div>
+        <div class="field"><label>Course Image</label><input type="file" name="course_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><?php if (!empty($edit['course_image'])): ?><small class="help">Current: <?= e($edit['course_image']) ?></small><?php endif; ?></div>
         <div class="field full"><label>Short Description</label><textarea name="short_description" placeholder="Explain the result students will get."><?= e($edit['short_description'] ?? '') ?></textarea></div>
         <div class="field full"><label>Detailed Description</label><textarea name="course_details" placeholder="Full details for course detail page."><?= e($edit['course_details'] ?? '') ?></textarea></div>
         <div class="field full"><label>Learning Outcomes</label><textarea name="outcomes" placeholder="One point per line. Example: Speak daily sentences confidently"><?= e($edit['outcomes'] ?? '') ?></textarea></div>
@@ -153,7 +153,7 @@ $stmt = db()->prepare($sql);$stmt->execute($params);$rows=$stmt->fetchAll();
         <div class="field full"><button class="btn btn-primary"><?= $edit ? 'Update Course' : 'Save Course' ?></button><?php if ($edit): ?><a class="btn btn-soft" href="courses.php">Cancel Edit</a><?php endif; ?></div>
     </div>
 </form>
-<div class="panel-card"><h3>Client-friendly course setup</h3><p>Fill price, class timing, days, tests and outcomes. These details will show on course cards and detail pages.</p><div class="premium-list"><div><span>₹</span><p><b>Price visible</b> Student can compare courses quickly.</p></div><div><span>🖼</span><p><b>Image allowed</b> Only PNG, JPG, JPEG and GIF are accepted.</p></div><div><span>🧩</span><p><b>Variants</b> Add batch-wise options without creating separate pages.</p></div></div></div>
+<div class="panel-card"><h3>Client-friendly course setup</h3><p>Fill price, class timing, days, tests and outcomes. These details will show on course cards and detail pages.</p><div class="premium-list"><div><span>₹</span><p><b>Price visible</b> Student can compare courses quickly.</p></div><div><span>🖼</span><p><b>Image allowed</b> Only PNG, JPG, JPEG and WEBP are accepted.</p></div><div><span>🧩</span><p><b>Variants</b> Add batch-wise options without creating separate pages.</p></div></div></div>
 </div>
 <br>
 <div class="panel-card">

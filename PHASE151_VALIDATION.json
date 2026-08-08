@@ -1,0 +1,40 @@
+{
+  "phase": 151,
+  "base": "spoken_phase150_access_control_fix.zip",
+  "database_schema_changed": false,
+  "php_files": 80,
+  "javascript_files": 15,
+  "css_files": 68,
+  "css_parse_errors": [],
+  "service_worker_assets": 47,
+  "service_worker_missing": [],
+  "service_worker_cache": "wellfare-spoken-static-v151",
+  "phase148_static": "PASS",
+  "phase149_static": "PASS",
+  "phase150_static": "PASS",
+  "phase151_static": "PASS",
+  "http_upload_smoke": {
+    "valid_jpg": "PASS/200",
+    "valid_webp": "PASS/200",
+    "php_extension": "REJECT/400",
+    "php_content_as_jpg": "REJECT/400",
+    "double_extension_php_jpg": "REJECT/400",
+    "gif": "REJECT/400"
+  },
+  "allowed_admin_image_uploads": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp"
+  ],
+  "forbidden_examples": [
+    "php",
+    "phtml",
+    "phar",
+    "cgi",
+    "svg",
+    "gif",
+    "ico",
+    "shell.php.jpg"
+  ]
+}

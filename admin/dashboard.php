@@ -125,17 +125,61 @@ $weeklyQuestions = dashboard_count('weekly_test_questions', "status_deleted=0");
 $roadmapItems = dashboard_count_available('roadmap_items', ['status_deleted'], ['published']);
 $faculty = dashboard_count_available('faculty_members', [], ['published']);
 $recent = dashboard_rows('enquiries', 'id DESC', 6);
+
+$dashboardRbacReady = admin_rbac_ready();
+$dashboardOwnerId = $dashboardRbacReady ? admin_primary_owner_id() : 0;
+$dashboardIsOwner = $dashboardRbacReady ? admin_is_primary_owner() : false;
+$dashboardRoleKey = $dashboardRbacReady ? admin_role_key() : 'migration_pending';
+$dashboardRoleName = 'Migration Pending';
+$dashboardAdminTotal = dashboard_count('admins');
+$dashboardActiveAdmins = dashboard_count('admins', "published='Yes'");
+$dashboardSuperAdmins = 0;
+if ($dashboardRbacReady) {
+    try {
+        $roleStmt = db()->prepare('SELECT COALESCE(r.role_name,\'Unassigned\') FROM admins a LEFT JOIN admin_roles r ON r.id=a.role_id WHERE a.id=? LIMIT 1');
+        $roleStmt->execute([(int)($_SESSION['admin_id'] ?? 0)]);
+        $dashboardRoleName = (string)($roleStmt->fetchColumn() ?: 'Unassigned');
+        $dashboardSuperAdmins = (int)db()->query("SELECT COUNT(*) FROM admins a JOIN admin_roles r ON r.id=a.role_id WHERE r.role_key='super_admin' AND a.published='Yes'")->fetchColumn();
+    } catch (Throwable $e) {
+        $dashboardRoleName = 'Unknown';
+    }
+}
 ?>
 <div class="admin-top">
     <div><h1>Dashboard</h1><p>Welcome, <?= e($_SESSION['admin_name'] ?? 'Admin') ?>. Manage enquiries, students, spoken practice content, weekly tests and website settings from one clean panel.</p></div>
-    <div class="admin-actions"><a class="btn btn-primary" href="enquiries.php">View Enquiries</a><a class="btn btn-soft" href="materials.php">Study Materials</a><a class="btn btn-soft" href="weekly-tests.php">Weekly Tests</a><a class="btn btn-soft" href="../index.php" target="_blank">Open Website</a></div>
+    <div class="admin-actions"><?php if(admin_can('enquiries.manage')):?><a class="btn btn-primary" href="enquiries.php">View Enquiries</a><?php endif;?><?php if(admin_can('materials.manage')):?><a class="btn btn-soft" href="materials.php">Study Materials</a><?php endif;?><?php if(admin_can('tests.manage')):?><a class="btn btn-soft" href="weekly-tests.php">Weekly Tests</a><?php endif;?><a class="btn btn-soft" href="../index.php" target="_blank">Open Website</a></div>
 </div>
+
+<section class="wf150-security-card" aria-label="Administrator access security">
+    <div>
+        <span class="dash-mini">Security & Access Control</span>
+        <h2><?= $dashboardRbacReady ? ($dashboardIsOwner ? 'Protected institute owner.' : 'Role-based staff access is active.') : 'Database security migration is pending.' ?></h2>
+        <p>Signed in as <strong><?= e($dashboardRoleName) ?></strong>. <?= $dashboardIsOwner ? 'Only this protected owner can create administrator accounts or change roles. A second Super Admin cannot be assigned from the Admin panel.' : ($dashboardRbacReady ? 'Your access is limited to the permissions assigned to this role. Administrator/role management is owner-only.' : 'Until the security migration is completed, business modules remain locked to prevent legacy privilege bypass.') ?></p>
+        <div class="admin-actions">
+            <?php if ($dashboardIsOwner): ?>
+                <a class="btn btn-primary" href="admin-users.php"><i class="fa-solid fa-user-shield"></i> Admin Accounts</a>
+                <a class="btn btn-soft" href="roles.php"><i class="fa-solid fa-shield-halved"></i> Roles</a>
+                <a class="btn btn-soft" href="audit-log.php"><i class="fa-solid fa-clock-rotate-left"></i> Audit</a>
+            <?php elseif (!$dashboardRbacReady): ?>
+                <a class="btn btn-primary" href="system-check.php"><i class="fa-solid fa-database"></i> Complete DB Upgrade</a>
+            <?php endif; ?>
+        </div>
+    </div>
+    <div class="wf150-security-metrics">
+        <div><b><?= e((string)$dashboardAdminTotal) ?></b><span>Admin records</span></div>
+        <div><b><?= e((string)$dashboardActiveAdmins) ?></b><span>Active staff</span></div>
+        <div><b><?= $dashboardRbacReady ? e((string)$dashboardSuperAdmins) : '—' ?></b><span>Super Admin</span></div>
+        <div><b><?= $dashboardRbacReady ? ($dashboardIsOwner ? 'Owner' : 'Staff') : 'Pending' ?></b><span>Your access</span></div>
+        <?php if ($dashboardRbacReady && $dashboardSuperAdmins !== 1): ?><div class="wf150-security-warning">Security warning: expected exactly 1 active Super Admin. Run the Phase 150 owner-lock migration.</div><?php endif; ?>
+    </div>
+</section>
 <?php
 $dashDirectorName = trim(app_setting('director_name','')) ?: 'Institute Director';
 $dashDirectorRole = trim(app_setting('director_designation','')) ?: 'Director & Spoken English Mentor';
 $dashDirectorPhoto = site_asset_url(app_setting('director_photo',''));
 $dashLogo = site_asset_url(app_setting('site_logo',''));
 ?>
+<?php if(admin_can('students.manage')): ?>
 <section class="panel-card wf147-dashboard-account-control">
     <div class="wf147-dashboard-account-copy">
         <span class="dash-mini">Student Account Control</span>
@@ -151,7 +195,9 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
         <a href="students.php?login=never"><b><?= e((string)$studentNeverLogin) ?></b><span>Never Login</span></a>
     </div>
 </section>
+<?php endif; ?>
 
+<?php if(admin_can('settings.manage')): ?>
 <div class="panel-card director-dashboard-preview">
     <div class="director-dashboard-media">
         <?php if($dashDirectorPhoto !== ''): ?><img src="../<?= e($dashDirectorPhoto) ?>" alt="<?= e($dashDirectorName) ?>">
@@ -165,26 +211,28 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
     </div>
     <div class="admin-actions"><a class="btn btn-primary" href="settings.php#director-settings">Manage Director Profile</a><a class="btn btn-soft" href="../about.php" target="_blank">View About Page</a></div>
 </div>
+<?php endif; ?>
 <div class="grid-4 admin-dashboard-links">
-    <a class="card dash-card dash-link" href="enquiries.php"><span class="dash-mini">Open</span><strong><?= e((string)$enquiries) ?></strong><p>Total Enquiries</p></a>
-    <a class="card dash-card dash-link" href="enquiries.php?status=New"><span class="dash-mini">Today</span><strong><?= e((string)$today) ?></strong><p>Today’s Enquiries</p></a>
-    <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">CRM</span><strong><?= e((string)$admissions) ?></strong><p>Admissions</p></a>
-    <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">Fee</span><strong><?= e((string)$admissionDue) ?></strong><p>Fee Due</p></a>
-    <a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Student Accounts</p></a>
-    <a class="card dash-card dash-link" href="courses.php"><span class="dash-mini">Edit</span><strong><?= e((string)$courses) ?></strong><p>Published Courses</p></a>
-    <a class="card dash-card dash-link" href="materials.php"><span class="dash-mini">Practice</span><strong><?= e((string)$materials) ?></strong><p>Practice Sentences</p></a>
-    <a class="card dash-card dash-link" href="weekly-tests.php"><span class="dash-mini">Tests</span><strong><?= e((string)$weeklyTests) ?></strong><p>Weekly Tests</p></a>
+    <?php if(admin_can('enquiries.manage')): ?><a class="card dash-card dash-link" href="enquiries.php"><span class="dash-mini">Open</span><strong><?= e((string)$enquiries) ?></strong><p>Total Enquiries</p></a>
+    <a class="card dash-card dash-link" href="enquiries.php?status=New"><span class="dash-mini">Today</span><strong><?= e((string)$today) ?></strong><p>Today’s Enquiries</p></a><?php endif; ?>
+    <?php if(admin_can('admissions.manage')): ?><a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">CRM</span><strong><?= e((string)$admissions) ?></strong><p>Admissions</p></a>
+    <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">Fee</span><strong><?= e((string)$admissionDue) ?></strong><p>Fee Due</p></a><?php endif; ?>
+    <?php if(admin_can('students.manage')): ?><a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Student Accounts</p></a><?php endif; ?>
+    <?php if(admin_can('courses.manage')): ?><a class="card dash-card dash-link" href="courses.php"><span class="dash-mini">Edit</span><strong><?= e((string)$courses) ?></strong><p>Published Courses</p></a><?php endif; ?>
+    <?php if(admin_can('materials.manage')): ?><a class="card dash-card dash-link" href="materials.php"><span class="dash-mini">Practice</span><strong><?= e((string)$materials) ?></strong><p>Practice Sentences</p></a><?php endif; ?>
+    <?php if(admin_can('tests.manage')): ?><a class="card dash-card dash-link" href="weekly-tests.php"><span class="dash-mini">Tests</span><strong><?= e((string)$weeklyTests) ?></strong><p>Weekly Tests</p></a>
     <a class="card dash-card dash-link" href="weekly-tests.php#question-bank"><span class="dash-mini">Questions</span><strong><?= e((string)$weeklyQuestions) ?></strong><p>Weekly Question Bank</p></a>
     <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Copies</span><strong><?= e((string)$weeklyAttempts) ?></strong><p>Student Test Copies</p></a>
-    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Check</span><strong><?= e((string)$weeklyPendingChecks) ?></strong><p>Pending Review</p></a>
-    <a class="card dash-card dash-link" href="testimonials.php"><span class="dash-mini">Review</span><strong><?= e((string)$reviews) ?></strong><p>Published Reviews</p></a>
+    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Check</span><strong><?= e((string)$weeklyPendingChecks) ?></strong><p>Pending Review</p></a><?php endif; ?>
+    <?php if(admin_can('content.manage')): ?><a class="card dash-card dash-link" href="testimonials.php"><span class="dash-mini">Review</span><strong><?= e((string)$reviews) ?></strong><p>Published Reviews</p></a>
     <a class="card dash-card dash-link" href="gallery.php"><span class="dash-mini">Media</span><strong><?= e((string)$gallery) ?></strong><p>Gallery Photos</p></a>
-    <a class="card dash-card dash-link" href="batches.php"><span class="dash-mini">Timing</span><strong><?= e((string)$batches) ?></strong><p>Batch Timings</p></a>
     <a class="card dash-card dash-link" href="faqs.php"><span class="dash-mini">Help</span><strong><?= e((string)$faqs) ?></strong><p>Published FAQs</p></a>
     <a class="card dash-card dash-link" href="nav-menus.php"><span class="dash-mini">Menu</span><strong><?= e((string)$navs) ?></strong><p>Menu Links</p></a>
-    <a class="card dash-card dash-link" href="roadmap.php"><span class="dash-mini">Roadmap</span><strong><?= e((string)$roadmapItems) ?></strong><p>Roadmap Practice</p></a>
-    <a class="card dash-card dash-link" href="faculty.php"><span class="dash-mini">Team</span><strong><?= e((string)$faculty) ?></strong><p>Faculty Profiles</p></a>
+    <a class="card dash-card dash-link" href="faculty.php"><span class="dash-mini">Team</span><strong><?= e((string)$faculty) ?></strong><p>Faculty Profiles</p></a><?php endif; ?>
+    <?php if(admin_can('batches.manage')): ?><a class="card dash-card dash-link" href="batches.php"><span class="dash-mini">Timing</span><strong><?= e((string)$batches) ?></strong><p>Batch Timings</p></a><?php endif; ?>
+    <?php if(admin_can('roadmap.manage')): ?><a class="card dash-card dash-link" href="roadmap.php"><span class="dash-mini">Roadmap</span><strong><?= e((string)$roadmapItems) ?></strong><p>Roadmap Practice</p></a><?php endif; ?>
 </div>
+<?php if(admin_can('enquiries.manage')): ?>
 <br>
 <div class="panel-card">
     <div class="toolbar"><div><h2 style="margin:0;color:var(--navy)">Recent Enquiries</h2><p style="margin:4px 0 0;color:var(--muted)">Follow up quickly from the admin panel.</p></div><a class="btn btn-sm btn-dark" href="enquiries.php">Open All</a></div>
@@ -207,4 +255,5 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
         </table>
     </div>
 </div>
+<?php endif; ?>
 <?php require_once __DIR__ . '/_footer.php'; ?>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 private_no_store();
+if (admin_setup_needed()) redirect('setup.php');
 if (is_admin()) { redirect('dashboard.php'); }
 
 if (!headers_sent()) {
@@ -15,8 +16,47 @@ $siteFavicon = site_asset_url(app_setting('site_favicon', app_setting('site_logo
 $brandShort = app_setting('brand_short', 'WF');
 $loginSubtitle = app_setting('admin_login_subtitle', 'Manage enquiries, courses, learning roadmap, weekly tests, reviews and website settings from one clean panel.');
 $failedLeft = max(0, 7 - (int)($_SESSION['login_attempts'] ?? 0));
+$mfaPendingId = (int)($_SESSION['admin_mfa_pending_id'] ?? 0);
+$mfaMode = $mfaPendingId > 0 && (time() - (int)($_SESSION['admin_mfa_pending_at'] ?? 0)) <= 300;
+if (isset($_GET['cancel_mfa'])) { unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']); redirect('login.php'); }
+if (!$mfaMode && $mfaPendingId > 0) unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string)($_POST['action'] ?? 'login');
+    if ($action === 'verify_mfa' && $mfaMode) {
+        $code = trim((string)($_POST['mfa_code'] ?? ''));
+        $rateKey = 'admin-mfa:' . $mfaPendingId;
+        if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+            flash('error', 'Invalid security token. Refresh the page and try again.');
+        } elseif (!security_rate_limit($rateKey, 8, 600)) {
+            flash('error', 'Too many verification attempts. Please wait and login again.');
+            unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
+        } else {
+            $stmt = db()->prepare("SELECT * FROM admins WHERE id=? AND published='Yes' LIMIT 1");
+            $stmt->execute([$mfaPendingId]);
+            $admin = $stmt->fetch();
+            if ($admin && ($admin['mfa_enabled'] ?? 'No') === 'Yes' && !empty($admin['mfa_secret']) && admin_mfa_verify((string)$admin['mfa_secret'], $code)) {
+                if (admin_rbac_ready()) {
+                    $loginRole = admin_role_key((int)$admin['id']);
+                    if (($loginRole === 'super_admin' && !admin_is_primary_owner((int)$admin['id'])) || $loginRole === 'legacy_admin' || $loginRole === '') {
+                        admin_audit_log('admin.login_blocked_invalid_role','admin',(int)$admin['id'],'MFA passed but role assignment was invalid/protected.');
+                        unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
+                        flash('error','This administrator account has an invalid role assignment. Ask the institute owner to review access control.');
+                        redirect('login.php');
+                    }
+                }
+                security_rate_limit_clear($rateKey);
+                clear_login_attempts();
+                admin_session_login($admin);
+                db()->prepare('UPDATE admins SET last_login_at=NOW() WHERE id=?')->execute([(int)$admin['id']]);
+                admin_audit_log('admin.login_mfa','admin',(int)$admin['id'],'Administrator signed in with password + TOTP.');
+                redirect(($admin['must_change_password'] ?? 'No') === 'Yes' ? 'password.php?required=1' : 'dashboard.php');
+            }
+            flash('error', 'The authenticator code is invalid or expired.');
+        }
+        redirect('login.php?mfa=1');
+    }
+
     $trap = trim((string)($_POST['website'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
     $rateKey = 'admin-login:' . $email;
@@ -34,18 +74,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$email, 'Yes']);
         $admin = $stmt->fetch();
         if ($admin && password_verify($password, (string)$admin['password_hash'])) {
+            if (admin_rbac_ready()) {
+                $loginRole = admin_role_key((int)$admin['id']);
+                if ($loginRole === 'super_admin' && !admin_is_primary_owner((int)$admin['id'])) {
+                    admin_audit_log('admin.login_blocked_duplicate_super','admin',(int)$admin['id'],'Blocked legacy/duplicate Super Admin login; run Phase 150 owner-lock migration.');
+                    flash('error','This administrator account has an invalid privileged role. Ask the institute owner to run the access-control migration.');
+                    redirect('login.php');
+                }
+                if ($loginRole === 'legacy_admin' || $loginRole === '') {
+                    flash('error','This administrator account has no active role. Ask the institute owner to review Roles & Permissions.');
+                    redirect('login.php');
+                }
+            }
+            if (password_needs_rehash((string)$admin['password_hash'], PASSWORD_DEFAULT)) {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                db()->prepare('UPDATE admins SET password_hash=?, auth_version=auth_version+1 WHERE id=?')->execute([$hash,(int)$admin['id']]);
+                $admin['password_hash']=$hash; $admin['auth_version']=(int)($admin['auth_version']??1)+1;
+            }
             security_rate_limit_clear($rateKey);
+            if (($admin['mfa_enabled'] ?? 'No') === 'Yes' && !empty($admin['mfa_secret'])) {
+                $_SESSION['admin_mfa_pending_id']=(int)$admin['id']; $_SESSION['admin_mfa_pending_at']=time();
+                redirect('login.php?mfa=1');
+            }
             clear_login_attempts();
-            session_regenerate_id(true);
-            $_SESSION['admin_id'] = (int)$admin['id'];
-            $_SESSION['admin_name'] = (string)$admin['name'];
-            $_SESSION['admin_last_activity'] = time();
-            redirect('dashboard.php');
+            admin_session_login($admin);
+            if (column_exists('admins','last_login_at')) db()->prepare('UPDATE admins SET last_login_at=NOW() WHERE id=?')->execute([(int)$admin['id']]);
+            admin_audit_log('admin.login','admin',(int)$admin['id'],'Administrator signed in successfully.');
+            redirect(($admin['must_change_password'] ?? 'No') === 'Yes' ? 'password.php?required=1' : 'dashboard.php');
         }
         register_failed_login();
         $failedLeft = max(0, 7 - (int)($_SESSION['login_attempts'] ?? 0));
+        admin_audit_log('admin.login_failed','admin',null,'Failed login for ' . $email);
         flash('error', $failedLeft > 0 ? 'Invalid login details. Please check and try again.' : 'Too many failed attempts. Please wait 15 minutes.');
     }
+    redirect('login.php');
 }
 ?>
 <!doctype html>
@@ -95,9 +157,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form class="admin-login-form-panel" method="post" autocomplete="on" novalidate>
       <header class="admin-login-form-head">
         <span class="admin-login-secure-badge"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure access</span>
-        <span class="admin-login-kicker">Authorised staff only</span>
-        <h1>Welcome back</h1>
-        <p>Enter your institute credentials to continue.</p>
+        <span class="admin-login-kicker"><?= $mfaMode ? 'Second security step' : 'Authorised staff only' ?></span>
+        <h1><?= $mfaMode ? 'Verify Authenticator' : 'Welcome back' ?></h1>
+        <p><?= $mfaMode ? 'Enter the 6-digit code from your authenticator app.' : 'Enter your institute credentials to continue.' ?></p>
       </header>
 
       <?php if ($msg = flash('error')): ?>
@@ -105,29 +167,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
 
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-
-      <label class="admin-login-field" for="adminEmail">
-        <span>Email address</span>
-        <input id="adminEmail" type="email" name="email" value="<?= e((string)($_POST['email'] ?? '')) ?>" placeholder="Enter authorised email" autocomplete="username" inputmode="email" required autofocus>
-      </label>
-
-      <label class="admin-login-field" for="adminPassword">
-        <span>Password</span>
-        <span class="admin-login-password-wrap">
-          <input id="adminPassword" type="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
-          <button type="button" id="togglePassword" class="admin-login-eye" aria-label="Show password"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
-        </span>
-        <small id="capsHint" class="admin-login-caps">Caps Lock is on</small>
-      </label>
-
-      <input class="admin-login-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-
-      <button class="admin-login-submit" type="submit"><span>Enter Control Centre</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
-
-      <div class="admin-login-meta">
-        <span><i class="fa-solid fa-shield" aria-hidden="true"></i><?= e((string)$failedLeft) ?> attempts remaining</span>
-        <span><i class="fa-solid fa-laptop" aria-hidden="true"></i>Trusted device only</span>
-      </div>
+      <?php if ($mfaMode): ?>
+        <input type="hidden" name="action" value="verify_mfa">
+        <label class="admin-login-field" for="adminMfaCode"><span>Authenticator code</span><input id="adminMfaCode" type="text" name="mfa_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" required autofocus></label>
+        <button class="admin-login-submit" type="submit"><span>Verify & Continue</span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></button>
+        <div class="admin-login-meta"><a href="login.php?cancel_mfa=1" onclick="sessionStorage.clear()"><span><i class="fa-solid fa-arrow-left"></i>Use another account</span></a><span><i class="fa-solid fa-clock"></i>Code changes every 30 sec</span></div>
+      <?php else: ?>
+        <input type="hidden" name="action" value="login">
+        <label class="admin-login-field" for="adminEmail"><span>Email address</span><input id="adminEmail" type="email" name="email" value="<?= e((string)($_POST['email'] ?? '')) ?>" placeholder="Enter authorised email" autocomplete="username" inputmode="email" required autofocus></label>
+        <label class="admin-login-field" for="adminPassword"><span>Password</span><span class="admin-login-password-wrap"><input id="adminPassword" type="password" name="password" placeholder="Enter password" autocomplete="current-password" required><button type="button" id="togglePassword" class="admin-login-eye" aria-label="Show password"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></span><small id="capsHint" class="admin-login-caps">Caps Lock is on</small></label>
+        <input class="admin-login-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="admin-login-submit" type="submit"><span>Enter Control Centre</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        <div class="admin-login-meta"><span><i class="fa-solid fa-shield" aria-hidden="true"></i><?= e((string)$failedLeft) ?> attempts remaining</span><span><i class="fa-solid fa-laptop" aria-hidden="true"></i>Trusted device only</span></div>
+      <?php endif; ?>
 
       <div class="admin-login-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Always sign out after completing institute work.</span></div>
     </form>

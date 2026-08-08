@@ -472,14 +472,15 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach((input) =>
 
 // Phase 62: live image upload validation for allowed public images.
 (() => {
-  const allowed = ['png','jpg','jpeg','gif'];
+  const allowed = ['png','jpg','jpeg','webp'];
   document.querySelectorAll('input[type="file"][accept*=".png"], input[type="file"][accept*="image/png"]').forEach((input) => {
     input.addEventListener('change', () => {
       const file = input.files && input.files[0];
       if (!file) return;
       const ext = (file.name.split('.').pop() || '').toLowerCase();
-      if (!allowed.includes(ext)) {
-        if(window.AppUI){window.AppUI.toast('error','Only PNG, JPG, JPEG and GIF images are allowed.');}
+      const allowedMime = ['image/png','image/jpeg','image/webp'];
+      if (!allowed.includes(ext) || (file.type && !allowedMime.includes(file.type.toLowerCase()))) {
+        if(window.AppUI){window.AppUI.toast('error','Only PNG, JPG, JPEG and WEBP images are allowed.');}
         input.value = '';
       }
     });

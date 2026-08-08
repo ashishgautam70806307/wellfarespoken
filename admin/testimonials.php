@@ -58,7 +58,7 @@ $rows=db()->query('SELECT * FROM testimonials ORDER BY sort_order ASC, id DESC')
 <label>Sort Order <input name="sort_order" type="number" value="<?= e((string)($edit['sort_order']??0)) ?>"></label>
 <label>Review Date <input name="review_date" value="<?= e($edit['review_date']??'') ?>" placeholder="11 months ago"></label>
 <label>Status <select name="published"><option <?= (($edit['published']??'Yes')==='Yes')?'selected':'' ?>>Yes</option><option <?= (($edit['published']??'Yes')==='No')?'selected':'' ?>>No</option></select></label>
-<label class="full">Student Photo optional <input type="file" name="student_image" accept=".png,.jpg,.jpeg,.gif"></label>
+<label class="full">Student Photo optional <input type="file" name="student_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"></label>
 <label class="full">Review Message <textarea name="message" rows="5" required placeholder="Write student feedback..."><?= e($edit['message']??'') ?></textarea></label>
 </div>
 <button class="btn btn-primary">Save Review</button>

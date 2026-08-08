@@ -1,77 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 
-function app_security_headers(): void
-{
-    if (headers_sent()) return;
-    header('X-Frame-Options: SAMEORIGIN');
-    header('X-Content-Type-Options: nosniff');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('X-Permitted-Cross-Domain-Policies: none');
-    header('Permissions-Policy: camera=(), geolocation=(), microphone=(self)');
-    header("Content-Security-Policy: frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'");
-    header('Cross-Origin-Opener-Policy: same-origin-allow-popups');
-    if (function_exists('app_request_is_https') && app_request_is_https()) {
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-    }
-}
-app_security_headers();
-
-function private_no_store(): void
-{
-    if (headers_sent()) return;
-    header('Cache-Control: no-store, no-cache, must-revalidate, private, max-age=0');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-    header('X-Robots-Tag: noindex, nofollow');
-}
-
-function client_ip(): string
-{
-    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-    if (defined('TRUST_PROXY_HEADERS') && TRUST_PROXY_HEADERS) {
-        $forwarded = trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))[0] ?? '');
-        if (filter_var($forwarded, FILTER_VALIDATE_IP)) $ip = $forwarded;
-    }
-    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
-}
-
-function security_rate_file(string $key): string
-{
-    $dir = dirname(__DIR__) . '/storage/rate-limits';
-    if (!is_dir($dir)) @mkdir($dir, 0750, true);
-    return $dir . '/' . hash('sha256', $key . '|' . client_ip()) . '.json';
-}
-
-function security_rate_limit(string $key, int $maxAttempts = 30, int $windowSeconds = 60): bool
-{
-    $maxAttempts = max(1, $maxAttempts);
-    $windowSeconds = max(1, $windowSeconds);
-    $file = security_rate_file($key);
-    $handle = @fopen($file, 'c+');
-    if (!$handle) return true; // Fail open rather than break the website.
-    try {
-        if (!flock($handle, LOCK_EX)) return true;
-        rewind($handle);
-        $data = json_decode(stream_get_contents($handle) ?: '[]', true);
-        $times = is_array($data) ? $data : [];
-        $cutoff = time() - $windowSeconds;
-        $times = array_values(array_filter(array_map('intval', $times), fn($ts) => $ts >= $cutoff));
-        if (count($times) >= $maxAttempts) return false;
-        $times[] = time();
-        ftruncate($handle, 0); rewind($handle);
-        fwrite($handle, json_encode($times)); fflush($handle);
-        return true;
-    } finally {
-        @flock($handle, LOCK_UN); @fclose($handle);
-    }
-}
-
-function security_rate_limit_clear(string $key): void
-{
-    $file = security_rate_file($key);
-    if (is_file($file)) @unlink($file);
-}
+require_once __DIR__ . '/security.php';
 
 function safe_local_redirect(string $path, string $default = 'student-dashboard.php'): string
 {
@@ -259,7 +189,7 @@ function is_admin(): bool
 
 function admin_session_logout(): void
 {
-    unset($_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['admin_last_activity']);
+    unset($_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['admin_auth_signature'], $_SESSION['admin_last_activity'], $_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
     session_regenerate_id(true);
 }
 
@@ -273,16 +203,37 @@ function require_admin(): void
         redirect('login.php?expired=1');
     }
     try {
-        $stmt = db()->prepare("SELECT id, name, published FROM admins WHERE id=? LIMIT 1");
+        $cols = ['id','name','email','password_hash','published'];
+        foreach (['role_id','auth_version','must_change_password','mfa_enabled'] as $col) if (column_exists('admins',$col)) $cols[]=$col;
+        $stmt = db()->prepare('SELECT ' . implode(',', $cols) . ' FROM admins WHERE id=? LIMIT 1');
         $stmt->execute([(int)$_SESSION['admin_id']]);
         $admin = $stmt->fetch();
         if (!$admin || ($admin['published'] ?? 'No') !== 'Yes') {
             admin_session_logout();
             redirect('login.php?inactive=1');
         }
+        if (function_exists('admin_session_signature')) {
+            $databaseSignature = admin_session_signature($admin);
+            $sessionSignature = (string)($_SESSION['admin_auth_signature'] ?? '');
+            if ($sessionSignature !== '' && !hash_equals($databaseSignature,$sessionSignature)) {
+                admin_session_logout();
+                redirect('login.php?reset=1');
+            }
+            if ($sessionSignature === '') $_SESSION['admin_auth_signature']=$databaseSignature;
+        }
         $_SESSION['admin_name'] = (string)$admin['name'];
         $_SESSION['admin_last_activity'] = time();
+        $page = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+        if (($admin['must_change_password'] ?? 'No') === 'Yes' && !in_array($page,['password.php','logout.php'],true)) {
+            redirect('password.php?required=1');
+        }
+        if (function_exists('admin_page_permission')) {
+            $permission = admin_page_permission($page);
+            if ($permission) admin_require_permission($permission);
+        }
+        if (function_exists('admin_request_audit_bootstrap')) admin_request_audit_bootstrap();
     } catch (Throwable $e) {
+        error_log('[admin-session] ' . $e->getMessage());
         admin_session_logout();
         redirect('login.php');
     }
@@ -1437,34 +1388,148 @@ function secure_upload_directory(string $dir): void
     if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
         throw new RuntimeException('Upload directory could not be created.');
     }
-    $rules = "Options -Indexes\n<FilesMatch \"\\.(php|phtml|phar|php[0-9]*)$\">\n  Require all denied\n</FilesMatch>\n";
-    if (!is_file($dir . '/.htaccess')) @file_put_contents($dir . '/.htaccess', $rules, LOCK_EX);
+
+    // Defence in depth for Apache/XAMPP/shared hosting. Uploaded files are also
+    // renamed to a server-generated image extension, but the upload directory
+    // itself must never execute server-side scripts.
+    $rules = <<<'HTACCESS'
+Options -Indexes -ExecCGI
+<IfModule mod_mime.c>
+  RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .sh
+  RemoveType .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .sh
+</IfModule>
+<FilesMatch "\.(php|phtml|phar|php[0-9]*|cgi|pl|py|sh|shtml|htaccess)$">
+  Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Content-Security-Policy "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'none'; script-src 'none'; sandbox"
+</IfModule>
+HTACCESS;
+    $rules .= "\n";
+    @file_put_contents($dir . '/.htaccess', $rules, LOCK_EX);
     if (!is_file($dir . '/index.html')) @file_put_contents($dir . '/index.html', '', LOCK_EX);
 }
 
 function upload_detect_mime(string $tmp): string
 {
     if ($tmp === '' || !is_file($tmp)) return '';
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    return strtolower((string)$finfo->file($tmp));
+    try {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        return strtolower((string)$finfo->file($tmp));
+    } catch (Throwable $e) {
+        return '';
+    }
 }
 
-function secure_image_upload(array $file, string $folder, string $prefix, int $maxBytes = 2097152, bool $allowIco = false): ?string
+function secure_image_allowed_extensions(): array
 {
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
-    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) throw new RuntimeException('Image upload failed. Please try again.');
-    if ((int)($file['size'] ?? 0) <= 0 || (int)$file['size'] > $maxBytes) throw new RuntimeException('Image size is not allowed.');
+    return ['jpg', 'jpeg', 'png', 'webp'];
+}
+
+function secure_image_extension_for_mime(string $mime): string
+{
+    return match (strtolower(trim($mime))) {
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        default => '',
+    };
+}
+
+function secure_image_filename_is_allowed(string $originalName): bool
+{
+    $name = trim(str_replace(["\0", "\r", "\n"], '', basename($originalName)));
+    if ($name === '') return false;
+    if (preg_match('/\.(?:php[0-9]*|phtml|phar|cgi|pl|py|sh|jsp|asp|aspx|shtml|htaccess)(?:\.|$)/i', $name)) return false;
+    $ext = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
+    return in_array($ext, secure_image_allowed_extensions(), true);
+}
+
+function secure_image_reencode(string $source, string $target, string $mime): bool
+{
+    if (!function_exists('imagecreatefromstring')) return false;
+    $bytes = @file_get_contents($source);
+    if ($bytes === false || $bytes === '') return false;
+    $image = @imagecreatefromstring($bytes);
+    if (!$image) return false;
+
+    try {
+        if ($mime === 'image/jpeg' && function_exists('imagejpeg')) {
+            return (bool)@imagejpeg($image, $target, 90);
+        }
+        if ($mime === 'image/png' && function_exists('imagepng')) {
+            @imagealphablending($image, false);
+            @imagesavealpha($image, true);
+            return (bool)@imagepng($image, $target, 6);
+        }
+        if ($mime === 'image/webp' && function_exists('imagewebp')) {
+            @imagealphablending($image, false);
+            @imagesavealpha($image, true);
+            return (bool)@imagewebp($image, $target, 88);
+        }
+        return false;
+    } finally {
+        if (is_resource($image) || is_object($image)) @imagedestroy($image);
+    }
+}
+
+function secure_image_upload(array $file, string $folder, string $prefix, int $maxBytes = 2097152): ?string
+{
+    $error = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($error === UPLOAD_ERR_NO_FILE) return null;
+    if ($error !== UPLOAD_ERR_OK) throw new RuntimeException('Image upload failed. Please try again.');
+
+    $size = (int)($file['size'] ?? 0);
+    if ($size <= 0 || $size > $maxBytes) throw new RuntimeException('Image size is not allowed.');
+
+    $originalName = (string)($file['name'] ?? '');
+    if (!secure_image_filename_is_allowed($originalName)) {
+        throw new RuntimeException('Only JPG, JPEG, PNG and WEBP image files are allowed.');
+    }
+
     $tmp = (string)($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_file($tmp) || !is_uploaded_file($tmp)) {
+        throw new RuntimeException('Invalid upload source.');
+    }
+
     $mime = upload_detect_mime($tmp);
-    $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/gif'=>'gif','image/webp'=>'webp'];
-    if ($allowIco) { $allowed['image/x-icon']='ico'; $allowed['image/vnd.microsoft.icon']='ico'; }
-    if (!isset($allowed[$mime])) throw new RuntimeException('Only JPG, PNG, GIF and WEBP images are allowed. SVG is blocked for security.');
-    if ($allowed[$mime] !== 'ico' && !@getimagesize($tmp)) throw new RuntimeException('Invalid or damaged image file.');
+    $serverExt = secure_image_extension_for_mime($mime);
+    if ($serverExt === '') throw new RuntimeException('Only JPG, JPEG, PNG and WEBP image files are allowed.');
+
+    $clientExt = strtolower((string)pathinfo($originalName, PATHINFO_EXTENSION));
+    $extensionMatches = $mime === 'image/jpeg'
+        ? in_array($clientExt, ['jpg', 'jpeg'], true)
+        : $clientExt === $serverExt;
+    if (!$extensionMatches) throw new RuntimeException('Image extension does not match the uploaded image content.');
+
+    $info = @getimagesize($tmp);
+    if (!is_array($info) || empty($info[0]) || empty($info[1])) throw new RuntimeException('Invalid or damaged image file.');
+    $width = (int)$info[0];
+    $height = (int)$info[1];
+    if ($width < 1 || $height < 1 || $width > 12000 || $height > 12000 || ($width * $height) > 40000000) {
+        throw new RuntimeException('Image dimensions are too large.');
+    }
+
+    if (function_exists('exif_imagetype')) {
+        $type = @exif_imagetype($tmp);
+        $expected = $mime === 'image/jpeg' ? IMAGETYPE_JPEG : ($mime === 'image/png' ? IMAGETYPE_PNG : (defined('IMAGETYPE_WEBP') ? IMAGETYPE_WEBP : 18));
+        if ($type !== false && $type !== $expected) throw new RuntimeException('Image signature does not match its declared type.');
+    }
+
     $dir = dirname(__DIR__) . '/assets/uploads/' . trim($folder, '/');
     secure_upload_directory($dir);
     $safePrefix = preg_replace('/[^a-z0-9_-]/i', '', $prefix) ?: 'image';
-    $name = $safePrefix . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(6)) . '.' . $allowed[$mime];
-    if (!move_uploaded_file($tmp, $dir . '/' . $name)) throw new RuntimeException('Could not save uploaded image.');
+    $name = $safePrefix . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(8)) . '.' . $serverExt;
+    $target = $dir . '/' . $name;
+
+    // When GD is available, decoding and re-encoding strips trailing/polyglot
+    // payload data instead of preserving attacker-controlled file bytes.
+    $sanitized = secure_image_reencode($tmp, $target, $mime);
+    if (!$sanitized && !move_uploaded_file($tmp, $target)) {
+        throw new RuntimeException('Could not save uploaded image.');
+    }
+    @chmod($target, 0644);
     return 'assets/uploads/' . trim($folder, '/') . '/' . $name;
 }
 
@@ -1709,7 +1774,7 @@ function upload_brand_asset(array $file, string $type = 'logo'): ?string
 {
     if (empty($file['name']) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
     try {
-        return secure_image_upload($file, 'brand', $type, 2 * 1024 * 1024, true);
+        return secure_image_upload($file, 'brand', $type, 2 * 1024 * 1024);
     } catch (RuntimeException $e) {
         return null;
     }
@@ -2584,7 +2649,14 @@ function fetch_material_assets(int $collectionId = 0, int $limit = 80): array
         $stmt = db()->prepare("SELECT * FROM material_assets WHERE published='Yes' AND status_deleted=0 ORDER BY practice_priority DESC, sort_order ASC, id DESC LIMIT {$limit}");
         $stmt->execute();
     }
-    return $stmt->fetchAll();
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row) {
+        // Never expose the physical storage path to the browser. Files are delivered
+        // only through material-file.php after an authenticated access check.
+        $row['secure_url'] = 'material-file.php?id=' . (int)($row['id'] ?? 0);
+    }
+    unset($row);
+    return $rows;
 }
 
 function upload_material_file(array $file): ?string
@@ -2600,11 +2672,17 @@ function upload_material_file(array $file): ?string
         'csv'=>['text/csv','text/plain','application/csv','application/vnd.ms-excel']
     ];
     if (!isset($allowed[$ext]) || !in_array($mime, $allowed[$ext], true)) throw new RuntimeException('File type does not match the allowed material format.');
-    $dir = dirname(__DIR__) . '/assets/uploads/materials';
-    secure_upload_directory($dir);
-    $name = 'material-' . date('Ymd-His') . '-' . bin2hex(random_bytes(6)) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
-    if (!move_uploaded_file((string)$file['tmp_name'], $dir . '/' . $name)) throw new RuntimeException('Could not save material file.');
-    return 'assets/uploads/materials/' . $name;
+
+    $root = material_private_root();
+    $dir = $root . '/materials';
+    if (!is_dir($dir) && !mkdir($dir, 0750, true) && !is_dir($dir)) {
+        throw new RuntimeException('Could not prepare private material storage.');
+    }
+    $name = 'material-' . date('Ymd-His') . '-' . bin2hex(random_bytes(8)) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+    $target = $dir . '/' . $name;
+    if (!move_uploaded_file((string)$file['tmp_name'], $target)) throw new RuntimeException('Could not save material file.');
+    @chmod($target, 0640);
+    return 'private/materials/' . $name;
 }
 
 function seed_uploaded_note_assets(): void
@@ -4907,3 +4985,5 @@ function admin_fetch_faculty(int $limit = 200): array
         return [];
     }
 }
+
+require_once __DIR__ . "/phase148_backend.php";

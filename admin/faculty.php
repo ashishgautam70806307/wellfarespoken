@@ -3,54 +3,10 @@ ensure_schema_updates();
 
 function faculty_upload_image(array $file): string
 {
-    if (empty($file['name']) || (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-        return '';
-    }
-    if ((int)$file['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Image upload failed. Please try again.');
-    }
-
-    $allowed = [
-        'image/png' => 'png',
-        'image/jpeg' => 'jpg',
-        'image/gif' => 'gif'
-    ];
-
-    $tmp = (string)$file['tmp_name'];
-    $mime = '';
-    if (function_exists('finfo_open')) {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if ($finfo) {
-            $mime = (string)finfo_file($finfo, $tmp);
-            finfo_close($finfo);
-        }
-    }
-    if ($mime === '' && function_exists('mime_content_type')) {
-        $mime = (string)mime_content_type($tmp);
-    }
-
-    if (!isset($allowed[$mime])) {
-        throw new Exception('Only PNG, JPG, JPEG and GIF images are allowed.');
-    }
-
-    if ((int)$file['size'] > 2 * 1024 * 1024) {
-        throw new Exception('Image size should be under 2MB.');
-    }
-
-    $dir = dirname(__DIR__) . '/assets/uploads/faculty';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0775, true);
-    }
-
-    $name = 'faculty_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
-    $target = $dir . '/' . $name;
-
-    if (!move_uploaded_file($tmp, $target)) {
-        throw new Exception('Could not save uploaded image.');
-    }
-
-    return 'assets/uploads/faculty/' . $name;
+    $path = secure_image_upload($file, 'faculty', 'faculty', 2 * 1024 * 1024);
+    return $path ?? '';
 }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate($_POST['csrf_token'] ?? '')) {
@@ -182,7 +138,7 @@ $totalPages = max(1, (int)ceil($totalRows / $perPage));
             <label>Qualification<input name="qualification" value="<?= e($edit['qualification'] ?? '') ?>" placeholder="B.Ed, MA, Diploma"></label>
 
             <label class="wide">Faculty Photo
-                <input type="file" name="faculty_photo" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif">
+                <input type="file" name="faculty_photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
                 <?php if (!empty($edit['image_url'])): ?><small>Current: <?= e($edit['image_url']) ?></small><?php endif; ?>
             </label>
 

@@ -29,9 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pageKey = trim($_POST['page_key'] ?? 'home') ?: 'home';
     $showContent = ($_POST['show_content'] ?? 'Yes') === 'No' ? 'No' : 'Yes';
     $title = trim($_POST['title'] ?? '');
-    if ($title === '' && $showContent === 'No') {
-        $title = 'Image Banner';
-    }
 
     $fallbackImage = trim($_POST['existing_image_url'] ?? '');
     $desktopImage = trim($_POST['existing_desktop_image_url'] ?? '');
@@ -45,14 +42,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($uploadedDesktop) $desktopImage = $uploadedDesktop;
         if ($uploadedMobile) $mobileImage = $uploadedMobile;
 
-        if ($desktopImage === '') $desktopImage = $fallbackImage;
-        if ($fallbackImage === '') $fallbackImage = $desktopImage;
+        if ($fallbackImage === '' && $desktopImage !== '') $fallbackImage = $desktopImage;
+        if ($fallbackImage === '' && $mobileImage !== '') $fallbackImage = $mobileImage;
+        if ($desktopImage === '' && $fallbackImage !== '') $desktopImage = $fallbackImage;
+        if ($desktopImage === '' && $mobileImage !== '') $desktopImage = $mobileImage;
 
-        if ($title === '') {
-            flash('error', 'Banner title is required when overlay content is enabled.');
-        } elseif ($fallbackImage === '' && $desktopImage === '') {
-            flash('error', 'Please upload at least a desktop or fallback banner image.');
+        $eyebrow = trim((string)($_POST['eyebrow'] ?? ''));
+        $subtitle = trim((string)($_POST['subtitle'] ?? ''));
+        $primaryText = trim((string)($_POST['primary_text'] ?? ''));
+        $primaryUrl = trim((string)($_POST['primary_url'] ?? ''));
+        $secondaryText = trim((string)($_POST['secondary_text'] ?? ''));
+        $secondaryUrl = trim((string)($_POST['secondary_url'] ?? ''));
+        $hasCopy = $eyebrow !== '' || $title !== '' || $subtitle !== ''
+            || ($primaryText !== '' && $primaryUrl !== '')
+            || ($secondaryText !== '' && $secondaryUrl !== '');
+        $hasImage = $fallbackImage !== '' || $desktopImage !== '' || $mobileImage !== '';
+        if (!$hasImage && !$hasCopy) {
+            flash('error', 'Add at least one banner image or some banner text. No individual field is required.');
         } else {
+            // Smart mode: uploading only artwork automatically becomes image-only;
+            // text-only records always keep content visible. The manual selector is
+            // still respected when both image and text are supplied.
+            if ($hasImage && !$hasCopy) $showContent = 'No';
+            if (!$hasImage) $showContent = 'Yes';
             $baseData = [
                 $pageKey,
                 trim($_POST['eyebrow'] ?? ''),
@@ -79,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $contentPosition = in_array($rawContentPosition, ['left', 'center', 'right'], true)
                     ? $rawContentPosition
                     : 'left';
-                $overlayStrength = max(15, min(85, (int)($_POST['overlay_strength'] ?? 58)));
+                $overlayStrength = max(0, min(85, (int)($_POST['overlay_strength'] ?? 58)));
 
                 $responsiveData = [
                     $pageKey,
@@ -152,7 +164,7 @@ $pageOptions = [
 <div class="admin-top">
     <div>
         <h1>Responsive Hero Banners</h1>
-        <p>Upload separate desktop and mobile artwork so the banner stays clear on every device.</p>
+        <p>Use image-only, text-only or image + text banners. Every content field is optional.</p>
     </div>
     <a class="btn btn-primary" href="../index.php" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Website</a>
 </div>
@@ -168,7 +180,7 @@ $pageOptions = [
 <div class="hero-admin-stack-v133">
     <div class="panel-card hero-editor-panel-v133">
         <div class="toolbar">
-            <div><h2><?= $edit ? 'Edit' : 'Add' ?> Hero Banner</h2><p>Keep banner text short. Use image-only mode when artwork already contains text.</p></div>
+            <div><h2><?= $edit ? 'Edit' : 'Add' ?> Hero Banner</h2><p>Upload artwork only, write text only, or use both. No individual banner field is mandatory.</p></div>
         </div>
         <form method="post" enctype="multipart/form-data" class="form-grid" id="responsiveBannerForm">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -212,14 +224,14 @@ $pageOptions = [
             </details>
 
             <?php if ($responsiveColumnsReady): ?>
-                <label>Show text over banner?
+                <label>Show optional text/content?
                     <select name="show_content" id="showBannerContent"><option value="Yes" <?= (($edit['show_content'] ?? 'Yes') === 'Yes') ? 'selected' : '' ?>>Yes</option><option value="No" <?= (($edit['show_content'] ?? '') === 'No') ? 'selected' : '' ?>>No — image only</option></select>
                 </label>
                 <label>Text position
                     <select name="content_position"><option value="left" <?= (($edit['content_position'] ?? 'left') === 'left') ? 'selected' : '' ?>>Left</option><option value="center" <?= (($edit['content_position'] ?? '') === 'center') ? 'selected' : '' ?>>Center</option><option value="right" <?= (($edit['content_position'] ?? '') === 'right') ? 'selected' : '' ?>>Right</option></select>
                 </label>
                 <label class="full">Overlay darkness <span id="overlayStrengthValue"><?= e((string)($edit['overlay_strength'] ?? 58)) ?>%</span>
-                    <input type="range" min="15" max="85" step="1" name="overlay_strength" value="<?= e((string)($edit['overlay_strength'] ?? 58)) ?>" id="overlayStrengthRange">
+                    <input type="range" min="0" max="85" step="1" name="overlay_strength" value="<?= e((string)($edit['overlay_strength'] ?? 58)) ?>" id="overlayStrengthRange">
                 </label>
             <?php else: ?>
                 <input type="hidden" name="show_content" value="Yes">

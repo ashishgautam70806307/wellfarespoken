@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
         if ($logoPath) {
             $stmt->execute(['site_logo', $logoPath]);
         } else {
-            $uploadError = 'Logo upload failed. Use jpg, png, webp, gif, svg, or ico under 2 MB.';
+            $uploadError = 'Logo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
         }
     }
     if (!empty($_FILES['site_favicon_file']['name'])) {
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
         if ($faviconPath) {
             $stmt->execute(['site_favicon', $faviconPath]);
         } else {
-            $uploadError = 'Favicon upload failed. Use jpg, png, webp, gif, svg, or ico under 2 MB.';
+            $uploadError = 'Favicon upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
         }
     }
     if (!empty($_FILES['director_photo_file']['name'])) {
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             }
         } catch (Throwable $e) {
             error_log('[admin-settings-upload] ' . $e->__toString());
-            $uploadError = 'Director photo upload failed. Use a valid image under the configured upload limit.';
+            $uploadError = 'Director photo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
         }
     }
     if ($uploadError !== '' || $settingErrors) {
@@ -165,8 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                         <div><?php if ($currentFavicon): ?><img src="../<?= e($currentFavicon) ?>" alt="Favicon preview"><?php else: ?><span class="brand-mark">★</span><?php endif; ?><small>Favicon</small></div>
                     </div>
                 </div>
-                <div class="field"><label>Upload Logo</label><input type="file" name="site_logo_file" accept="image/*,.ico,.svg"><span class="help">Recommended: transparent PNG/WebP/SVG, max 2 MB.</span></div>
-                <div class="field"><label>Upload Favicon</label><input type="file" name="site_favicon_file" accept="image/*,.ico,.svg"><span class="help">Recommended: square 512x512 PNG or .ico.</span></div>
+                <div class="field"><label>Upload Logo</label><input type="file" name="site_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP, max 2 MB.</span></div>
+                <div class="field"><label>Upload Favicon</label><input type="file" name="site_favicon_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: square PNG, JPG, JPEG or WEBP, max 2 MB.</span></div>
                 <div class="field full"><label>Logo Path</label><input name="site_logo" value="<?= e(app_setting('site_logo', '')) ?>" placeholder="assets/uploads/brand/logo.png"><span class="help">Upload a logo above or paste an existing path.</span></div>
                 <div class="field full"><label>Favicon Path</label><input name="site_favicon" value="<?= e(app_setting('site_favicon', '')) ?>" placeholder="assets/uploads/brand/favicon.png"><span class="help">Upload a favicon above or paste an existing path.</span></div>
             <?php endif; ?>
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                         <div><?php if ($currentDirectorPhoto): ?><img src="../<?= e($currentDirectorPhoto) ?>" alt="Director photo preview"><?php else: ?><span class="brand-mark"><?= e(mb_substr(app_setting('director_name','D') ?: 'D',0,1)) ?></span><?php endif; ?><small>Director Photo</small></div>
                     </div>
                 </div>
-                <div class="field"><label>Choose Director Image</label><input type="file" name="director_photo_file" accept="image/png,image/jpeg,image/gif"><span class="help">Allowed: PNG, JPG, JPEG, GIF. Best size: square or portrait image under 2 MB.</span></div>
+                <div class="field"><label>Choose Director Image</label><input type="file" name="director_photo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP. Best size: square or portrait image under 2 MB.</span></div>
                 <div class="field"><label>Director Photo Path</label><input name="director_photo" value="<?= e(app_setting('director_photo', '')) ?>" placeholder="assets/uploads/gallery/director.png"><span class="help">Upload image above or paste existing image path.</span></div>
             <?php endif; ?>
             <?php foreach ($fields as $key => $meta): $label = $meta[0]; $type = $meta[1]; $placeholder = $meta[2] ?? ''; ?>
