@@ -16,17 +16,16 @@ function admin_count(): int
 
 function admin_setup_needed(): bool
 {
-    // First-run setup is allowed only when there is no real administrator yet.
-    // The exact historical predictable seed is ignored so a migrated installation
-    // can replace it once; deactivating legitimate admins never reopens setup.
+    // Setup is a true first-install bootstrap only. Any existing administrator row
+    // means the public Institute Login must remain a login screen. Legacy/migrated
+    // accounts are handled by RBAC/password migration rules, never by reopening setup.
     try {
         if (!table_exists('admins')) return true;
-        $legacyEmail = 'admin@wellfare.local';
-        $legacyHash = '$2y$12$DHCToBguTMZptJEHcBMUGuoAErIOUDX45NhgtxRT6i9LPRaojvz5u';
-        $stmt = db()->prepare("SELECT COUNT(*) FROM admins WHERE NOT (LOWER(email)=? AND password_hash=?)");
-        $stmt->execute([$legacyEmail,$legacyHash]);
-        return (int)$stmt->fetchColumn() === 0;
-    } catch (Throwable $e) { return false; }
+        return admin_count() === 0;
+    } catch (Throwable $e) {
+        // Never reopen owner creation because of a transient database/query error.
+        return false;
+    }
 }
 
 function admin_rbac_ready(): bool

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 private_no_store();
-if (admin_setup_needed()) redirect('setup.php');
+$setupNeeded = admin_setup_needed();
 if (is_admin()) { redirect('dashboard.php'); }
 
 if (!headers_sent()) {
@@ -22,6 +22,10 @@ if (isset($_GET['cancel_mfa'])) { unset($_SESSION['admin_mfa_pending_id'], $_SES
 if (!$mfaMode && $mfaPendingId > 0) unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($setupNeeded) {
+        flash('error', 'No institute administrator account exists yet. Complete the one-time secure owner setup, then return to Institute Login.');
+        redirect('login.php');
+    }
     $action = (string)($_POST['action'] ?? 'login');
     if ($action === 'verify_mfa' && $mfaMode) {
         $code = trim((string)($_POST['mfa_code'] ?? ''));
@@ -155,6 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </aside>
 
     <form class="admin-login-form-panel" method="post" autocomplete="on" novalidate>
+      <?php if ($setupNeeded): ?>
+        <div class="admin-login-alert" role="status"><i class="fa-solid fa-user-shield" aria-hidden="true"></i><span><strong>First-time owner setup is pending.</strong> Institute Login will always stay on this login page and will never redirect visitors to setup automatically.
+        <?php if ((defined('APP_RUNTIME_ENV') && APP_RUNTIME_ENV !== 'live') || (defined('ADMIN_SETUP_KEY') && trim((string)ADMIN_SETUP_KEY) !== '')): ?>
+          <a href="setup.php" style="display:block;margin-top:8px;font-weight:800;color:inherit;text-decoration:underline">Open one-time owner setup</a>
+        <?php else: ?>
+          <small style="display:block;margin-top:8px">For a brand-new live install only, set <code>ADMIN_SETUP_KEY</code> in the server <code>.env</code>, open <code>/admin/setup.php</code> once, create the owner, then remove/rotate the key.</small>
+        <?php endif; ?>
+        </span></div>
+      <?php endif; ?>
       <header class="admin-login-form-head">
         <span class="admin-login-secure-badge"><i class="fa-solid fa-lock" aria-hidden="true"></i> Secure access</span>
         <span class="admin-login-kicker"><?= $mfaMode ? 'Second security step' : 'Authorised staff only' ?></span>
@@ -177,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label class="admin-login-field" for="adminEmail"><span>Email address</span><input id="adminEmail" type="email" name="email" value="<?= e((string)($_POST['email'] ?? '')) ?>" placeholder="Enter authorised email" autocomplete="username" inputmode="email" required autofocus></label>
         <label class="admin-login-field" for="adminPassword"><span>Password</span><span class="admin-login-password-wrap"><input id="adminPassword" type="password" name="password" placeholder="Enter password" autocomplete="current-password" required><button type="button" id="togglePassword" class="admin-login-eye" aria-label="Show password"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></span><small id="capsHint" class="admin-login-caps">Caps Lock is on</small></label>
         <input class="admin-login-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <button class="admin-login-submit" type="submit"><span>Enter Control Centre</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        <button class="admin-login-submit" type="submit" <?= $setupNeeded ? 'disabled aria-disabled="true"' : '' ?>><span>Enter Control Centre</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
         <div class="admin-login-meta"><span><i class="fa-solid fa-shield" aria-hidden="true"></i><?= e((string)$failedLeft) ?> attempts remaining</span><span><i class="fa-solid fa-laptop" aria-hidden="true"></i>Trusted device only</span></div>
       <?php endif; ?>
 
