@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/error-pages.php';
 private_no_store();
 ensure_schema_updates();
 weekly_test_ensure_schema();
@@ -7,9 +8,7 @@ weekly_test_ensure_schema();
 $attemptId = (int)($_GET['attempt_id'] ?? 0);
 $token = trim((string)($_GET['token'] ?? ''));
 if ($attemptId <= 0 || $token === '') {
-    http_response_code(403);
-    echo 'Invalid exam link.';
-    exit;
+    wf_show_error_page(403);
 }
 
 $stmt = db()->prepare("SELECT a.*, t.title, t.test_type, t.duration_minutes, t.instructions, t.total_questions, t.shuffle_options, t.warning_limit, t.penalty_after_warnings, t.penalty_per_warning, t.strict_exam_mode, t.auto_submit_on_warning_limit, t.allow_question_jump
@@ -19,15 +18,12 @@ $stmt = db()->prepare("SELECT a.*, t.title, t.test_type, t.duration_minutes, t.i
 $stmt->execute([$attemptId, $token]);
 $attempt = $stmt->fetch();
 if (!$attempt) {
-    http_response_code(403);
-    echo 'Exam access denied.';
-    exit;
+    wf_show_error_page(403);
 }
 if (!empty($attempt['student_id'])) {
     require_student();
     if ((int)$attempt['student_id'] !== current_student_id()) {
-        http_response_code(403);
-        exit('Exam access denied.');
+        wf_show_error_page(403);
     }
 }
 
@@ -50,9 +46,7 @@ if ($remaining <= 0) {
     $finalized = weekly_test_finalize_attempt($attemptId, $token, [], 'timer_expired');
     if (!empty($finalized['result_url'])) $resultUrl = (string)$finalized['result_url'];
     if (empty($finalized['success'])) {
-        http_response_code(500);
-        echo 'Your exam time is over, but the saved answers could not be submitted safely. Please reopen My Results or contact the institute.';
-        exit;
+        wf_show_error_page(500);
     }
     header('Location: ' . $resultUrl);
     exit;
@@ -60,9 +54,7 @@ if ($remaining <= 0) {
 
 $snapshot = weekly_test_attempt_snapshot($attempt);
 if (!$snapshot) {
-    http_response_code(500);
-    echo 'Question paper is unavailable. Please contact the institute.';
-    exit;
+    wf_show_error_page(500);
 }
 $safe = array_map(static function(array $question): array {
     unset($question['expected']);

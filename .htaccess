@@ -1,9 +1,47 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# Phase 157: branded application error pages.
+# On production the project is served from the domain root, so Apache/LiteSpeed
+# can use these ErrorDocument routes instead of the hosting provider pages.
+ErrorDocument 400 /errors/400.php
+ErrorDocument 401 /errors/401.php
+ErrorDocument 403 /errors/403.php
+ErrorDocument 404 /errors/404.php
+ErrorDocument 405 /errors/405.php
+ErrorDocument 408 /errors/408.php
+ErrorDocument 409 /errors/409.php
+ErrorDocument 410 /errors/410.php
+ErrorDocument 413 /errors/413.php
+ErrorDocument 414 /errors/414.php
+ErrorDocument 415 /errors/415.php
+ErrorDocument 422 /errors/422.php
+ErrorDocument 429 /errors/429.php
+ErrorDocument 500 /errors/500.php
+ErrorDocument 501 /errors/501.php
+ErrorDocument 502 /errors/502.php
+ErrorDocument 503 /errors/503.php
+ErrorDocument 504 /errors/504.php
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
-RewriteRule (^|/)\. - [F,L]
+
+# Keep certificate validation reachable even though other dot-paths are blocked.
+RewriteRule ^\.well-known/acme-challenge/ - [L]
+
+# Return the branded 403 page before protected files can ever be served.
+# These internal rewrites also work when the project is installed in a local
+# subdirectory such as /spoken/, where root-based ErrorDocument URLs do not.
+RewriteRule (^|/)\. errors/403.php [L,NC]
+RewriteRule (^|/)(?:config|db|functions)\.php$ errors/403.php [L,NC]
+RewriteRule \.(?:sql|bak|log|ini|env|zip|tar|gz|7z)$ errors/403.php [L,NC]
+RewriteRule (^|/)(?:README|PHASE|DELETE_).*\.(?:md|txt|json|bat)$ errors/403.php [L,NC]
+
+# Unknown public URLs stay inside the Well Fare design instead of falling
+# through to the hosting provider's generic 404 page.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ errors/404.php [L]
 </IfModule>
 
 <FilesMatch "^(config|db|functions)\.php$">

@@ -1,17 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/error-pages.php';
 ensure_schema_updates();
 $id = (int)($_GET['id'] ?? 0);
 $teacher = fetch_faculty_member($id);
-if (!$teacher) {
-    http_response_code(404);
-    $page_title = 'Faculty Not Found | ' . app_setting('site_name', APP_NAME);
-    $lightweight_layout = true;
-require_once __DIR__ . '/includes/header.php';
-    echo '<section class="section"><div class="container"><div class="empty-state">Faculty profile not found.</div></div></section>';
-    require_once __DIR__ . '/includes/footer.php';
-    exit;
-}
+if (!$teacher) { wf_show_error_page(404); }
 $page_title = $teacher['faculty_name'] . ' | Faculty Profile';
 $meta_description = $teacher['short_bio'] ?: ($teacher['designation'] . ' at ' . app_setting('site_name', APP_NAME));
 require_once __DIR__ . '/includes/header.php';

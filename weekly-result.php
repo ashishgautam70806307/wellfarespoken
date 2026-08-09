@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/error-pages.php';
 private_no_store();
 ensure_schema_updates();
 weekly_test_ensure_schema();
@@ -11,31 +12,19 @@ $lightweight_layout = true;
 $page_title = 'Weekly Test Result | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Secure weekly-test score, attempt details and answer review.';
 
-if (!$attempt) {
-    http_response_code(404);
-    $page_title = 'Result Not Found | ' . app_setting('site_name', APP_NAME);
-    require_once __DIR__ . '/includes/header.php';
-    ?>
-    <section class="wf145-result-page wf145-result-missing">
-        <div class="container"><div class="wf145-result-empty"><i class="fa-solid fa-file-circle-xmark" aria-hidden="true"></i><h1>Result not found</h1><p>This test result does not exist or is no longer available.</p><a class="wf-btn wf-btn-primary" href="weekly-test.php"><span class="wf-btn-label"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Back to Test Center</span></span></a></div></div>
-    </section>
-    <?php
-    require_once __DIR__ . '/includes/footer.php';
-    exit;
-}
+if (!$attempt) { wf_show_error_page(404); }
+
 
 $isGuestAttempt = empty($attempt['student_id']);
 if ($isGuestAttempt) {
     $expectedToken = trim((string)($attempt['result_token'] ?? $attempt['access_token'] ?? ''));
     if ($expectedToken === '' || $resultToken === '' || !hash_equals($expectedToken, $resultToken)) {
-        http_response_code(403);
-        exit('Result access denied. Please open the result from the same test completion screen.');
+        wf_show_error_page(403);
     }
 } else {
     require_student();
     if ((int)($attempt['student_id'] ?? 0) !== current_student_id()) {
-        http_response_code(403);
-        exit('Access denied.');
+        wf_show_error_page(403);
     }
 }
 

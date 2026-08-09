@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/error-pages.php';
 /** Phase 148 security, identity, lifecycle and payment helpers. */
 
 function phase148_schema_ready(): bool
@@ -60,8 +61,7 @@ function admin_is_primary_owner(int $adminId = 0): bool
 function admin_assert_primary_owner(): void
 {
     if (admin_is_primary_owner()) return;
-    http_response_code(403);
-    exit('Access denied. Only the protected institute owner can manage administrator accounts and roles.');
+    wf_show_error_page(403);
 }
 
 function admin_page_permission(?string $page = null): ?string
@@ -149,7 +149,7 @@ function admin_require_permission(string $permission): void
         echo json_encode(['success'=>false,'message'=>'You do not have permission to perform this action.']);
         exit;
     }
-    exit('Access denied. Your administrator role does not allow this module.');
+    wf_show_error_page(403);
 }
 
 function admin_password_change_required(array $admin): bool

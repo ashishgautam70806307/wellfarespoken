@@ -1,5 +1,26 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/error-pages.php';
+
+function db_fatal_response(string $message): never
+{
+    $accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+    $requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+    $script = strtolower(basename((string)($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '')));
+    $isMachineRequest = str_contains($accept, 'application/json')
+        || $requestedWith === 'xmlhttprequest'
+        || str_contains($script, '-api.php')
+        || str_contains($script, 'ajax.php');
+
+    if ($isMachineRequest) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $message], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    wf_show_error_page(500);
+}
 
 function db(): PDO
 {
@@ -10,8 +31,7 @@ function db(): PDO
 
     if (APP_RUNTIME_ENV === 'live' && (trim(DB_NAME) === '' || trim(DB_USER) === '')) {
         error_log('[database] Missing live DB credentials. Configure DB_LIVE_NAME, DB_LIVE_USER and DB_LIVE_PASS in .env.');
-        http_response_code(500);
-        exit('Production database is not configured. Please set the live database credentials in the server .env file.');
+        db_fatal_response('Database service is not configured.');
     }
 
     $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
@@ -25,8 +45,7 @@ function db(): PDO
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     } catch (PDOException $e) {
         error_log('[database] Connection failed for ' . DB_HOST . ':' . DB_PORT . '/' . DB_NAME . ' as ' . DB_USER . ' - ' . $e->getMessage());
-        http_response_code(500);
-        exit('Database connection failed. Please check configuration.');
+        db_fatal_response('Database service is temporarily unavailable.');
     }
 
     return $pdo;
