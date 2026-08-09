@@ -1,0 +1,32 @@
+{
+  "php_files": 80,
+  "php_syntax_pass": true,
+  "php_failures": [],
+  "javascript_files": 15,
+  "javascript_syntax_pass": true,
+  "javascript_failures": [],
+  "css_files": 70,
+  "css_basic_validation_pass": true,
+  "css_failures": [],
+  "literal_local_references_checked": 214,
+  "literal_local_missing": [],
+  "literal_local_references_pass": true,
+  "duplicate_literal_ids": [],
+  "duplicate_literal_ids_pass": true,
+  "service_worker_cache": "wellfare-spoken-static-v154",
+  "service_worker_assets": 48,
+  "service_worker_missing": [],
+  "service_worker_assets_pass": true,
+  "focused_markers": {
+    "mobile_final_submit_markup": true,
+    "mobile_final_submit_css_loaded_last": true,
+    "mobile_final_submit_forced_visible": true,
+    "mobile_entry_actions_small_phone": true,
+    "home_fetches_published_videos": true,
+    "home_one_at_a_time_video_slider": true,
+    "home_video_swipe_and_arrows": true,
+    "home_lazy_youtube_iframe": true
+  },
+  "focused_markers_pass": true,
+  "pass": true
+}

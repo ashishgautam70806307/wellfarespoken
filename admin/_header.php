@@ -10,6 +10,8 @@ $canMainMenu = admin_can('dashboard.view') || admin_can('enquiries.manage') || a
 $canLearningMenu = admin_can('materials.manage') || admin_can('roadmap.manage') || admin_can('tests.manage') || admin_can('batches.manage') || admin_can('content.manage');
 $canWebsiteMenu = admin_can('content.manage') || admin_can('settings.manage');
 $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schema_ready() : true;
+$adminPasswordGate = function_exists('admin_password_gate_active') ? admin_password_gate_active() : false;
+if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWebsiteMenu = false; }
 ?>
 <!doctype html>
 <html lang="en">
@@ -50,13 +52,19 @@ $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schem
 <div class="admin-shell">
     <aside class="admin-side" id="adminSide">
         <div class="admin-side-top">
-            <a href="dashboard.php" class="brand admin-brand admin-logo-only" aria-label="Admin dashboard">
+            <a href="<?= $adminPasswordGate ? 'password.php?required=1' : 'dashboard.php' ?>" class="brand admin-brand admin-logo-only" aria-label="<?= $adminPasswordGate ? 'Account security' : 'Admin dashboard' ?>">
                 <?php $adminLogo = site_asset_url(app_setting('site_logo', '')); ?>
                 <?php if ($adminLogo !== ''): ?><span class="brand-logo-wrap"><img src="../<?= e($adminLogo) ?>" decoding="async" alt="<?= e(app_setting('brand_logo_alt', 'Logo')) ?>"></span><?php else: ?><span class="brand-mark"><?= e(app_setting('brand_short', 'WF')) ?></span><?php endif; ?>
             </a>
             <button class="admin-menu-close" type="button" data-admin-menu-close>×</button>
         </div>
         <div class="admin-menu-scroll">
+            <?php if ($adminPasswordGate): ?>
+            <div class="admin-menu-title">Account Setup</div>
+            <a class="<?= active_nav('password.php') ?>" href="password.php?required=1"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password & MFA</span></a>
+            <a href="logout.php"><span class="menu-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+            <div class="wf153-password-gate-note"><i class="fa-solid fa-shield-halved"></i><span>Finish the temporary password change to unlock assigned modules.</span></div>
+            <?php else: ?>
             <?php if ($canMainMenu): ?><div class="admin-menu-title">Main</div><?php endif; ?>
             <?php if (admin_can('dashboard.view')): ?><a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a><?php endif; ?>
             <?php if (admin_can('enquiries.manage')): ?><a class="<?= active_nav('enquiries.php') ?>" href="enquiries.php"><span class="menu-ico"><i class="fa-solid fa-phone-volume"></i></span><span>Enquiries</span></a><?php endif; ?>
@@ -95,6 +103,7 @@ $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schem
             <a class="<?= active_nav('password.php') ?>" href="password.php"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password & MFA</span></a>
             <a href="../index.php" target="_blank"><span class="menu-ico"><i class="fa-solid fa-globe"></i></span><span>View Website</span></a>
             <a href="logout.php"><span class="menu-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+            <?php endif; ?>
         </div>
         <div class="admin-side-footer">
             <b>Premium CMS</b>
@@ -129,18 +138,22 @@ $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schem
             ['Password & MFA', 'password.php', 'System', 'fa-solid fa-lock'],
             ['System Check', 'system-check.php', 'System', 'fa-solid fa-screwdriver-wrench'],
         ];
-        $adminQuickLinks = array_values(array_filter($adminQuickLinks, static function(array $link) use ($phase148SchemaReady): bool {
-            if (!$phase148SchemaReady && in_array((string)$link[1], ['admin-users.php','roles.php','audit-log.php'], true)) return false;
-            if ((string)$link[1] === 'roles.php' && admin_role_key() !== 'super_admin') return false;
-            $permission = admin_page_permission((string)$link[1]);
-            return $permission === null || admin_can($permission);
-        }));
+        if ($adminPasswordGate) {
+            $adminQuickLinks = array_values(array_filter($adminQuickLinks, static fn(array $link): bool => (string)$link[1] === 'password.php'));
+        } else {
+            $adminQuickLinks = array_values(array_filter($adminQuickLinks, static function(array $link) use ($phase148SchemaReady): bool {
+                if (!$phase148SchemaReady && in_array((string)$link[1], ['admin-users.php','roles.php','audit-log.php'], true)) return false;
+                if ((string)$link[1] === 'roles.php' && admin_role_key() !== 'super_admin') return false;
+                $permission = admin_page_permission((string)$link[1]);
+                return $permission === null || admin_can($permission);
+            }));
+        }
         ?>
         <div class="admin-topbar">
             <button class="admin-drawer-btn" type="button" data-admin-menu-open aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-            <div class="admin-search-wrap">
-                <span class="admin-search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-                <input type="search" id="adminMenuSearch" placeholder="Search menu, page or module..." autocomplete="off">
+            <div class="admin-search-wrap <?= $adminPasswordGate ? 'is-password-gated' : '' ?>">
+                <span class="admin-search-icon"><i class="fa-solid <?= $adminPasswordGate ? 'fa-lock' : 'fa-magnifying-glass' ?>"></i></span>
+                <input type="search" id="adminMenuSearch" placeholder="<?= $adminPasswordGate ? 'Complete password setup to unlock modules' : 'Search menu, page or module...' ?>" autocomplete="off" <?= $adminPasswordGate ? 'disabled' : '' ?>>
                 <div class="admin-search-results" id="adminMenuResults" aria-live="polite">
                     <?php foreach ($adminQuickLinks as $link): ?>
                         <a href="<?= e($link[1]) ?>" data-menu-search-item data-search-text="<?= e(strtolower($link[0] . ' ' . $link[2] . ' ' . $link[1])) ?>">

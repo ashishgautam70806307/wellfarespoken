@@ -189,7 +189,7 @@ function is_admin(): bool
 
 function admin_session_logout(): void
 {
-    unset($_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['admin_auth_signature'], $_SESSION['admin_last_activity'], $_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
+    unset($_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['admin_auth_signature'], $_SESSION['admin_last_activity'], $_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at'], $_SESSION['admin_password_change_required']);
     session_regenerate_id(true);
 }
 
@@ -221,10 +221,13 @@ function require_admin(): void
             }
             if ($sessionSignature === '') $_SESSION['admin_auth_signature']=$databaseSignature;
         }
+        if (function_exists('admin_clear_stale_owner_password_gate')) admin_clear_stale_owner_password_gate($admin);
         $_SESSION['admin_name'] = (string)$admin['name'];
         $_SESSION['admin_last_activity'] = time();
+        $passwordGate = function_exists('admin_password_change_required') ? admin_password_change_required($admin) : (($admin['must_change_password'] ?? 'No') === 'Yes');
+        $_SESSION['admin_password_change_required'] = $passwordGate;
         $page = basename((string)($_SERVER['PHP_SELF'] ?? ''));
-        if (($admin['must_change_password'] ?? 'No') === 'Yes' && !in_array($page,['password.php','logout.php'],true)) {
+        if ($passwordGate && !in_array($page,['password.php','logout.php'],true)) {
             redirect('password.php?required=1');
         }
         if (function_exists('admin_page_permission')) {

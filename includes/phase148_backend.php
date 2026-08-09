@@ -152,6 +152,39 @@ function admin_require_permission(string $permission): void
     exit('Access denied. Your administrator role does not allow this module.');
 }
 
+function admin_password_change_required(array $admin): bool
+{
+    if (($admin['must_change_password'] ?? 'No') !== 'Yes') return false;
+    $adminId = (int)($admin['id'] ?? 0);
+    if ($adminId <= 0) return false;
+
+    // The protected institute owner may carry a stale legacy migration flag from
+    // Phase 148/150. The owner already proved the existing password at login, and
+    // owner password changes must be performed explicitly from Account Security.
+    // Temporary-password enforcement remains active for normal staff accounts.
+    if (admin_rbac_ready() && admin_is_primary_owner($adminId)) return false;
+    return true;
+}
+
+function admin_clear_stale_owner_password_gate(array &$admin): void
+{
+    if (($admin['must_change_password'] ?? 'No') !== 'Yes') return;
+    $adminId = (int)($admin['id'] ?? 0);
+    if ($adminId <= 0 || !admin_rbac_ready() || !admin_is_primary_owner($adminId)) return;
+    try {
+        db()->prepare("UPDATE admins SET must_change_password='No' WHERE id=?")->execute([$adminId]);
+        $admin['must_change_password'] = 'No';
+        admin_audit_log('admin.owner_legacy_password_gate_cleared','admin',$adminId,'Cleared stale legacy must-change-password flag for the protected institute owner.');
+    } catch (Throwable $e) {
+        error_log('[admin-owner-password-gate] ' . $e->getMessage());
+    }
+}
+
+function admin_password_gate_active(): bool
+{
+    return !empty($_SESSION['admin_password_change_required']);
+}
+
 function admin_session_signature(array $admin): string
 {
     return hash('sha256', implode('|', [
@@ -169,6 +202,7 @@ function admin_session_login(array $admin): void
     $_SESSION['admin_name'] = (string)($admin['name'] ?? 'Admin');
     $_SESSION['admin_auth_signature'] = admin_session_signature($admin);
     $_SESSION['admin_last_activity'] = time();
+    $_SESSION['admin_password_change_required'] = admin_password_change_required($admin);
     unset($_SESSION['admin_mfa_pending_id'], $_SESSION['admin_mfa_pending_at']);
 }
 

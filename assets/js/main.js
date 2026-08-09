@@ -312,19 +312,21 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach((input) =>
 
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isSecure = () => window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const isIOS = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+  const isAndroid = () => /android/i.test(window.navigator.userAgent || '');
   const setHelp = (text) => helpItems.forEach((item) => { item.textContent = text; });
   const setButton = (state) => {
     buttons.forEach((btn) => {
       btn.classList.remove('is-ready', 'is-installed', 'is-waiting');
       if (state === 'ready') {
         btn.classList.add('is-ready');
-        btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Install Web App';
+        btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Install App';
       } else if (state === 'installed') {
         btn.classList.add('is-installed');
-        btn.innerHTML = '<i class="fa-solid fa-circle-check" aria-hidden="true"></i> App Installed';
+        btn.innerHTML = '<i class="fa-solid fa-circle-check" aria-hidden="true"></i> Installed';
       } else {
         btn.classList.add('is-waiting');
-        btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Install Web App';
+        btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i> Install App';
       }
     });
   };
@@ -345,10 +347,13 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach((input) =>
 
   if (!isSecure()) {
     setButton('waiting');
-    setHelp('Live server par PWA install ke liye HTTPS required hai. SSL enable karo, then reload.');
+    setHelp('Install ke liye HTTPS required hai. Secure site open karke reload karein.');
+  } else if (isIOS()) {
+    setButton('waiting');
+    setHelp('iPhone/iPad: Safari me Share button dabayein, phir “Add to Home Screen”.');
   } else {
     setButton('waiting');
-    setHelp('Install prompt ready hone ke liye Chrome/Edge manifest + service worker validate karta hai. Page reload ke baad prompt ready hoga.');
+    setHelp('Chrome/Edge me install prompt ready hote hi button active ho jayega.');
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -380,9 +385,16 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach((input) =>
         return;
       }
 
-      const msg = isSecure()
-        ? 'Install prompt abhi ready nahi hai. Live server par check karo: HTTPS active ho, manifest.webmanifest browser me open ho, sw.js 200 OK ho, aur old service worker/cache clear ho. Chrome menu (⋮) me Install app option bhi check karo.'
-        : 'PWA install ke liye HTTPS required hai. SSL enable karo.';
+      let msg;
+      if (!isSecure()) {
+        msg = 'PWA install ke liye HTTPS required hai.';
+      } else if (isIOS()) {
+        msg = 'iPhone/iPad par Safari ka Share button use karein, phir “Add to Home Screen” select karein.';
+      } else if (isAndroid()) {
+        msg = 'Install prompt ready nahi hai. Chrome menu (⋮) me “Install app” ya “Add to Home screen” check karein.';
+      } else {
+        msg = 'Install prompt ready nahi hai. Chrome/Edge menu me “Install app” check karein; HTTPS, manifest aur service worker active hone chahiye.';
+      }
       setHelp(msg);
       if(window.AppUI){window.AppUI.toast('info', msg, 'Install app');}
     });

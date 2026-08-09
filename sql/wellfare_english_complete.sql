@@ -1466,8 +1466,6 @@ ALTER TABLE `admins` ADD COLUMN IF NOT EXISTS `last_login_at` DATETIME NULL AFTE
 UPDATE `admins` SET `published`='No', `must_change_password`='Yes'
 WHERE LOWER(`email`)='admin@wellfare.local'
   AND `password_hash`='$2y$12$DHCToBguTMZptJEHcBMUGuoAErIOUDX45NhgtxRT6i9LPRaojvz5u';
-UPDATE `admins` SET `must_change_password`='Yes'
-WHERE LOWER(`email`)='admin@wellfare.local' AND `published`='Yes';
 
 CREATE TABLE IF NOT EXISTS `admin_roles` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1960,3 +1958,7 @@ WHERE r.role_key<>'super_admin';
 INSERT INTO schema_migrations(version,description,applied_at)
 VALUES ('20260807_002_phase150','Single protected Super Admin owner, owner-only admin management and RBAC escalation lock',NOW())
 ON DUPLICATE KEY UPDATE description=VALUES(description);
+
+
+-- Phase 153 compatibility marker
+INSERT INTO schema_migrations(version,description,applied_at) VALUES ('20260808_001_phase153','Admin access flow repair: protected owner legacy password gate cleared; staff temporary-password gate preserved',NOW()) ON DUPLICATE KEY UPDATE description=VALUES(description);

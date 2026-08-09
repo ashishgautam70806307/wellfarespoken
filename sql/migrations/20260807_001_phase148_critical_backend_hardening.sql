@@ -25,8 +25,6 @@ ALTER TABLE `admins` ADD COLUMN IF NOT EXISTS `last_login_at` DATETIME NULL AFTE
 UPDATE `admins` SET `published`='No', `must_change_password`='Yes'
 WHERE LOWER(`email`)='admin@wellfare.local'
   AND `password_hash`='$2y$12$DHCToBguTMZptJEHcBMUGuoAErIOUDX45NhgtxRT6i9LPRaojvz5u';
-UPDATE `admins` SET `must_change_password`='Yes'
-WHERE LOWER(`email`)='admin@wellfare.local' AND `published`='Yes';
 
 CREATE TABLE IF NOT EXISTS `admin_roles` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             db()->prepare('UPDATE admins SET name=?,email=?,role_id=?,published=? WHERE id=?')->execute([$name,$email,$roleId,$published,$id]);
             if ($password !== '') {
+                if ($isOwnerTarget) throw new RuntimeException('For security, the protected owner password can only be changed from Account Security using the current password.');
                 $passwordError = admin_password_error($password);
                 if ($passwordError !== '') throw new RuntimeException($passwordError);
                 db()->prepare("UPDATE admins SET password_hash=?,auth_version=auth_version+1,must_change_password='Yes',password_changed_at=NOW() WHERE id=?")
@@ -136,7 +137,11 @@ $rows = db()->query("SELECT a.*,r.role_name,r.role_key FROM admins a LEFT JOIN a
             <div class="field"><label>Role</label><select name="role_id" required><option value="">Select staff role</option><?php foreach($roles as $r):?><option value="<?=e((string)$r['id'])?>" <?=(int)($edit['role_id']??0)===(int)$r['id']?'selected':''?>><?=e($r['role_name'])?></option><?php endforeach;?></select></div>
             <div class="field"><label>Account Status</label><select name="published"><option value="Yes" <?=($edit['published']??'Yes')==='Yes'?'selected':''?>>Active</option><option value="No" <?=($edit['published']??'')==='No'?'selected':''?>>Inactive</option></select></div>
         <?php endif; ?>
-        <div class="field full"><label><?=$edit?'Reset Password (optional)':'Temporary Password'?></label><input type="password" name="new_password" minlength="12" maxlength="128" <?=$edit?'':'required'?>><small class="help">12–128 characters, including a letter and number. Staff must change a temporary password after first login.</small></div>
+        <?php if ($editingOwner): ?>
+            <div class="field full"><label>Owner Password</label><div class="alert alert-info" style="margin:0">For security, change the protected owner password from <a href="password.php"><strong>Account Security</strong></a>, where the current password is required.</div></div>
+        <?php else: ?>
+            <div class="field full"><label><?=$edit?'Reset Password (optional)':'Temporary Password'?></label><input type="password" name="new_password" minlength="12" maxlength="128" <?=$edit?'':'required'?>><small class="help">12–128 characters, including a letter and number. Staff must change a temporary password after first login.</small></div>
+        <?php endif; ?>
         <?php if($edit&&($edit['mfa_enabled']??'No')==='Yes'):?><div class="field full"><label><input type="checkbox" name="reset_mfa" value="1"> Reset this administrator's Authenticator MFA</label></div><?php endif;?>
         <div class="field full"><button class="btn btn-primary"><?=$edit?'Update Administrator':'Create Staff Administrator'?></button><?php if($edit):?><a class="btn btn-soft" href="admin-users.php">Cancel</a><?php endif;?></div>
     </div>

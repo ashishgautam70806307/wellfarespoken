@@ -104,6 +104,16 @@ foreach ($socialLinks as $social) {
             <?php if ($wfWhatsapp !== ''): ?>
                 <?= wf_button('Chat on WhatsApp', 'https://wa.me/' . $wfWhatsapp . '?text=Hello,%20I%20want%20spoken%20English%20course%20details', 'success', 'fa-brands fa-whatsapp', ['target' => '_blank', 'rel' => 'noopener', 'class' => 'wf137-footer-whatsapp']) ?>
             <?php endif; ?>
+
+            <div class="wf156-pwa-install-row">
+                <?= wf_button('Install Web App', '', 'gold', 'fa-solid fa-mobile-screen-button', [
+                    'type' => 'button',
+                    'class' => 'wf155-pwa-install wf156-pwa-install',
+                    'aria_label' => 'Install Well Fare English Spoken web app',
+                    'title' => 'Install Well Fare English Spoken on this device',
+                    'data' => ['install-webapp' => '1'],
+                ]) ?>
+            </div>
         </section>
     </div>
 

@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if(!hash_equals($new,$confirm))throw new RuntimeException('New password and confirm password do not match.');
             $hash=password_hash($new,PASSWORD_DEFAULT);
             db()->prepare("UPDATE admins SET password_hash=?,auth_version=auth_version+1,must_change_password='No',password_changed_at=NOW() WHERE id=?")->execute([$hash,$adminId]);
-            $fresh=db()->prepare('SELECT * FROM admins WHERE id=?');$fresh->execute([$adminId]);admin_session_login($fresh->fetch());admin_audit_log('admin.password_changed','admin',$adminId,'Administrator changed own password.');flash('success','Password updated. Existing sessions were invalidated.');redirect('password.php');
+            $fresh=db()->prepare('SELECT * FROM admins WHERE id=?');$fresh->execute([$adminId]);admin_session_login($fresh->fetch());admin_audit_log('admin.password_changed','admin',$adminId,'Administrator changed own password.');flash('success','Password updated. Existing sessions were invalidated.');redirect(isset($_GET['required']) ? 'dashboard.php' : 'password.php');
         }
         if($action==='mfa_prepare'){
             $secret=admin_mfa_generate_secret();$_SESSION['admin_mfa_setup_secret']=$secret;flash('success','Authenticator setup key generated. Add it to your authenticator app, then verify one code below.');redirect('password.php#mfa');

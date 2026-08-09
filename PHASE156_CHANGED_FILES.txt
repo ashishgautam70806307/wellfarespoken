@@ -1,0 +1,7 @@
+includes/ui-components.php
+includes/footer.php
+assets/css/phase155-pwa-footer.css
+assets/css/phase155-pwa-footer.min.css
+sw.js
+README_PHASE156_PWA_COMPACT_FIX.md
+PHASE156_CHANGED_FILES.txt

@@ -49,12 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         redirect('login.php');
                     }
                 }
+                if (function_exists('admin_clear_stale_owner_password_gate')) admin_clear_stale_owner_password_gate($admin);
                 security_rate_limit_clear($rateKey);
                 clear_login_attempts();
                 admin_session_login($admin);
                 db()->prepare('UPDATE admins SET last_login_at=NOW() WHERE id=?')->execute([(int)$admin['id']]);
                 admin_audit_log('admin.login_mfa','admin',(int)$admin['id'],'Administrator signed in with password + TOTP.');
-                redirect(($admin['must_change_password'] ?? 'No') === 'Yes' ? 'password.php?required=1' : 'dashboard.php');
+                redirect(admin_password_change_required($admin) ? 'password.php?required=1' : 'dashboard.php');
             }
             flash('error', 'The authenticator code is invalid or expired.');
         }
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 db()->prepare('UPDATE admins SET password_hash=?, auth_version=auth_version+1 WHERE id=?')->execute([$hash,(int)$admin['id']]);
                 $admin['password_hash']=$hash; $admin['auth_version']=(int)($admin['auth_version']??1)+1;
             }
+            if (function_exists('admin_clear_stale_owner_password_gate')) admin_clear_stale_owner_password_gate($admin);
             security_rate_limit_clear($rateKey);
             if (($admin['mfa_enabled'] ?? 'No') === 'Yes' && !empty($admin['mfa_secret'])) {
                 $_SESSION['admin_mfa_pending_id']=(int)$admin['id']; $_SESSION['admin_mfa_pending_at']=time();
@@ -104,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_session_login($admin);
             if (column_exists('admins','last_login_at')) db()->prepare('UPDATE admins SET last_login_at=NOW() WHERE id=?')->execute([(int)$admin['id']]);
             admin_audit_log('admin.login','admin',(int)$admin['id'],'Administrator signed in successfully.');
-            redirect(($admin['must_change_password'] ?? 'No') === 'Yes' ? 'password.php?required=1' : 'dashboard.php');
+            redirect(admin_password_change_required($admin) ? 'password.php?required=1' : 'dashboard.php');
         }
         register_failed_login();
         $failedLeft = max(0, 7 - (int)($_SESSION['login_attempts'] ?? 0));

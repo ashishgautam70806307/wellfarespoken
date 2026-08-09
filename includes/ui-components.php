@@ -128,7 +128,8 @@ if (!function_exists('wf_button')) {
             return '<a' . $common . ' href="' . e(app_safe_href($url)) . '"' . $target . $rel . $download . $disabled . '>' . $content . '</a>';
         }
 
-        $type = in_array(($attributes['type'] ?? 'button'), ['button','submit','reset'], true) ? (string)$attributes['type'] : 'button';
+        $requestedType = strtolower(trim((string)($attributes['type'] ?? 'button')));
+        $type = in_array($requestedType, ['button','submit','reset'], true) ? $requestedType : 'button';
         $name = !empty($attributes['name']) && preg_match('/^[a-zA-Z0-9_-]+$/', (string)$attributes['name']) ? ' name="' . e((string)$attributes['name']) . '"' : '';
         $value = array_key_exists('value', $attributes) ? ' value="' . e((string)$attributes['value']) . '"' : '';
         $disabled = !empty($attributes['disabled']) ? ' disabled' : '';

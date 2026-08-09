@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/header.php';
 
 $courses = fetch_courses(4);
 $reviews = fetch_testimonials(6);
+$videos = fetch_videos(8);
 $batches = fetch_batch_timings(3);
 $faqs = fetch_faqs(6);
 $heroStats = fetch_content_blocks('hero_stat', 4);
@@ -41,6 +42,15 @@ function wf_home_slide_asset(?string $path): string
 {
     $path = trim((string)$path);
     return $path === '' ? '' : site_asset_url($path);
+}
+
+function wf_home_youtube_id(string $url): string
+{
+    $embed = youtube_embed_url(trim($url));
+    if (preg_match('#youtube\.com/embed/([A-Za-z0-9_-]{6,})#i', $embed, $matches)) {
+        return (string)$matches[1];
+    }
+    return '';
 }
 
 $heroSlides = [];
@@ -332,6 +342,64 @@ $practiceTools = [
                     <footer><span><i class="fa-regular fa-clock"></i><?= e(wf_home_short((string)($course['duration'] ?: 'Flexible'), 24)) ?></span><a href="course-detail.php?id=<?= e((string)$course['id']) ?>" aria-label="View <?= e((string)$course['title']) ?>"><i class="fa-solid fa-arrow-right"></i></a></footer>
                 </article>
             <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php if ($videos): ?>
+<section class="wf126-section wf154-videos" aria-labelledby="wf154VideosTitle">
+    <div class="container">
+        <header class="wf126-section-head" data-reveal>
+            <div>
+                <span class="wf126-label"><i class="fa-brands fa-youtube"></i> YouTube Videos</span>
+                <h2 id="wf154VideosTitle"><?= e(app_setting('home_videos_title', 'Class Videos')) ?></h2>
+                <p><?= e(app_setting('home_videos_subtitle', 'Watch one class video at a time and learn with real examples.')) ?></p>
+            </div>
+            <?php $youtubeChannel = trim((string)app_setting('youtube_url', '')); ?>
+            <?php if ($youtubeChannel !== ''): ?><a href="<?= e(app_safe_href($youtubeChannel, '#', true)) ?>" target="_blank" rel="noopener">YouTube Channel<i class="fa-solid fa-arrow-up-right-from-square"></i></a><?php endif; ?>
+        </header>
+
+        <div class="wf154-video-slider" data-video-slider tabindex="0" aria-roledescription="carousel" aria-label="Class videos">
+            <div class="wf154-video-viewport">
+                <div class="wf154-video-track" data-video-track>
+                    <?php foreach (array_values($videos) as $index => $video):
+                        $videoTitle = trim((string)($video['title'] ?? 'Class Video')) ?: 'Class Video';
+                        $videoUrl = trim((string)($video['youtube_url'] ?? ''));
+                        $embedUrl = youtube_embed_url($videoUrl);
+                        $youtubeId = wf_home_youtube_id($videoUrl);
+                        $thumbUrl = $youtubeId !== '' ? 'https://i.ytimg.com/vi/' . rawurlencode($youtubeId) . '/hqdefault.jpg' : '';
+                    ?>
+                        <article class="wf154-video-slide<?= $index === 0 ? ' is-active' : '' ?>" data-video-slide aria-hidden="<?= $index === 0 ? 'false' : 'true' ?>">
+                            <div class="wf154-video-media" data-video-media>
+                                <button type="button" class="wf154-video-play" data-video-play data-embed="<?= e($embedUrl) ?>" aria-label="Play <?= e($videoTitle) ?>">
+                                    <?php if ($thumbUrl !== ''): ?><img src="<?= e($thumbUrl) ?>" loading="lazy" decoding="async" alt="<?= e($videoTitle) ?> video thumbnail"><?php else: ?><span class="wf154-video-fallback"><i class="fa-brands fa-youtube"></i></span><?php endif; ?>
+                                    <span class="wf154-play-circle"><i class="fa-solid fa-play"></i></span>
+                                    <span class="wf154-video-duration-label">Watch Class</span>
+                                </button>
+                                <div class="wf154-video-frame" data-video-frame hidden></div>
+                            </div>
+                            <div class="wf154-video-copy">
+                                <span class="wf154-video-count">Video <?= e(str_pad((string)($index + 1), 2, '0', STR_PAD_LEFT)) ?> / <?= e(str_pad((string)count($videos), 2, '0', STR_PAD_LEFT)) ?></span>
+                                <h3><?= e($videoTitle) ?></h3>
+                                <p>Watch this lesson without leaving the learning flow. Use the arrows or swipe to move to the next class video.</p>
+                                <div class="wf154-video-actions">
+                                    <button type="button" class="wf126-btn wf126-btn-primary" data-video-play-copy data-slide-index="<?= e((string)$index) ?>"><i class="fa-solid fa-play"></i>Play Video</button>
+                                    <a href="<?= e(app_safe_href($videoUrl, '#', true)) ?>" target="_blank" rel="noopener">Open YouTube<i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <?php if (count($videos) > 1): ?>
+                <button class="wf154-video-arrow wf154-video-prev" type="button" data-video-prev aria-label="Previous video"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="wf154-video-arrow wf154-video-next" type="button" data-video-next aria-label="Next video"><i class="fa-solid fa-chevron-right"></i></button>
+                <div class="wf154-video-dots" role="tablist" aria-label="Choose video">
+                    <?php foreach ($videos as $index => $_): ?><button type="button" class="<?= $index === 0 ? 'is-active' : '' ?>" data-video-dot="<?= e((string)$index) ?>" aria-label="Show video <?= e((string)($index + 1)) ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"></button><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>
