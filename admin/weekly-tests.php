@@ -1,4 +1,5 @@
 <?php
+$admin_page_final_styles = ['assets/css/phase159-admin-weekly-papers.css'];
 require_once __DIR__ . '/_header.php';
 weekly_test_ensure_schema();
 
@@ -448,7 +449,7 @@ function weekly_admin_sample_link(string $type): string {
       <h2><?= e($typeLabel[$selectedType] ?? 'Test') ?> Batch / Test Papers</h2>
       <p class="muted small">Har batch/test paper card me status, schedule, questions aur copies ka short summary rahega. Published card light green rahega. Open/Edit se selected paper ka setup, upload, questions aur student copies scoped open honge.</p>
     </div>
-    <a class="btn btn-soft btn-sm" href="#setup">Create / Edit Paper</a>
+    <div class="wf159-board-head-actions"><a class="btn btn-soft btn-sm" href="#setup">Create / Edit Paper</a><?php if($selectedType==='upcoming' && $selectedTestId>0): ?><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i> Student PDF</a><a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i> Answer Key</a><?php endif; ?></div>
   </div>
   <div class="paper-card-grid">
     <?php if(!$paperCards): ?><p class="muted">No paper yet. Create a test paper from Test Setup.</p><?php endif; ?>
@@ -476,7 +477,10 @@ function weekly_admin_sample_link(string $type): string {
       <div class="paper-card-actions paper-actions-grid">
         <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=<?= e($selectedType) ?>&test_id=<?= e((string)$pid) ?>#setup">Edit</a>
         <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=<?= e($selectedType) ?>&test_id=<?= e((string)$pid) ?>#question-bank">Questions</a>
-        <?php if(($pt['test_type'] ?? '')==='upcoming'): ?><a class="btn btn-soft btn-sm" target="_blank" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=paper&autoprint=1">Offline PDF</a><?php endif; ?>
+        <?php if(($pt['test_type'] ?? '')==='upcoming'): ?>
+          <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
+          <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
+        <?php endif; ?>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-primary btn-sm" type="submit">Publish</button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-soft btn-sm" type="submit">Pending</button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="<?= e((($pt['test_type'] ?? '')==='upcoming') ? 'Complete this upcoming batch test and freeze 1st, 2nd and 3rd positions? All submitted copies should be checked first.' : 'Complete this batch test and publish top 3 winners for 2 days?') ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-green btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Complete + Rank' : 'Complete' ?></button><span class="ajax-msg"></span></form>
@@ -564,7 +568,7 @@ function weekly_admin_sample_link(string $type): string {
     </form>
   </div>
 
-  <div class="admin-card">
+  <div class="admin-card" id="answer-sheet">
     <h2>Upload Answer Sheet / Questions</h2>
     <p class="muted small">Select exact test, upload CSV/XLSX. The <b>expected_answer</b> column is the answer sheet.</p>
     <form class="ajax-admin-form form-stack compact-upload-form" action="weekly-test-ajax.php" method="post" enctype="multipart/form-data">

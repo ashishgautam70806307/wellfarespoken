@@ -52,14 +52,15 @@ check_true(strpos($offline, 'break-inside:avoid') !== false && strpos($offline, 
 check_true(strpos($offline, 'Name:') !== false && strpos($offline, 'Mobile / Roll:') !== false && strpos($offline, 'Date:') !== false, 'Offline student paper has identity fields');
 check_true(strpos($offline, 'answer-space') !== false, 'Offline student paper includes answer-writing space');
 check_true(strpos($offline, 'batch_name') !== false && strpos($offline, 'batch_timing') !== false, 'Offline paper includes batch metadata');
-check_true(strpos($paper, 'Offline PDF') !== false && strpos($testsPage, 'Offline PDF') !== false, 'Admin weekly-test screens link to offline paper');
+check_true(strpos($paper, 'weekly-test-offline-paper.php') !== false && strpos($testsPage, 'weekly-test-offline-paper.php') !== false, 'Admin weekly-test screens link to offline paper');
 check_true(strpos($paper, 'Complete + Rank Top 3') !== false || strpos($testsPage, 'Complete + Rank') !== false, 'Admin Upcoming completion exposes rank action');
 check_true(strpos($backend, "'weekly-test-offline-paper.php'=>'tests.manage'") !== false, 'Offline paper is mapped to RBAC permission');
 
 check_true(strpos($css, '#f0b72f') !== false, 'Rank 1 uses gold');
 check_true(strpos($css, '#8b5cf6') !== false, 'Rank 2 uses violet/purple');
 check_true(strpos($css, '#75d21e') !== false, 'Rank 3 uses parrot green');
-check_true(strpos($sw, 'wellfare-spoken-static-v158') !== false, 'Service worker cache is v158');
+preg_match('/wellfare-spoken-static-v(\d+)/', $sw, $cacheMatch);
+check_true((int)($cacheMatch[1] ?? 0) >= 158, 'Service worker cache is Phase 158 or newer');
 check_true(strpos($sw, './assets/css/phase158-test-results.min.css') !== false, 'Service worker caches Phase 158 CSS');
 check_true(strpos($sw, './assets/js/phase158-test-results.js') !== false, 'Service worker caches Phase 158 JS');
 

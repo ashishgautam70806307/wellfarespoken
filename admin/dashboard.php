@@ -1,5 +1,5 @@
 <?php
-$admin_page_final_styles = ['assets/css/phase147-student-accounts.css'];
+$admin_page_final_styles = ['assets/css/phase147-student-accounts.css', 'assets/css/phase159-admin-weekly-papers.css'];
 require_once __DIR__ . '/_header.php';
 student_account_ensure_schema();
 
@@ -122,6 +122,14 @@ $weeklyTests = dashboard_count_available('weekly_tests');
 $weeklyAttempts = dashboard_count('weekly_test_attempts', 'COALESCE(status_deleted,0)=0');
 $weeklyPendingChecks = dashboard_count('weekly_test_attempts', "COALESCE(status_deleted,0)=0 AND status='submitted'");
 $weeklyQuestions = dashboard_count('weekly_test_questions', "status_deleted=0");
+$dashboardUpcomingPapers = [];
+if (admin_can('tests.manage') && function_exists('weekly_test_fetch_tests')) {
+    try {
+        $dashboardUpcomingPapers = array_slice(weekly_test_fetch_tests('upcoming'), 0, 6);
+    } catch (Throwable $e) {
+        $dashboardUpcomingPapers = [];
+    }
+}
 $roadmapItems = dashboard_count_available('roadmap_items', ['status_deleted'], ['published']);
 $faculty = dashboard_count_available('faculty_members', [], ['published']);
 $recent = dashboard_rows('enquiries', 'id DESC', 6);
@@ -147,7 +155,7 @@ if ($dashboardRbacReady) {
 ?>
 <div class="admin-top">
     <div><h1>Dashboard</h1><p>Welcome, <?= e($_SESSION['admin_name'] ?? 'Admin') ?>. Manage enquiries, students, spoken practice content, weekly tests and website settings from one clean panel.</p></div>
-    <div class="admin-actions"><?php if(admin_can('enquiries.manage')):?><a class="btn btn-primary" href="enquiries.php">View Enquiries</a><?php endif;?><?php if(admin_can('materials.manage')):?><a class="btn btn-soft" href="materials.php">Study Materials</a><?php endif;?><?php if(admin_can('tests.manage')):?><a class="btn btn-soft" href="weekly-tests.php">Weekly Tests</a><?php endif;?><a class="btn btn-soft" href="../index.php" target="_blank">Open Website</a></div>
+    <div class="admin-actions"><?php if(admin_can('enquiries.manage')):?><a class="btn btn-primary" href="enquiries.php">View Enquiries</a><?php endif;?><?php if(admin_can('materials.manage')):?><a class="btn btn-soft" href="materials.php">Study Materials</a><?php endif;?><?php if(admin_can('tests.manage')):?><a class="btn btn-soft" href="weekly-tests.php">Weekly Tests</a><a class="btn btn-soft" href="weekly-tests.php?type=upcoming#paper-board"><i class="fa-solid fa-file-pdf"></i> Offline Papers</a><?php endif;?><a class="btn btn-soft" href="../index.php" target="_blank">Open Website</a></div>
 </div>
 
 <section class="wf150-security-card" aria-label="Administrator access security">
@@ -211,6 +219,58 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
     </div>
     <div class="admin-actions"><a class="btn btn-primary" href="settings.php#director-settings">Manage Director Profile</a><a class="btn btn-soft" href="../about.php" target="_blank">View About Page</a></div>
 </div>
+<?php endif; ?>
+<?php if(admin_can('tests.manage')): ?>
+<section class="panel-card wf159-offline-papers" id="offline-test-papers">
+    <div class="wf159-paper-head">
+        <div>
+            <span class="dash-mini">Upcoming Test • Offline Mode</span>
+            <h2>Batch-wise Question Papers & Answer Keys</h2>
+            <p>Print a student paper for learners without a phone, or open the confidential Admin answer key. The paper uses the same uploaded Upcoming Test questions and marks.</p>
+        </div>
+        <div class="wf159-paper-head-actions">
+            <a class="btn btn-primary" href="weekly-tests.php?type=upcoming#paper-board"><i class="fa-solid fa-list-check"></i> Manage Upcoming Tests</a>
+            <a class="btn btn-soft" href="weekly-tests.php?type=upcoming#answer-sheet"><i class="fa-solid fa-file-arrow-up"></i> Upload Questions</a>
+        </div>
+    </div>
+    <?php if (!$dashboardUpcomingPapers): ?>
+        <div class="wf159-paper-empty">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            <div><b>No Upcoming Test paper yet.</b><span>Create an Upcoming Test and upload its Excel/CSV question sheet. Offline paper buttons will appear here automatically.</span></div>
+            <a class="btn btn-primary btn-sm" href="weekly-tests.php?type=upcoming#setup">Create Upcoming Test</a>
+        </div>
+    <?php else: ?>
+        <div class="wf159-paper-grid">
+        <?php foreach ($dashboardUpcomingPapers as $paper):
+            $paperId = (int)($paper['id'] ?? 0);
+            $paperReady = weekly_test_ready_reason($paper);
+            $paperStatus = $paperReady === 'ready' ? 'Published' : ($paperReady === 'scheduled_later' ? 'Scheduled' : ($paperReady === 'expired' ? 'Closed' : 'Pending'));
+            $paperBatch = trim((string)(($paper['batch_label'] ?? '') ?: ($paper['batch_name'] ?? '') ?: 'Common Batch'));
+            $paperTiming = trim((string)($paper['batch_timing'] ?? ''));
+            $paperDays = trim((string)($paper['batch_days'] ?? ''));
+        ?>
+            <article class="wf159-paper-card status-<?= e(strtolower($paperStatus)) ?>">
+                <div class="wf159-paper-card-top">
+                    <span class="wf159-paper-status"><?= e($paperStatus) ?></span>
+                    <span class="wf159-paper-count"><i class="fa-solid fa-list-ol"></i> <?= e((string)($paper['question_count'] ?? 0)) ?> Q</span>
+                </div>
+                <h3><?= e((string)($paper['title'] ?? 'Upcoming Weekly Test')) ?></h3>
+                <p><i class="fa-solid fa-users"></i> <?= e($paperBatch) ?></p>
+                <div class="wf159-paper-meta">
+                    <span><b><?= e((string)($paper['duration_minutes'] ?? 30)) ?></b> min</span>
+                    <span><b><?= e((string)($paper['total_marks'] ?? 0)) ?></b> marks</span>
+                    <span><b><?= e($paperTiming !== '' ? $paperTiming : 'Flexible') ?></b><?= $paperDays !== '' ? '<small>'.e($paperDays).'</small>' : '<small>Timing</small>' ?></span>
+                </div>
+                <div class="wf159-paper-actions">
+                    <a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
+                    <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
+                    <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=upcoming&test_id=<?= e((string)$paperId) ?>#question-bank"><i class="fa-solid fa-pen-to-square"></i><span>Manage Questions</span></a>
+                </div>
+            </article>
+        <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
 <?php endif; ?>
 <div class="grid-4 admin-dashboard-links">
     <?php if(admin_can('enquiries.manage')): ?><a class="card dash-card dash-link" href="enquiries.php"><span class="dash-mini">Open</span><strong><?= e((string)$enquiries) ?></strong><p>Total Enquiries</p></a>
