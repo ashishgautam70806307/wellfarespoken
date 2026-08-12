@@ -44,42 +44,57 @@ if ($student && $testSystemError === '' && !empty($testPools['upcoming'])) {
     $studentIdForBatch = (int)($student['id'] ?? 0);
     $allUpcoming = $testPools['upcoming'];
     $eligibleUpcoming = [];
-    $deniedCandidate = null;
-    $deniedMessage = null;
+    $lockedUpcoming = [];
+    $requestedLockedPaper = null;
+    $firstActiveLockedPaper = null;
+
+    // Never silently hide a published Upcoming paper. A batch-restricted paper that the
+    // current student cannot enter remains visible with an exact lock reason, while the
+    // server API still remains authoritative and refuses an invalid start request.
     foreach ($allUpcoming as $paper) {
         $batchCheck = weekly_test_student_batch_eligibility($studentIdForBatch, $paper);
+        $paper['_batch_allowed'] = !empty($batchCheck['allowed']) ? 1 : 0;
+        $paper['_batch_message'] = !empty($batchCheck['allowed'])
+            ? ''
+            : (string)($batchCheck['message'] ?? 'This test is not assigned to your batch.');
+
         if (!empty($batchCheck['allowed'])) {
-            $paper['_batch_allowed'] = 1;
-            $paper['_batch_message'] = '';
             $gapCheck = weekly_test_upcoming_eligibility($studentIdForBatch, (int)($paper['id'] ?? 0));
             $paper['_student_allowed'] = !empty($gapCheck['allowed']) ? 1 : 0;
             $paper['_student_message'] = (string)($gapCheck['message'] ?? '');
             $eligibleUpcoming[] = $paper;
-            continue;
+        } else {
+            $paper['_student_allowed'] = 0;
+            $paper['_student_message'] = $paper['_batch_message'];
+            $lockedUpcoming[] = $paper;
+            if ($firstActiveLockedPaper === null && ((int)($paper['ready_now'] ?? 0) === 1 || strtolower((string)($paper['status'] ?? '')) === 'active')) {
+                $firstActiveLockedPaper = $paper;
+            }
         }
-        $paper['_batch_allowed'] = 0;
-        $paper['_batch_message'] = (string)($batchCheck['message'] ?? 'This test is not assigned to your batch.');
-        $paper['_student_allowed'] = 0;
-        $paper['_student_message'] = $paper['_batch_message'];
-        $isRequested = $requestedType === 'upcoming' && $requestedTestId > 0 && (int)($paper['id'] ?? 0) === $requestedTestId;
-        if ($isRequested) {
-            $deniedCandidate = $paper;
-            $deniedMessage = $paper['_batch_message'];
-        } elseif ($deniedCandidate === null && $requestedType === 'upcoming') {
-            if ((int)($paper['ready_now'] ?? 0) === 1 || strtolower((string)($paper['status'] ?? '')) === 'active') {
-                $deniedCandidate = $paper;
-                $deniedMessage = $paper['_batch_message'];
+
+        if ($requestedType === 'upcoming' && $requestedTestId > 0 && (int)($paper['id'] ?? 0) === $requestedTestId) {
+            if (empty($paper['_batch_allowed'])) {
+                $batchAccessError = $paper['_batch_message'];
+                $requestedLockedPaper = $paper;
+            } elseif (empty($paper['_student_allowed'])) {
+                $batchAccessError = $paper['_student_message'];
             }
         }
     }
-    if ($requestedType === 'upcoming' && !$eligibleUpcoming && $deniedCandidate) {
-        $eligibleUpcoming[] = $deniedCandidate;
-        $batchAccessError = $deniedMessage;
-    } elseif ($requestedType === 'upcoming' && $requestedTestId > 0 && $deniedCandidate) {
-        $eligibleUpcoming[] = $deniedCandidate;
-        $batchAccessError = $deniedMessage;
+
+    // If the student has valid papers, show those only (plus a directly requested locked
+    // paper so a bookmarked link can explain the denial). If there is no eligible paper,
+    // keep one active locked paper visible instead of incorrectly showing "No paper".
+    if ($eligibleUpcoming) {
+        $testPools['upcoming'] = $eligibleUpcoming;
+        if ($requestedLockedPaper) $testPools['upcoming'][] = $requestedLockedPaper;
+    } elseif ($firstActiveLockedPaper) {
+        $testPools['upcoming'] = [$firstActiveLockedPaper];
+    } elseif ($requestedLockedPaper) {
+        $testPools['upcoming'] = [$requestedLockedPaper];
+    } else {
+        $testPools['upcoming'] = $lockedUpcoming ? [reset($lockedUpcoming)] : [];
     }
-    $testPools['upcoming'] = $eligibleUpcoming;
 }
 
 $invalidRequestedPaper = false;
@@ -106,6 +121,10 @@ function wf133_test_preferred(array $tests, int $requestedTestId = 0): ?array
     if ($requestedTestId > 0) {
         foreach ($tests as $test) if ((int)($test['id'] ?? 0) === $requestedTestId) return $test;
     }
+    $isAllowed = static fn(array $test): bool => (int)($test['_batch_allowed'] ?? 1) === 1 && (int)($test['_student_allowed'] ?? 1) === 1;
+    foreach ($tests as $test) if ($isAllowed($test) && (int)($test['ready_now'] ?? 0) === 1) return $test;
+    foreach ($tests as $test) if ($isAllowed($test) && strtolower((string)($test['status'] ?? '')) === 'active') return $test;
+    foreach ($tests as $test) if ($isAllowed($test)) return $test;
     foreach ($tests as $test) if ((int)($test['ready_now'] ?? 0) === 1) return $test;
     foreach ($tests as $test) if (strtolower((string)($test['status'] ?? '')) === 'active') return $test;
     return $tests[0] ?? null;
@@ -115,6 +134,7 @@ function wf133_test_status(?array $test, string $type): array
 {
     if (!$test) return ['No paper', 'is-empty'];
     if ((int)($test['_batch_allowed'] ?? 1) === 0) return ['Batch access needed', 'is-scheduled'];
+    if ((int)($test['_student_allowed'] ?? 1) === 0) return ['Temporarily locked', 'is-scheduled'];
     if ((int)($test['ready_now'] ?? 0) === 1) {
         return [$type === 'upcoming' ? 'Exam open' : 'Available now', 'is-ready'];
     }
@@ -220,7 +240,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php foreach ($cards as $type => $card):
                 $test = $preferred[$type];
                 [$statusText, $statusClass] = wf133_test_status($test, $type);
-                $mobileStatus = $statusClass === 'is-ready' ? 'Open' : ($statusClass === 'is-scheduled' ? 'Soon' : 'Closed');
+                $mobileStatus = $statusClass === 'is-ready' ? 'Open' : (($statusText === 'Batch access needed' || $statusText === 'Temporarily locked') ? 'Locked' : ($statusClass === 'is-scheduled' ? 'Soon' : 'Closed'));
                 $requiresLogin = $type === 'upcoming';
                 $cardUrl = 'weekly-test.php?type=' . rawurlencode($type) . ($test ? '&test_id=' . (int)$test['id'] : '') . '#wfTestSetup';
             ?>

@@ -226,12 +226,41 @@ try {
             $pdo->beginTransaction();
             $startTransactionOpen = true;
             // Every concurrent start for the same official paper waits on this row lock.
-            $lock = $pdo->prepare("SELECT id FROM weekly_tests WHERE id=? AND status_deleted=0 FOR UPDATE");
+            // Re-fetch the complete paper after the lock so a simultaneous Admin
+            // Close Entry / schedule change cannot race a new student start.
+            $lock = $pdo->prepare("SELECT * FROM weekly_tests WHERE id=? AND status_deleted=0 FOR UPDATE");
             $lock->execute([(int)$test['id']]);
-            if (!$lock->fetchColumn()) {
+            $lockedTest = $lock->fetch();
+            if (!$lockedTest) {
                 $pdo->rollBack();
                 $startTransactionOpen = false;
                 jt(['success'=>false, 'message'=>'The selected test paper is no longer available.'], 404);
+            }
+            $test = array_merge($test, $lockedTest);
+
+            if (!$canResumeClosed) {
+                $lockedNow = time();
+                if (strtolower((string)($test['status'] ?? '')) !== 'active' || ($test['published'] ?? 'Yes') !== 'Yes') {
+                    $pdo->rollBack();
+                    $startTransactionOpen = false;
+                    jt(['success'=>false, 'message'=>'This Upcoming Test is closed for new entries. Refresh the Test Center.'], 409);
+                }
+                if (!empty($test['starts_at']) && strtotime((string)$test['starts_at']) > $lockedNow) {
+                    $pdo->rollBack();
+                    $startTransactionOpen = false;
+                    jt(['success'=>false, 'message'=>'This Upcoming Test has not opened yet.'], 409);
+                }
+                if (!empty($test['ends_at']) && strtotime((string)$test['ends_at']) < $lockedNow) {
+                    $pdo->rollBack();
+                    $startTransactionOpen = false;
+                    jt(['success'=>false, 'message'=>'This Upcoming Test window is closed.'], 409);
+                }
+                $lockedBatchEligibility = weekly_test_student_batch_eligibility($studentId, $test);
+                if (empty($lockedBatchEligibility['allowed'])) {
+                    $pdo->rollBack();
+                    $startTransactionOpen = false;
+                    jt(['success'=>false, 'message'=>(string)($lockedBatchEligibility['message'] ?? 'This test is not assigned to your batch.')], 403);
+                }
             }
 
             // Serialize official-test starts for this student as well as this paper.

@@ -391,7 +391,7 @@ $entryIntroText = $isBasicWeeklyTest ? 'Practice test: answer one question at a 
 (function(){
  const csrf=<?= json_encode($csrf) ?>, attemptId=<?= (int)$attemptId ?>, token=<?= json_encode($token) ?>, resultUrl=<?= json_encode($resultUrl) ?>, strictMode=<?= $strictExamMode ? 'true' : 'false' ?>, autoSubmitOnLimit=<?= $autoSubmitOnLimit ? 'true' : 'false' ?>, allowQuestionJump=<?= $allowQuestionJump ? 'true' : 'false' ?>;
  const questions=<?= json_encode($safe, JSON_UNESCAPED_UNICODE) ?>;
- let remaining=<?= (int)$remaining ?>, current=0, answers=<?= json_encode($savedAnswers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>, warnings=<?= (int)($attempt['warning_count'] ?? 0) ?>, active=false, timerInt=null, saveInt=null, visited={}, qStart=Date.now(), lastWarningAt=0, lastWarningMessage='';
+ let remaining=<?= (int)$remaining ?>, current=0, answers=<?= json_encode($savedAnswers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>, warnings=<?= (int)($attempt['warning_count'] ?? 0) ?>, active=false, timerInt=null, saveInt=null, submittingFinal=false, visited={}, qStart=Date.now(), lastWarningAt=0, lastWarningMessage='';
  const $=id=>document.getElementById(id);
  const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
@@ -455,6 +455,17 @@ $entryIntroText = $isBasicWeeklyTest ? 'Practice test: answer one question at a 
     });
  }
 
+ function clearExamIntervals(){
+   if(timerInt){clearInterval(timerInt);timerInt=null;}
+   if(saveInt){clearInterval(saveInt);saveInt=null;}
+ }
+ function startExamIntervals(){
+   clearExamIntervals();
+   if(!active || submittingFinal) return;
+   timerInt=setInterval(tick,1000);
+   saveInt=setInterval(save,15000);
+ }
+
  function currentAnswer(){
    const q=questions[current]; if(!q) return;
    const checked=document.querySelector('[name="q'+q.id+'"]:checked');
@@ -506,16 +517,18 @@ $entryIntroText = $isBasicWeeklyTest ? 'Practice test: answer one question at a 
    currentAnswer();
    const fd=new FormData(); fd.append('csrf_token',csrf); fd.append('action','autosave'); fd.append('attempt_id',attemptId); fd.append('access_token',token); fd.append('answers_json',JSON.stringify(answers));
    fetch('weekly-test-api.php',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}})
-    .then(r=>r.json()).then(d=>{if(d.expired&&d.result_url){active=false;location.href=d.result_url;return;} $('saveState').textContent=d.success?'Saved':'Save pending';})
+    .then(r=>r.json()).then(d=>{if(d.expired&&d.result_url){active=false;clearExamIntervals();location.href=d.result_url;return;} $('saveState').textContent=d.success?'Saved':'Save pending';})
     .catch(()=>{$('saveState').textContent='Offline pending';});
  }
 
  function submitFinal(){
-   currentAnswer(); pushTiming(current);
+   if(submittingFinal) return;
+   submittingFinal=true;
+   currentAnswer(); pushTiming(current); clearExamIntervals();
    const fd=new FormData(); fd.append('csrf_token',csrf); fd.append('action','submit'); fd.append('attempt_id',attemptId); fd.append('access_token',token); fd.append('answers_json',JSON.stringify(answers));
    fetch('weekly-test-api.php',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}})
-    .then(r=>r.json()).then(d=>{if(!d.success) throw new Error(d.message||'Submit failed'); active=false; location.href=d.result_url||resultUrl;})
-    .catch(e=>showModal({icon:'!',title:'Submit Failed',text:e.message,okText:'OK',hideCancel:true}));
+    .then(r=>r.json()).then(d=>{if(!d.success) throw new Error(d.message||'Submit failed'); active=false; clearExamIntervals(); location.href=d.result_url||resultUrl;})
+    .catch(e=>{submittingFinal=false; if(active) startExamIntervals(); showModal({icon:'!',title:'Submit Failed',text:e.message,okText:'OK',hideCancel:true});});
  }
 
  function submitWithModal(){
@@ -529,8 +542,8 @@ $entryIntroText = $isBasicWeeklyTest ? 'Practice test: answer one question at a 
    showModal({icon:'×',title:'Cancel this test?',text:'Your current test will be closed and marked as cancelled. Submitted answers will not be counted as final result.',okText:'Yes, Cancel Test',cancelText:'Continue Test'}, ()=>{
      const fd=new FormData(); fd.append('csrf_token',csrf); fd.append('action','cancel_attempt'); fd.append('attempt_id',attemptId); fd.append('access_token',token);
      fetch('weekly-test-api.php',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}})
-      .then(r=>r.json()).then(d=>{active=false; location.href='weekly-test.php';})
-      .catch(()=>{active=false; location.href='weekly-test.php';});
+      .then(r=>r.json()).then(d=>{active=false; clearExamIntervals(); location.href='weekly-test.php';})
+      .catch(()=>{active=false; clearExamIntervals(); location.href='weekly-test.php';});
    });
  }
 
@@ -548,7 +561,7 @@ $entryIntroText = $isBasicWeeklyTest ? 'Practice test: answer one question at a 
    active=true;
    document.body.classList.add('exam-active');
    enterStrictMode();
-   render(); tick(); timerInt=setInterval(tick,1000); saveInt=setInterval(save,15000);
+   render(); tick(); startExamIntervals();
  });
  $('nextBtn').onclick=()=>{currentAnswer(); if(current<questions.length-1){pushTiming(current+1); current++; render();}};
  $('prevBtn').onclick=()=>{currentAnswer(); if(current>0){pushTiming(current-1); current--; render();}};

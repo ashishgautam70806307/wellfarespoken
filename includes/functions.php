@@ -4164,6 +4164,35 @@ function weekly_test_ready_reason(array $test): string
 }
 
 
+function weekly_test_sync_linked_batch_access(int $batchId): int
+{
+    $batchId = max(0, $batchId);
+    if ($batchId <= 0 || !function_exists('lifecycle_sync_admission') || !table_exists('admissions')) return 0;
+    if (!column_exists('admissions', 'student_id') || !column_exists('admissions', 'batch_id')) return 0;
+
+    try {
+        $where = "batch_id=? AND student_id IS NOT NULL AND student_id>0";
+        if (column_exists('admissions', 'status_deleted')) $where .= " AND COALESCE(status_deleted,0)=0";
+        if (column_exists('admissions', 'published')) $where .= " AND published='Yes'";
+        if (column_exists('admissions', 'admission_status')) $where .= " AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
+        $stmt = db()->prepare("SELECT id FROM admissions WHERE $where ORDER BY id ASC");
+        $stmt->execute([$batchId]);
+        $synced = 0;
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $admissionId) {
+            try {
+                lifecycle_sync_admission((int)$admissionId);
+                $synced++;
+            } catch (Throwable $e) {
+                error_log('[weekly-batch-sync-admission] admission='.(int)$admissionId.' '.$e->getMessage());
+            }
+        }
+        return $synced;
+    } catch (Throwable $e) {
+        error_log('[weekly-batch-sync] '.$e->getMessage());
+        return 0;
+    }
+}
+
 function weekly_test_set_single_active_by_type(int $testId, bool $clearSchedule = false): void
 {
     weekly_test_ensure_schema();
@@ -4194,6 +4223,14 @@ function weekly_test_set_single_active_by_type(int $testId, bool $clearSchedule 
         db()->prepare("UPDATE weekly_tests SET status='active', published='Yes', starts_at=NULL, ends_at=NULL, updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);
     } else {
         db()->prepare("UPDATE weekly_tests SET status='active', published='Yes', updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);
+    }
+
+    // Publishing a batch-specific Upcoming paper should immediately repair/sync the
+    // lifecycle memberships for admissions that are already explicitly linked to a
+    // student account. This is safe because it never links an unverified phone-only
+    // account to an admission; that still requires the existing manual/verified flow.
+    if ($type === 'upcoming' && $batchId > 0) {
+        weekly_test_sync_linked_batch_access($batchId);
     }
 }
 

@@ -1,0 +1,22 @@
+{
+  "phase": 164,
+  "base_phase": 163,
+  "scope": "Upcoming Test publish/visibility/start/submit stability",
+  "php_files_syntax_passed": 112,
+  "javascript_files_syntax_passed": 16,
+  "css_files_present": 80,
+  "service_worker_cache": "wellfare-spoken-static-v164",
+  "service_worker_assets": 54,
+  "service_worker_missing_assets": 0,
+  "phase164_focused_checks_passed": 20,
+  "regression_suites_passed": [148,149,150,151,158,159,160,161,162,163,164],
+  "database_schema_changed": false,
+  "mysql_runtime_tested": false,
+  "notes": [
+    "Published batch-restricted Upcoming papers are no longer silently rendered as No paper.",
+    "Batch and cooldown gates remain server-authoritative.",
+    "Upcoming start re-checks paper state under row lock.",
+    "Final submit has a client-side re-entry/timer-loop guard.",
+    "Live student batch membership still requires real MySQL/session verification on staging."
+  ]
+}
