@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
         if ($action === 'set_test_pending') {
             $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
             if($testId<=0) weekly_admin_post_reply(false, 'Select a test paper first.');
-            db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);
+            weekly_test_close_entry($testId);
             $tstmt=db()->prepare("SELECT test_type FROM weekly_tests WHERE id=? LIMIT 1");
             $tstmt->execute([$testId]);
             $tt=(string)($tstmt->fetchColumn() ?: 'basic');
-            weekly_admin_post_reply(true, 'Set to Pending/Draft. Students cannot start this paper now.', ['test_id'=>$testId, 'type'=>$tt]);
+            weekly_admin_post_reply(true, $tt==='upcoming' ? 'Upcoming Test entry closed. New starts are blocked; students already inside keep their exam timer. Review copies, then Finalize Top 3.' : 'Set to Pending/Draft. Students cannot start this paper now.', ['test_id'=>$testId, 'type'=>$tt]);
         }
         if ($action === 'upload_questions') {
             $testId=(int)($_POST['test_id']??0);
@@ -483,8 +483,8 @@ function weekly_admin_sample_link(string $type): string {
           <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
         <?php endif; ?>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-primary btn-sm" type="submit">Publish</button><span class="ajax-msg"></span></form>
-        <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-soft btn-sm" type="submit">Pending</button><span class="ajax-msg"></span></form>
-        <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="<?= e((($pt['test_type'] ?? '')==='upcoming') ? 'Complete this upcoming batch test and freeze 1st, 2nd and 3rd positions? All submitted copies should be checked first.' : 'Complete this batch test and publish top 3 winners for 2 days?') ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-green btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Complete + Rank' : 'Complete' ?></button><span class="ajax-msg"></span></form>
+        <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-soft btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Close Entry' : 'Pending' ?></button><span class="ajax-msg"></span></form>
+        <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="<?= e((($pt['test_type'] ?? '')==='upcoming') ? 'Close new entry and finalize 1st, 2nd and 3rd when all active attempts are finished and all submitted copies are checked?' : 'Complete this batch test and publish top 3 winners for 2 days?') ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-green btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Finalize Top 3' : 'Complete' ?></button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Hide/archive this batch paper? Records will remain in database for 15 days."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="archive_test_paper"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-red btn-sm" type="submit">Delete</button><span class="ajax-msg"></span></form>
       </div>
     </div>
@@ -530,10 +530,10 @@ function weekly_admin_sample_link(string $type): string {
       </form>
       <form class="ajax-admin-form inline-paper-action" action="weekly-test-ajax.php" method="post">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>">
-        <button class="btn btn-soft" type="submit">Set Pending</button><span class="ajax-msg"></span>
+        <button class="btn btn-soft" type="submit"><?= $selectedType==='upcoming' ? 'Close Entry' : 'Set Pending' ?></button><span class="ajax-msg"></span>
       </form>
     </div>
-    <div class="weekly-test-active-helper">Delete button paper ko 15 din ke liye hide/archive karega, direct permanent delete nahi karega.<br>Frontend start ke liye <b>Paper Published / Active</b>, <b>Active Questions</b> aur <b>schedule open</b> required hai. Publish Now selected paper ko turant student visible bana deta hai aur same type ke other papers ko Pending kar deta hai.</div>
+    <div class="weekly-test-active-helper">Delete button paper ko 15 din ke liye hide/archive karega, direct permanent delete nahi karega.<br>Frontend start ke liye <b>Paper Published / Active</b>, <b>Active Questions</b>, <b>schedule open</b> aur Upcoming Test ke liye <b>student batch access</b> required hai. <b>Publish Now</b> selected paper ko turant open karta hai. Upcoming me <b>Close Entry</b> new starts rokta hai; checked copies complete hone ke baad <b>Finalize Top 3</b> karein.</div>
     <form class="ajax-admin-form form-grid compact-admin-form" action="weekly-test-ajax.php" method="post">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="save_test">

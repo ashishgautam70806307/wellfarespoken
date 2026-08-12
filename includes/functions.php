@@ -1168,6 +1168,92 @@ function student_password_error(string $password): string
     return '';
 }
 
+/**
+ * Admin-assisted recovery deliberately has fewer composition rules than student
+ * self-registration. The institute can set the exact temporary password agreed
+ * with the student, while still rejecting blank/oversized values.
+ */
+function student_admin_password_error(string $password): string
+{
+    if ($password === '' || trim($password) === '') return 'Enter the new student password.';
+    if (strlen($password) > 128) return 'Password must not exceed 128 characters.';
+    return '';
+}
+
+/**
+ * Return the student's effective/manual Weekly Test batch access for Admin UI.
+ * Manual test access is stored in a learning-only enrollment so admission
+ * memberships are never overwritten by this control.
+ */
+function student_weekly_test_batch_access(int $studentId): array
+{
+    $studentId = max(0, $studentId);
+    $out = ['label'=>'Admission / Common only','manual'=>false,'manual_batch_id'=>0,'batch_ids'=>[]];
+    if ($studentId <= 0 || !table_exists('student_batch_memberships')) return $out;
+    try {
+        $stmt = db()->prepare("SELECT sbm.batch_id, COALESCE(NULLIF(bt.batch_name,''), NULLIF(sbm.batch_name_snapshot,''), CONCAT('Batch #',sbm.batch_id)) batch_name, COALESCE(se.course_title_snapshot,'') enrollment_label, se.admission_id
+            FROM student_batch_memberships sbm
+            JOIN student_enrollments se ON se.id=sbm.enrollment_id
+            LEFT JOIN batch_timings bt ON bt.id=sbm.batch_id
+            WHERE sbm.student_id=? AND sbm.membership_status='Active' AND sbm.batch_id IS NOT NULL
+              AND se.enrollment_status NOT IN ('Cancelled','Completed')
+            ORDER BY (se.course_title_snapshot='Weekly Test Access') DESC, sbm.id DESC");
+        $stmt->execute([$studentId]);
+        $rows = $stmt->fetchAll();
+        $labels=[];
+        foreach ($rows as $row) {
+            $bid=(int)($row['batch_id']??0); if($bid<=0) continue;
+            $out['batch_ids'][$bid]=true;
+            $labels[]=(string)($row['batch_name']??('Batch #'.$bid));
+            if ((string)($row['enrollment_label']??'') === 'Weekly Test Access') {
+                $out['manual']=true;
+                if ($out['manual_batch_id']<=0) $out['manual_batch_id']=$bid;
+            }
+        }
+        if ($labels) $out['label']=implode(' · ', array_values(array_unique($labels)));
+    } catch (Throwable $e) {
+        error_log('[student-test-access-read] ' . $e->getMessage());
+    }
+    return $out;
+}
+
+function student_set_weekly_test_batch_access(int $studentId, int $batchId): void
+{
+    $studentId=max(0,$studentId); $batchId=max(0,$batchId);
+    if($studentId<=0) throw new RuntimeException('Invalid student account.');
+    if(!table_exists('student_enrollments') || !table_exists('student_batch_memberships')) throw new RuntimeException('Weekly Test batch-access tables are not ready. Run Admin > System Check and complete the backend database upgrade.');
+    if($batchId>0){
+        $b=db()->prepare("SELECT id,batch_name FROM batch_timings WHERE id=? AND published='Yes' LIMIT 1");
+        $b->execute([$batchId]); $batch=$b->fetch();
+        if(!$batch) throw new RuntimeException('Choose a valid active batch.');
+    } else { $batch=null; }
+
+    $pdo=db(); $owns=!$pdo->inTransaction();
+    try {
+        if($owns) $pdo->beginTransaction();
+        $en=$pdo->prepare("SELECT id FROM student_enrollments WHERE student_id=? AND admission_id IS NULL AND course_title_snapshot='Weekly Test Access' AND enrollment_status IN ('Pending','Active','Completed') ORDER BY id DESC LIMIT 1 FOR UPDATE");
+        $en->execute([$studentId]); $enrollmentId=(int)($en->fetchColumn()?:0);
+        if($enrollmentId<=0 && $batchId>0){
+            $pdo->prepare("INSERT INTO student_enrollments (student_id,admission_id,course_id,course_title_snapshot,enrollment_status,joined_at) VALUES (?,NULL,NULL,'Weekly Test Access','Active',NOW())")->execute([$studentId]);
+            $enrollmentId=(int)$pdo->lastInsertId();
+        }
+        if($enrollmentId>0){
+            $pdo->prepare("UPDATE student_batch_memberships SET membership_status='Left',left_at=NOW() WHERE enrollment_id=? AND membership_status='Active'")->execute([$enrollmentId]);
+            if($batchId>0){
+                $pdo->prepare("INSERT INTO student_batch_memberships (enrollment_id,student_id,batch_id,batch_name_snapshot,membership_status,joined_at) VALUES (?,?,?,?, 'Active',NOW())")
+                    ->execute([$enrollmentId,$studentId,$batchId,(string)$batch['batch_name']]);
+                $pdo->prepare("UPDATE student_enrollments SET enrollment_status='Active', joined_at=COALESCE(joined_at,NOW()), completed_at=NULL WHERE id=?")->execute([$enrollmentId]);
+            } else {
+                $pdo->prepare("UPDATE student_enrollments SET enrollment_status='Completed', completed_at=NOW() WHERE id=?")->execute([$enrollmentId]);
+            }
+        }
+        if($owns) $pdo->commit();
+    } catch(Throwable $e){
+        if($owns && $pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+}
+
 function is_student(): bool
 {
     return !empty($_SESSION['student_id']);
@@ -3927,55 +4013,70 @@ function weekly_test_student_batch_eligibility(int $studentId, array $test): arr
     $batchId = max(0, (int)($test['batch_id'] ?? 0));
     $batchLabel = trim((string)(($test['batch_label'] ?? '') ?: ($test['batch_name'] ?? '') ?: 'selected batch'));
     if ($batchId <= 0) {
-        return ['allowed'=>true, 'message'=>'Common Upcoming Test is available to all active students.', 'batch_id'=>0, 'batch_label'=>'Common / All Batches'];
+        return ['allowed'=>true, 'message'=>'Common Upcoming Test is available to all active students.', 'batch_id'=>0, 'batch_label'=>'Common / All Batches', 'source'=>'common'];
     }
     if ($studentId <= 0) {
-        return ['allowed'=>false, 'message'=>'Student login is required for this batch test.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
+        return ['allowed'=>false, 'message'=>'Student login is required for this batch test.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel, 'source'=>'login_required'];
     }
 
-    try {
+    $checkAccess = static function(int $sid, int $bid): ?string {
         if (table_exists('student_batch_memberships')) {
             $sql = "SELECT sbm.id FROM student_batch_memberships sbm";
-            if (table_exists('student_enrollments')) {
-                $sql .= " LEFT JOIN student_enrollments se ON se.id=sbm.enrollment_id";
-            }
+            if (table_exists('student_enrollments')) $sql .= " LEFT JOIN student_enrollments se ON se.id=sbm.enrollment_id";
             $sql .= " WHERE sbm.student_id=? AND sbm.batch_id=? AND sbm.membership_status='Active'";
-            if (table_exists('student_enrollments')) {
-                $sql .= " AND (se.id IS NULL OR se.enrollment_status NOT IN ('Cancelled','Rejected'))";
-            }
+            if (table_exists('student_enrollments')) $sql .= " AND (se.id IS NULL OR se.enrollment_status NOT IN ('Cancelled','Completed'))";
             $sql .= " LIMIT 1";
-            $stmt = db()->prepare($sql);
-            $stmt->execute([$studentId, $batchId]);
-            if ($stmt->fetchColumn()) {
-                return ['allowed'=>true, 'message'=>'Student belongs to this batch.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
-            }
+            $stmt=db()->prepare($sql); $stmt->execute([$sid,$bid]);
+            if($stmt->fetchColumn()) return 'membership';
+        }
+        if (table_exists('admissions') && column_exists('admissions','student_id') && column_exists('admissions','batch_id')) {
+            $where="student_id=? AND batch_id=?";
+            if(column_exists('admissions','status_deleted')) $where.=" AND COALESCE(status_deleted,0)=0";
+            if(column_exists('admissions','published')) $where.=" AND published='Yes'";
+            if(column_exists('admissions','admission_status')) $where.=" AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
+            $stmt=db()->prepare("SELECT id FROM admissions WHERE $where ORDER BY id DESC LIMIT 1"); $stmt->execute([$sid,$bid]);
+            if($stmt->fetchColumn()) return 'admission';
+        }
+        return null;
+    };
+
+    try {
+        $source=$checkAccess($studentId,$batchId);
+        if($source){
+            return ['allowed'=>true,'message'=>$source==='membership'?'Student belongs to this batch.':'Student admission belongs to this batch.','batch_id'=>$batchId,'batch_label'=>$batchLabel,'source'=>$source];
         }
 
-        if (table_exists('admissions') && column_exists('admissions', 'student_id') && column_exists('admissions', 'batch_id')) {
-            $where = "student_id=? AND batch_id=?";
-            if (column_exists('admissions', 'status_deleted')) $where .= " AND COALESCE(status_deleted,0)=0";
-            if (column_exists('admissions', 'published')) $where .= " AND published='Yes'";
-            if (column_exists('admissions', 'admission_status')) $where .= " AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
-            $stmt = db()->prepare("SELECT id FROM admissions WHERE $where ORDER BY id DESC LIMIT 1");
-            $stmt->execute([$studentId, $batchId]);
-            if ($stmt->fetchColumn()) {
-                return ['allowed'=>true, 'message'=>'Student admission belongs to this batch.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
+        // Safely reconcile older verified student accounts whose admission existed before
+        // the lifecycle tables were introduced. Unverified self-entered phone numbers are
+        // never auto-linked here.
+        if (function_exists('lifecycle_link_student_registration')) {
+            $st=db()->prepare('SELECT phone' . (column_exists('students','identity_status') ? ',identity_status' : '') . ' FROM students WHERE id=? AND status_deleted=0 LIMIT 1');
+            $st->execute([$studentId]); $studentRow=$st->fetch()?:[];
+            $verified=!column_exists('students','identity_status') || (string)($studentRow['identity_status']??'Unverified')==='Verified';
+            if($verified && !empty($studentRow['phone'])){
+                lifecycle_link_student_registration($studentId,(string)$studentRow['phone']);
+                $source=$checkAccess($studentId,$batchId);
+                if($source){
+                    return ['allowed'=>true,'message'=>'Student batch access was safely restored from the verified admission record.','batch_id'=>$batchId,'batch_label'=>$batchLabel,'source'=>'reconciled_'.$source];
+                }
             }
         }
 
         return [
             'allowed'=>false,
-            'message'=>'This Upcoming Test is only for '.$batchLabel.'. Ask the institute to assign your student account to this batch.',
+            'message'=>'This Upcoming Test is for '.$batchLabel.'. Admin can open Student Accounts → this student → Upcoming Test Batch Access and grant the correct batch without changing the admission record.',
             'batch_id'=>$batchId,
             'batch_label'=>$batchLabel,
+            'source'=>'not_assigned',
         ];
     } catch (Throwable $e) {
         error_log('[weekly-batch-eligibility] ' . $e->getMessage());
         return [
             'allowed'=>false,
-            'message'=>'Your batch eligibility could not be verified safely. Please contact the institute.',
+            'message'=>'Your batch eligibility could not be verified safely. Ask the institute to check Student Account → Upcoming Test Batch Access.',
             'batch_id'=>$batchId,
             'batch_label'=>$batchLabel,
+            'source'=>'error',
         ];
     }
 }
@@ -4103,6 +4204,22 @@ function weekly_test_publish_now(int $testId, bool $activateQuestions = true, bo
     weekly_test_set_single_active_by_type($testId, $clearSchedule);
     if ($activateQuestions) {
         db()->prepare("UPDATE weekly_test_questions SET published='Yes' WHERE test_id=? AND status_deleted=0")->execute([$testId]);
+    }
+    return true;
+}
+
+function weekly_test_close_entry(int $testId): bool
+{
+    weekly_test_ensure_schema();
+    if ($testId <= 0) return false;
+    $stmt=db()->prepare("SELECT test_type FROM weekly_tests WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1");
+    $stmt->execute([$testId]);
+    $type=strtolower((string)($stmt->fetchColumn()?:''));
+    if($type==='') return false;
+    if($type==='upcoming') {
+        db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE id=? AND COALESCE(status_deleted,0)=0")->execute([$testId]);
+    } else {
+        db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE id=? AND COALESCE(status_deleted,0)=0")->execute([$testId]);
     }
     return true;
 }
@@ -4601,20 +4718,26 @@ function weekly_test_complete_batch(int $testId): array
         $liveStmt->execute([$testId]);
         $live = $liveStmt->fetch() ?: [];
         $endsTs = !empty($live['ends_at']) ? strtotime((string)$live['ends_at']) : false;
+        $entryClosedNow = false;
         if (strtolower((string)($live['status'] ?? '')) === 'active' && (!$endsTs || $endsTs > time())) {
-            return ['success'=>false,'message'=>'This upcoming test is still open. Wait for the schedule to close or set the paper to Pending before fixing the Top 3 positions.'];
+            // Admin chose Complete/Rank: close new entry first so ranking can never race
+            // with a new student starting the same paper. Existing started attempts keep
+            // their own server-side expires_at and may finish safely.
+            db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE id=? AND COALESCE(status_deleted,0)=0")
+                ->execute([$testId]);
+            $entryClosedNow = true;
         }
         $running = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='started'");
         $running->execute([$testId]);
         $runningCount = (int)$running->fetchColumn();
         if ($runningCount > 0) {
-            return ['success'=>false,'message'=>$runningCount.' student attempt'.($runningCount===1?' is':'s are').' still in progress. Finish or safely close those attempts before ranking.'];
+            return ['success'=>false,'paper_closed'=>true,'message'=>($entryClosedNow?'New entries are closed. ':'').$runningCount.' student attempt'.($runningCount===1?' is':'s are').' still in progress. Let those students finish or wait for their timer to end, then check submitted copies and click Finalize Top 3 again.'];
         }
         $pending = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='submitted'");
         $pending->execute([$testId]);
         $pendingCount = (int)$pending->fetchColumn();
         if ($pendingCount > 0) {
-            return ['success'=>false,'message'=>'Review and publish marks for '.$pendingCount.' submitted upcoming-test cop'.($pendingCount===1?'y':'ies').' before fixing the Top 3 positions.'];
+            return ['success'=>false,'paper_closed'=>true,'message'=>($entryClosedNow?'New entries are closed. ':'').'Review and publish marks for '.$pendingCount.' submitted upcoming-test cop'.($pendingCount===1?'y':'ies').'. After all copies are Checked, click Finalize Top 3 again.'];
         }
     }
 

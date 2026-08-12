@@ -77,10 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newPassword = (string)($_POST['new_password'] ?? '');
             $confirmPassword = (string)($_POST['confirm_password'] ?? '');
             $resetReason = mb_substr(trim((string)($_POST['reset_reason'] ?? '')), 0, 500);
-            if (mb_strlen($resetReason) < 3) throw new RuntimeException('Add a short reset reason, for example: student confirmed in person or by phone.');
-            $passwordError = student_password_error($newPassword);
+            $passwordError = student_admin_password_error($newPassword);
             if ($passwordError !== '') throw new RuntimeException($passwordError);
             if (!hash_equals($newPassword, $confirmPassword)) throw new RuntimeException('New password and confirmation do not match.');
+            if ($resetReason === '') $resetReason = 'Admin-assisted forgotten-password reset.';
             db()->beginTransaction();
             try {
                 if (!student_account_reset_password($id, password_hash($newPassword, PASSWORD_DEFAULT))) {
@@ -93,8 +93,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (db()->inTransaction()) db()->rollBack();
                 throw $e;
             }
-            flash('success', 'Password changed successfully. The student can now use the new password and all old sessions were signed out.');
+            flash('success', 'Password changed successfully. The student can now use exactly the new password you entered. All old sessions were signed out.');
             redirect('student-view.php?id=' . $id . '#password-control');
+        }
+        if ($action === 'set_test_batch_access') {
+            $batchId = max(0, (int)($_POST['test_batch_id'] ?? 0));
+            student_set_weekly_test_batch_access($id, $batchId);
+            if ($batchId > 0) {
+                $b = db()->prepare("SELECT batch_name FROM batch_timings WHERE id=? AND published='Yes' LIMIT 1");
+                $b->execute([$batchId]);
+                $batchName = trim((string)($b->fetchColumn() ?: 'Selected batch'));
+                student_account_log($id, 'weekly_test_batch_access', 'Weekly Test batch access updated', 'Admin granted Upcoming Test access for: ' . $batchName . '.');
+                admin_audit_log('student.weekly_test_batch_access', 'student', $id, 'Batch ID ' . $batchId . ' granted for official Upcoming Test access.');
+                flash('success', 'Upcoming Test access granted for ' . $batchName . '. The student can now open published tests for this batch.');
+            } else {
+                student_account_log($id, 'weekly_test_batch_access_removed', 'Weekly Test batch access cleared', 'Admin removed the manual Weekly Test batch assignment. Admission-based memberships are unchanged.');
+                admin_audit_log('student.weekly_test_batch_access_removed', 'student', $id, 'Manual Weekly Test batch access removed.');
+                flash('success', 'Manual Upcoming Test batch access cleared. Admission-based batch access was not changed.');
+            }
+            redirect('student-view.php?id=' . $id . '#test-access-control');
         }
         if ($action === 'force_logout') {
             student_account_invalidate_sessions($id);
@@ -120,7 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Throwable $e) {
         error_log('[admin-student-view] ' . $e->__toString());
         flash('error', ($e instanceof RuntimeException && !($e instanceof PDOException)) ? $e->getMessage() : 'Student account could not be updated.');
-        redirect('student-view.php?id=' . $id);
+        $anchor = $action === 'reset_password' ? '#password-control' : ($action === 'set_test_batch_access' ? '#test-access-control' : '');
+        redirect('student-view.php?id=' . $id . $anchor);
     }
 }
 
@@ -136,6 +154,8 @@ $weeklyAttempts = weekly_test_fetch_attempts_for_student($id, 12);
 $recentAttempts = student_recent_material_attempts($id, 10);
 $wrongAttempts = student_wrong_material_attempts($id, 10);
 $accountEvents = student_account_events($id, 24);
+$testAccess = student_weekly_test_batch_access($id);
+$testAccessBatches = weekly_test_get_batches();
 $progress = student_level_progress_percent((string)$student['current_level'], $metrics);
 function admin_student_initials(array $s): string { $n=trim((string)($s['full_name']??'S')); $p=preg_split('/\s+/', $n); $o=''; foreach(array_slice($p?:[],0,2) as $x){$o.=mb_substr($x,0,1);} return mb_strtoupper($o?:'S'); }
 function admin_student_datetime(?string $value, string $fallback='Never'): string { if(!$value)return $fallback; $t=strtotime($value); return $t?date('d M Y, h:i A',$t):$fallback; }
@@ -185,13 +205,27 @@ function admin_student_datetime(?string $value, string $fallback='Never'): strin
       <div class="wf147-card-heading"><span><i class="fa-solid fa-key"></i></span><div><h2>Reset Forgotten Password</h2><p>Set a new password chosen by the institute. The old password is not required.</p></div></div>
       <form method="post" class="wf147-password-form" data-confirm="Change this password and sign the student out from all existing sessions?">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="reset_password">
-        <label><span>New Password</span><div class="wf147-password-field"><input type="password" id="studentNewPassword" name="new_password" minlength="8" maxlength="128" autocomplete="new-password" required><button type="button" class="btn btn-soft" id="generateStudentPassword">Generate</button></div></label>
-        <label><span>Confirm Password</span><input type="password" id="studentConfirmPassword" name="confirm_password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
-        <label><span>Reset Reason</span><input name="reset_reason" maxlength="500" required placeholder="Example: student confirmed in person / on registered phone"></label>
+        <label><span>New Password</span><div class="wf147-password-field"><div class="wf163-password-input"><input type="password" id="studentNewPassword" name="new_password" maxlength="128" autocomplete="new-password" required><button type="button" class="btn btn-soft btn-sm" data-toggle-password="studentNewPassword" aria-label="Show password">Show</button></div><button type="button" class="btn btn-soft" id="generateStudentPassword">Generate</button></div></label>
+        <label><span>Confirm Password</span><div class="wf163-password-input"><input type="password" id="studentConfirmPassword" name="confirm_password" maxlength="128" autocomplete="new-password" required><button type="button" class="btn btn-soft btn-sm" data-toggle-password="studentConfirmPassword" aria-label="Show password">Show</button></div></label>
+        <label><span>Reset Note <small>(optional)</small></span><input name="reset_reason" maxlength="500" placeholder="Example: student forgot password / confirmed by phone"></label>
         <?php if(column_exists('students','identity_status') && ($student['identity_status']??'Unverified')!=='Verified'): ?><div class="alert alert-warning">This mobile number is still <strong>Unverified</strong>. Confirm the student/guardian identity manually before sharing the new password.</div><?php endif; ?>
-        <div class="wf147-password-tools"><button type="button" class="btn btn-soft" id="copyStudentPassword"><i class="fa-regular fa-copy"></i> Copy Password</button><small>Minimum 8 characters. Share it privately with the student.</small></div>
+        <div class="wf147-password-tools"><button type="button" class="btn btn-soft" id="copyStudentPassword"><i class="fa-regular fa-copy"></i> Copy Password</button><small>You choose the student password. Any non-empty password up to 128 characters is accepted; a stronger password is still recommended.</small></div>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-rotate"></i> Change Password</button>
       </form>
+    </section>
+
+    <section class="panel-card wf147-security-card" id="test-access-control">
+      <div class="wf147-card-heading"><span><i class="fa-solid fa-people-group"></i></span><div><h2>Upcoming Test Batch Access</h2><p>Grant a secure batch assignment for official Upcoming Tests when legacy admission/membership data is missing.</p></div></div>
+      <?php if (!table_exists('student_enrollments') || !table_exists('student_batch_memberships')): ?>
+        <div class="alert alert-warning">Batch-access tables are not ready. Complete the backend database upgrade from Admin &gt; System Check first.</div>
+      <?php else: ?>
+        <div class="wf163-test-access-current"><small>Current access</small><strong><?= e((string)($testAccess['label'] ?? 'Admission / Common only')) ?></strong><span><?= !empty($testAccess['manual']) ? 'Manual test access' : 'Admission/membership access' ?></span></div>
+        <form method="post" class="wf147-profile-form" data-confirm="Update this student’s Upcoming Test batch access?">
+          <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_batch_access">
+          <label class="full"><span>Test Batch</span><select name="test_batch_id"><option value="0">No manual batch / use admission access</option><?php foreach($testAccessBatches as $batch): ?><option value="<?= e((string)$batch['id']) ?>" <?= (int)($testAccess['manual_batch_id'] ?? 0)===(int)$batch['id']?'selected':'' ?>><?= e($batch['batch_name']) ?><?= !empty($batch['timing'])?' · '.e($batch['timing']):'' ?></option><?php endforeach; ?></select><small>This does not alter the student's admission record. It only grants/revokes a manual Weekly Test batch membership.</small></label>
+          <div class="full wf147-form-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-user-check"></i> Save Test Access</button></div>
+        </form>
+      <?php endif; ?>
     </section>
 
     <section class="panel-card wf147-security-card" id="security-control">
@@ -235,6 +269,16 @@ function admin_student_datetime(?string $value, string $fallback='Never'): strin
   document.getElementById('copyStudentPassword')?.addEventListener('click', async () => {
     if (!password?.value) return;
     try { await navigator.clipboard.writeText(password.value); } catch (_) { password.select(); document.execCommand('copy'); }
+  });
+  document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const input = document.getElementById(button.getAttribute('data-toggle-password'));
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      button.textContent = show ? 'Hide' : 'Show';
+      button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
   });
 })();
 </script>

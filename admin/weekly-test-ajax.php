@@ -87,8 +87,9 @@ try{
  if($action==='set_test_pending'){
    $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
    if($testId<=0) aj(['success'=>false,'message'=>'Select a test paper first.']);
-   db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);
-   aj(['success'=>true,'message'=>'Set to Pending/Draft. Students cannot start this paper now.','test_id'=>$testId]);
+   weekly_test_close_entry($testId);
+   $ts=db()->prepare("SELECT test_type FROM weekly_tests WHERE id=? LIMIT 1"); $ts->execute([$testId]); $closeType=(string)($ts->fetchColumn()?:'');
+   aj(['success'=>true,'message'=>$closeType==='upcoming'?'Upcoming Test entry closed. No new student can start; students already inside keep their own exam timer. Review submitted copies, then Finalize Top 3.':'Set to Pending/Draft. Students cannot start this paper now.','test_id'=>$testId]);
  }
 
  if($action==='create_demo_batch_tests'){

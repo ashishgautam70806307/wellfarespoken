@@ -1,0 +1,26 @@
+{
+  "phase": 163,
+  "php_files_syntax_passed": 111,
+  "javascript_files_syntax_passed": 16,
+  "css_files_brace_check_passed": 80,
+  "static_test_suites_passed": [
+    "148",
+    "149",
+    "150",
+    "151",
+    "158",
+    "159",
+    "160",
+    "161",
+    "162",
+    "163"
+  ],
+  "literal_local_references_checked": 238,
+  "literal_local_references_missing": 0,
+  "duplicate_literal_ids": 0,
+  "service_worker_cache_version": 163,
+  "service_worker_local_assets_checked": 54,
+  "service_worker_local_assets_missing": 0,
+  "database_schema_changed": false,
+  "real_mysql_browser_testing": "pending - build environment has no user live database/session/device state"
+}

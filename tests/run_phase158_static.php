@@ -33,8 +33,8 @@ check_true(strpos($functions, 'function weekly_test_expected_answers_releasable'
 check_true(strpos($functions, "\$type !== 'upcoming'") !== false, 'Basic/Previous answers release after final submit');
 check_true(strpos($functions, "['archived', 'closed', 'completed']") !== false, 'Upcoming master answers unlock after paper closure');
 check_true(strpos($functions, 'test_ends_at') !== false, 'Upcoming answer release considers end time');
-check_true(strpos($functions, "status='started'") !== false && strpos($functions, 'before ranking') !== false, 'Top-3 completion blocks in-progress attempts');
-check_true(strpos($functions, "status='submitted'") !== false && strpos($functions, 'before fixing the Top 3 positions') !== false, 'Top-3 completion blocks unreviewed submitted attempts');
+check_true(strpos($functions, "status='started'") !== false && strpos($functions, 'still in progress') !== false, 'Top-3 completion blocks in-progress attempts');
+check_true(strpos($functions, "status='submitted'") !== false && strpos($functions, 'After all copies are Checked') !== false, 'Top-3 completion blocks unreviewed submitted attempts');
 check_true(strpos($functions, 'weekly_test_latest_upcoming_rank_for_student') !== false, 'Latest Upcoming rank helper exists');
 
 check_true(strpos($result, 'weekly_test_expected_answers_releasable($attempt)') !== false, 'Result page uses safe answer release policy');
@@ -53,7 +53,7 @@ check_true(strpos($offline, 'Name:') !== false && strpos($offline, 'Mobile / Rol
 check_true(strpos($offline, 'answer-space') !== false, 'Offline student paper includes answer-writing space');
 check_true(strpos($offline, 'batch_name') !== false && strpos($offline, 'batch_timing') !== false, 'Offline paper includes batch metadata');
 check_true(strpos($paper, 'weekly-test-offline-paper.php') !== false && strpos($testsPage, 'weekly-test-offline-paper.php') !== false, 'Admin weekly-test screens link to offline paper');
-check_true(strpos($paper, 'Complete + Rank Top 3') !== false || strpos($testsPage, 'Complete + Rank') !== false, 'Admin Upcoming completion exposes rank action');
+check_true(strpos($paper, 'Finalize Top 3') !== false || strpos($testsPage, 'Finalize Top 3') !== false, 'Admin Upcoming completion exposes rank action');
 check_true(strpos($backend, "'weekly-test-offline-paper.php'=>'tests.manage'") !== false, 'Offline paper is mapped to RBAC permission');
 
 check_true(strpos($css, '#f0b72f') !== false, 'Rank 1 uses gold');

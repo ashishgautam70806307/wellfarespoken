@@ -26,4 +26,5 @@ p162_check(strpos($api, 'weekly_test_student_batch_eligibility($studentId, $test
 p162_check(strpos($student, 'weekly_test_student_batch_eligibility($studentIdForBatch, $paper)') !== false, 'Student Test Center filters Upcoming papers to eligible batches');
 p162_check(strpos($functions, "test_type='upcoming' AND id<>? AND COALESCE(batch_id,0)=?") !== false, 'Upcoming active-paper exclusivity is scoped per batch');
 p162_check(strpos($css, '.page-admin-dashboard .btn') !== false && strpos($css, 'font-size:11px') !== false, 'Dashboard button labels use compact typography');
-p162_check(strpos($sw, 'wellfare-spoken-static-v162') !== false && strpos($sw, 'phase162-dashboard-performance.min.css') !== false, 'Service worker cache and Phase 162 CSS are current');
+preg_match('/wellfare-spoken-static-v(\d+)/', $sw, $cacheMatch);
+p162_check((int)($cacheMatch[1] ?? 0) >= 162 && strpos($sw, 'phase162-dashboard-performance.min.css') !== false, 'Service worker cache and Phase 162 CSS are current');

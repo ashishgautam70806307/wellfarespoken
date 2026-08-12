@@ -191,19 +191,29 @@ try {
                 jt(['success'=>false, 'login_required'=>true, 'message'=>'Student account is not active. Please login again.'], 403);
             }
         }
-        if (strtolower((string)($test['status'] ?? '')) !== 'active' || ($test['published'] ?? 'Yes') !== 'Yes') {
-            jt(['success'=>false, 'message'=>'This test is not published yet.']);
+        $studentId = is_student() ? current_student_id() : null;
+        $canResumeClosed = false;
+        if ($isOfficialExam && $studentId) {
+            $resumeCheck = db()->prepare("SELECT id,expires_at FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND student_id=? AND status='started' ORDER BY id DESC LIMIT 1");
+            $resumeCheck->execute([(int)$test['id'], $studentId]);
+            $resumeRow = $resumeCheck->fetch();
+            if ($resumeRow) {
+                $resumeExpiry = !empty($resumeRow['expires_at']) ? strtotime((string)$resumeRow['expires_at']) : false;
+                $canResumeClosed = !$resumeExpiry || $resumeExpiry > time();
+            }
+        }
+        if ((strtolower((string)($test['status'] ?? '')) !== 'active' || ($test['published'] ?? 'Yes') !== 'Yes') && !$canResumeClosed) {
+            jt(['success'=>false, 'message'=>'This test is not published/open for new attempts.']);
         }
         $now = time();
-        if (!empty($test['starts_at']) && strtotime((string)$test['starts_at']) > $now) {
+        if (!empty($test['starts_at']) && strtotime((string)$test['starts_at']) > $now && !$canResumeClosed) {
             jt(['success'=>false, 'message'=>'This test will open at the scheduled time.']);
         }
-        if (!empty($test['ends_at']) && strtotime((string)$test['ends_at']) < $now) {
+        if (!empty($test['ends_at']) && strtotime((string)$test['ends_at']) < $now && !$canResumeClosed) {
             jt(['success'=>false, 'message'=>'This test window is closed.']);
         }
 
-        $studentId = is_student() ? current_student_id() : null;
-        if ($isOfficialExam && $studentId) {
+        if ($isOfficialExam && $studentId && !$canResumeClosed) {
             $batchEligibility = weekly_test_student_batch_eligibility($studentId, $test);
             if (empty($batchEligibility['allowed'])) {
                 jt(['success'=>false, 'message'=>(string)($batchEligibility['message'] ?? 'This test is not assigned to your batch.')], 403);

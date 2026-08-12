@@ -42,14 +42,42 @@ if ($student) private_no_store();
 $batchAccessError = null;
 if ($student && $testSystemError === '' && !empty($testPools['upcoming'])) {
     $studentIdForBatch = (int)($student['id'] ?? 0);
+    $allUpcoming = $testPools['upcoming'];
     $eligibleUpcoming = [];
-    foreach ($testPools['upcoming'] as $paper) {
+    $deniedCandidate = null;
+    $deniedMessage = null;
+    foreach ($allUpcoming as $paper) {
         $batchCheck = weekly_test_student_batch_eligibility($studentIdForBatch, $paper);
         if (!empty($batchCheck['allowed'])) {
+            $paper['_batch_allowed'] = 1;
+            $paper['_batch_message'] = '';
+            $gapCheck = weekly_test_upcoming_eligibility($studentIdForBatch, (int)($paper['id'] ?? 0));
+            $paper['_student_allowed'] = !empty($gapCheck['allowed']) ? 1 : 0;
+            $paper['_student_message'] = (string)($gapCheck['message'] ?? '');
             $eligibleUpcoming[] = $paper;
-        } elseif ($requestedType === 'upcoming' && $requestedTestId > 0 && (int)($paper['id'] ?? 0) === $requestedTestId) {
-            $batchAccessError = (string)($batchCheck['message'] ?? 'This test is not assigned to your batch.');
+            continue;
         }
+        $paper['_batch_allowed'] = 0;
+        $paper['_batch_message'] = (string)($batchCheck['message'] ?? 'This test is not assigned to your batch.');
+        $paper['_student_allowed'] = 0;
+        $paper['_student_message'] = $paper['_batch_message'];
+        $isRequested = $requestedType === 'upcoming' && $requestedTestId > 0 && (int)($paper['id'] ?? 0) === $requestedTestId;
+        if ($isRequested) {
+            $deniedCandidate = $paper;
+            $deniedMessage = $paper['_batch_message'];
+        } elseif ($deniedCandidate === null && $requestedType === 'upcoming') {
+            if ((int)($paper['ready_now'] ?? 0) === 1 || strtolower((string)($paper['status'] ?? '')) === 'active') {
+                $deniedCandidate = $paper;
+                $deniedMessage = $paper['_batch_message'];
+            }
+        }
+    }
+    if ($requestedType === 'upcoming' && !$eligibleUpcoming && $deniedCandidate) {
+        $eligibleUpcoming[] = $deniedCandidate;
+        $batchAccessError = $deniedMessage;
+    } elseif ($requestedType === 'upcoming' && $requestedTestId > 0 && $deniedCandidate) {
+        $eligibleUpcoming[] = $deniedCandidate;
+        $batchAccessError = $deniedMessage;
     }
     $testPools['upcoming'] = $eligibleUpcoming;
 }
@@ -86,6 +114,7 @@ function wf133_test_preferred(array $tests, int $requestedTestId = 0): ?array
 function wf133_test_status(?array $test, string $type): array
 {
     if (!$test) return ['No paper', 'is-empty'];
+    if ((int)($test['_batch_allowed'] ?? 1) === 0) return ['Batch access needed', 'is-scheduled'];
     if ((int)($test['ready_now'] ?? 0) === 1) {
         return [$type === 'upcoming' ? 'Exam open' : 'Available now', 'is-ready'];
     }
@@ -133,10 +162,14 @@ $setupOpen = $requestedType !== '';
 $selectedReady = $selectedTest
     && (int)($selectedTest['ready_now'] ?? 0) === 1
     && strtolower((string)($selectedTest['status'] ?? '')) === 'active'
-    && (int)($selectedTest['question_count'] ?? 0) > 0;
+    && (int)($selectedTest['question_count'] ?? 0) > 0
+    && (int)($selectedTest['_batch_allowed'] ?? 1) === 1;
 $selectedEligibility = null;
-if ($selectedReady && $student && $selectedType === 'upcoming' && $selectedTest) {
-    $selectedEligibility = weekly_test_upcoming_eligibility((int)$student['id'], (int)$selectedTest['id']);
+if ($student && $selectedType === 'upcoming' && $selectedTest) {
+    $selectedEligibility = [
+        'allowed' => (int)($selectedTest['_student_allowed'] ?? 1) === 1,
+        'message' => (string)($selectedTest['_student_message'] ?? ''),
+    ];
     if (empty($selectedEligibility['allowed'])) $selectedReady = false;
 }
 $nativeError = flash('error');
@@ -249,6 +282,10 @@ require_once __DIR__ . '/includes/header.php';
                                 data-questions="<?= e((string)($paper['question_count'] ?? 0)) ?>"
                                 data-duration="<?= e((string)($paper['duration_minutes'] ?? 0)) ?>"
                                 data-batch="<?= e((string)($paper['batch_name'] ?? '')) ?>"
+                                data-batch-allowed="<?= e((string)($paper['_batch_allowed'] ?? 1)) ?>"
+                                data-batch-message="<?= e((string)($paper['_batch_message'] ?? '')) ?>"
+                                data-student-allowed="<?= e((string)($paper['_student_allowed'] ?? 1)) ?>"
+                                data-student-message="<?= e((string)($paper['_student_message'] ?? '')) ?>"
                                 data-ready="<?= e((string)($paper['ready_now'] ?? 0)) ?>"
                                 data-status="<?= e((string)($paper['status'] ?? '')) ?>"
                                 <?= $selectedTest && (int)$selectedTest['id'] === (int)$paper['id'] ? 'selected' : '' ?>><?= e((string)$paper['title']) ?> · <?= e((string)($paper['question_count'] ?? 0)) ?>Q · <?= e((string)($paper['duration_minutes'] ?? 0)) ?> min</option>

@@ -134,7 +134,11 @@
       const duration = Number.parseInt(option?.dataset.duration || '0', 10) || 0;
       const status = String(option?.dataset.status || '').toLowerCase();
       const readyNow = option?.dataset.ready === '1' && status === 'active';
-      const usable = hasPaper && readyNow && questionCount > 0;
+      const batchAllowed = option?.dataset.batchAllowed !== '0';
+      const batchMessage = String(option?.dataset.batchMessage || '').trim();
+      const studentAllowed = option?.dataset.studentAllowed !== '0';
+      const studentMessage = String(option?.dataset.studentMessage || '').trim();
+      const usable = hasPaper && readyNow && questionCount > 0 && batchAllowed && studentAllowed;
       const batch = String(option?.dataset.batch || '').trim();
 
       if (title) title.textContent = hasPaper ? String(option.dataset.title || option.textContent || 'Selected test') : 'Choose a test paper';
@@ -147,7 +151,9 @@
         message.classList.toggle('is-error', hasPaper && !usable);
         message.textContent = !hasPaper
           ? 'No test paper is available.'
-          : (usable ? 'Ready. Start the selected paper when you are comfortable.' : 'This paper is not open yet. Check its schedule or ask the institute.');
+          : (!batchAllowed ? (batchMessage || 'This Upcoming Test is not assigned to your batch.')
+            : (!studentAllowed ? (studentMessage || 'This Upcoming Test is temporarily locked for your account.')
+              : (usable ? 'Ready. Start the selected paper when you are comfortable.' : 'This paper is not open yet. Check its schedule or ask the institute.')));
       }
     };
 
@@ -175,6 +181,8 @@
         option?.value
         && option.dataset.ready === '1'
         && String(option.dataset.status || '').toLowerCase() === 'active'
+        && option.dataset.batchAllowed !== '0'
+        && option.dataset.studentAllowed !== '0'
         && Number.parseInt(option.dataset.questions || '0', 10) > 0
       );
       if (!usable) {
