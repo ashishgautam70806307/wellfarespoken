@@ -218,6 +218,16 @@ try {
                 jt(['success'=>false, 'message'=>'The selected test paper is no longer available.'], 404);
             }
 
+            // Serialize official-test starts for this student as well as this paper.
+            // This prevents two different Upcoming Test start requests from racing each other.
+            $studentLock = $pdo->prepare("SELECT id FROM students WHERE id=? AND status_deleted=0 FOR UPDATE");
+            $studentLock->execute([$studentId]);
+            if (!$studentLock->fetchColumn()) {
+                $pdo->rollBack();
+                $startTransactionOpen = false;
+                jt(['success'=>false, 'login_required'=>true, 'message'=>'Student account is not available. Please login again.'], 403);
+            }
+
             $chk = $pdo->prepare("SELECT * FROM weekly_test_attempts
                                   WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND student_id=?
                                     AND status IN ('started','submitted','checked') ORDER BY id DESC LIMIT 1 FOR UPDATE");
@@ -259,6 +269,18 @@ try {
                     'test'=>['id'=>(int)$test['id'], 'title'=>$test['title'], 'type'=>$test['test_type'],
                             'duration'=>$duration, 'instructions'=>$test['instructions']],
                     'questions'=>$safe, 'server_time'=>time()]);
+            }
+
+            $eligibility = weekly_test_upcoming_eligibility($studentId, (int)$test['id']);
+            if (empty($eligibility['allowed'])) {
+                $pdo->rollBack();
+                $startTransactionOpen = false;
+                jt([
+                    'success'=>false,
+                    'message'=>(string)($eligibility['message'] ?? 'This Upcoming Test is temporarily locked.'),
+                    'available_at'=>$eligibility['available_at'] ?? null,
+                    'wait_seconds'=>(int)($eligibility['wait_seconds'] ?? 0),
+                ], 409);
             }
         }
 

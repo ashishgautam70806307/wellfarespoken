@@ -3915,6 +3915,82 @@ function weekly_test_order_questions(array $questions, array $test, ?array $atte
 }
 
 
+function weekly_test_upcoming_gap_hours(): int
+{
+    $hours = (int)app_setting('weekly_upcoming_min_gap_hours', '12');
+    return max(0, min(168, $hours));
+}
+
+function weekly_test_upcoming_eligibility(int $studentId, int $testId): array
+{
+    $studentId = max(0, $studentId);
+    $testId = max(0, $testId);
+    if ($studentId <= 0 || $testId <= 0) {
+        return ['allowed'=>false, 'message'=>'Student login and a valid Upcoming Test are required.', 'wait_seconds'=>0, 'available_at'=>null];
+    }
+
+    try {
+        $running = db()->prepare("SELECT a.id, t.title
+            FROM weekly_test_attempts a
+            JOIN weekly_tests t ON t.id=a.test_id
+            WHERE COALESCE(a.status_deleted,0)=0 AND a.student_id=? AND a.test_id<>?
+              AND a.status='started' AND (a.expires_at IS NULL OR a.expires_at>NOW())
+              AND t.test_type='upcoming' AND COALESCE(t.status_deleted,0)=0
+            ORDER BY a.started_at DESC, a.id DESC LIMIT 1");
+        $running->execute([$studentId, $testId]);
+        $openAttempt = $running->fetch();
+        if ($openAttempt) {
+            return [
+                'allowed'=>false,
+                'message'=>'Finish your current Upcoming Test before opening another official test.',
+                'wait_seconds'=>0,
+                'available_at'=>null,
+                'previous_test'=>(string)($openAttempt['title'] ?? ''),
+            ];
+        }
+
+        $gapHours = weekly_test_upcoming_gap_hours();
+        if ($gapHours <= 0) {
+            return ['allowed'=>true, 'message'=>'Eligible for this Upcoming Test.', 'wait_seconds'=>0, 'available_at'=>null, 'gap_hours'=>0];
+        }
+
+        $last = db()->prepare("SELECT a.id, COALESCE(a.submitted_at,a.started_at) completed_at, t.title
+            FROM weekly_test_attempts a
+            JOIN weekly_tests t ON t.id=a.test_id
+            WHERE COALESCE(a.status_deleted,0)=0 AND a.student_id=? AND a.test_id<>?
+              AND a.status IN ('submitted','checked') AND t.test_type='upcoming' AND COALESCE(t.status_deleted,0)=0
+            ORDER BY COALESCE(a.submitted_at,a.started_at) DESC, a.id DESC LIMIT 1");
+        $last->execute([$studentId, $testId]);
+        $previous = $last->fetch();
+        if (!$previous || empty($previous['completed_at'])) {
+            return ['allowed'=>true, 'message'=>'Eligible for this Upcoming Test.', 'wait_seconds'=>0, 'available_at'=>null, 'gap_hours'=>$gapHours];
+        }
+
+        $previousTs = strtotime((string)$previous['completed_at']);
+        if (!$previousTs) {
+            return ['allowed'=>true, 'message'=>'Eligible for this Upcoming Test.', 'wait_seconds'=>0, 'available_at'=>null, 'gap_hours'=>$gapHours];
+        }
+        $availableTs = $previousTs + ($gapHours * 3600);
+        $wait = max(0, $availableTs - time());
+        if ($wait <= 0) {
+            return ['allowed'=>true, 'message'=>'Eligible for this Upcoming Test.', 'wait_seconds'=>0, 'available_at'=>date('Y-m-d H:i:s', $availableTs), 'gap_hours'=>$gapHours];
+        }
+
+        $hoursLeft = max(1, (int)ceil($wait / 3600));
+        return [
+            'allowed'=>false,
+            'message'=>'Upcoming Test security lock is active. You can start the next official test after '.date('d M Y, h:i A', $availableTs).' (about '.$hoursLeft.' hour'.($hoursLeft===1?'':'s').' remaining).',
+            'wait_seconds'=>$wait,
+            'available_at'=>date('Y-m-d H:i:s', $availableTs),
+            'gap_hours'=>$gapHours,
+            'previous_test'=>(string)($previous['title'] ?? ''),
+        ];
+    } catch (Throwable $e) {
+        error_log('[weekly-upcoming-eligibility] ' . $e->getMessage());
+        return ['allowed'=>false, 'message'=>'Upcoming Test eligibility could not be verified safely. Please try again.', 'wait_seconds'=>0, 'available_at'=>null];
+    }
+}
+
 function weekly_test_ready_reason(array $test): string
 {
     $status = strtolower((string)($test['status'] ?? 'draft'));

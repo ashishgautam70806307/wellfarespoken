@@ -1,5 +1,5 @@
 <?php
-$admin_page_final_styles = ['assets/css/phase147-student-accounts.css', 'assets/css/phase159-admin-weekly-papers.css'];
+$admin_page_final_styles = ['assets/css/phase147-student-accounts.css', 'assets/css/phase159-admin-weekly-papers.css', 'assets/css/phase161-upcoming-performance.css'];
 require_once __DIR__ . '/_header.php';
 student_account_ensure_schema();
 
@@ -130,6 +130,33 @@ if (admin_can('tests.manage') && function_exists('weekly_test_fetch_tests')) {
         $dashboardUpcomingPapers = [];
     }
 }
+$dashboardUpcomingPerformanceTest = $dashboardUpcomingPapers[0] ?? null;
+$dashboardUpcomingPerformance = ['attempts'=>0,'checked'=>0,'pending'=>0];
+$dashboardUpcomingTopThree = [];
+if (admin_can('tests.manage') && $dashboardUpcomingPerformanceTest) {
+    try {
+        $performanceTestId = (int)($dashboardUpcomingPerformanceTest['id'] ?? 0);
+        if ($performanceTestId > 0) {
+            $performanceStmt = db()->prepare("SELECT COUNT(*) attempts, SUM(status='checked') checked, SUM(status='submitted') pending FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=?");
+            $performanceStmt->execute([$performanceTestId]);
+            $dashboardUpcomingPerformance = array_merge($dashboardUpcomingPerformance, $performanceStmt->fetch() ?: []);
+
+            $winnerStmt = db()->prepare("SELECT rank_no,student_name,score,total_marks FROM weekly_test_winners WHERE test_id=? ORDER BY rank_no ASC,id ASC LIMIT 3");
+            $winnerStmt->execute([$performanceTestId]);
+            $dashboardUpcomingTopThree = $winnerStmt->fetchAll();
+            if (!$dashboardUpcomingTopThree) {
+                $rankStmt = db()->prepare("SELECT COALESCE(NULLIF(s.full_name,''),NULLIF(a.guest_name,''),'Student') student_name, COALESCE(a.admin_score,a.auto_score,0) score, COALESCE(a.total_marks,0) total_marks FROM weekly_test_attempts a LEFT JOIN students s ON s.id=a.student_id WHERE COALESCE(a.status_deleted,0)=0 AND a.test_id=? AND a.status='checked' ORDER BY score DESC, COALESCE(a.submitted_at,a.started_at) ASC,a.id ASC LIMIT 3");
+                $rankStmt->execute([$performanceTestId]);
+                foreach ($rankStmt->fetchAll() as $index => $row) {
+                    $row['rank_no'] = $index + 1;
+                    $dashboardUpcomingTopThree[] = $row;
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $dashboardUpcomingTopThree = [];
+    }
+}
 $roadmapItems = dashboard_count_available('roadmap_items', ['status_deleted'], ['published']);
 $faculty = dashboard_count_available('faculty_members', [], ['published']);
 $recent = dashboard_rows('enquiries', 'id DESC', 6);
@@ -221,6 +248,38 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
 </div>
 <?php endif; ?>
 <?php if(admin_can('tests.manage')): ?>
+<section class="panel-card wf161-dashboard-performance" id="upcoming-test-performance">
+    <div class="wf161-dashboard-performance-inner">
+        <div>
+            <span class="dash-mini">Upcoming Test Performance</span>
+            <h2><?= $dashboardUpcomingPerformanceTest ? e((string)($dashboardUpcomingPerformanceTest['title'] ?? 'Upcoming Test')) : 'Top 10, score bands and rank tracking' ?></h2>
+            <p><?= $dashboardUpcomingPerformanceTest ? 'Open the performance board to see marks 0–10 distribution, Top 10 standings, Top 3 and rapid-repeat security.' : 'Create an Upcoming Test first. This card will automatically show participation and Top 3 standings.' ?></p>
+            <div class="wf161-dashboard-metrics">
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['attempts'] ?? 0)) ?></b> students</span>
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['checked'] ?? 0)) ?></b> checked</span>
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['pending'] ?? 0)) ?></b> pending</span>
+                <span><b><?= e((string)weekly_test_upcoming_gap_hours()) ?>h</b> anti-repeat gap</span>
+            </div>
+            <div class="admin-actions">
+                <a class="btn btn-primary" href="upcoming-test-performance.php<?= $dashboardUpcomingPerformanceTest ? '?test_id='.e((string)$dashboardUpcomingPerformanceTest['id']) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Open Performance Board</a>
+            </div>
+        </div>
+        <div class="wf161-dashboard-top3" aria-label="Upcoming Test Top 3 preview">
+            <?php if (!$dashboardUpcomingTopThree): ?>
+                <div class="wf161-dashboard-empty-ranks">Top 3 names will appear after Admin checks student copies.</div>
+            <?php else: ?>
+                <?php foreach ($dashboardUpcomingTopThree as $rankRow): ?>
+                <a href="upcoming-test-performance.php?test_id=<?= e((string)($dashboardUpcomingPerformanceTest['id'] ?? 0)) ?>">
+                    <i>#<?= e((string)($rankRow['rank_no'] ?? '')) ?></i>
+                    <b><?= e((string)($rankRow['student_name'] ?? 'Student')) ?></b>
+                    <small><?= e(number_format((float)($rankRow['score'] ?? 0),1)) ?> / <?= e(number_format((float)($rankRow['total_marks'] ?? 0),1)) ?></small>
+                </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>
+
 <section class="panel-card wf159-offline-papers" id="offline-test-papers">
     <div class="wf159-paper-head">
         <div>

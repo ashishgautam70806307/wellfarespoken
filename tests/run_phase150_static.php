@@ -27,7 +27,7 @@ $ok(strpos($migration, 'Existing administrators are promoted to Super Admin') ==
 $ok(substr_count($migration, 'COLLATE utf8mb4_unicode_ci') >= 10, 'Legacy migration comparisons explicitly normalize collation');
 $ok(strpos($ownerMigration, "p.permission_key='admins.manage'") !== false && strpos($ownerMigration, "r.role_key<>'super_admin'") !== false, 'Phase 150 DB migration removes admin-management permission from staff roles');
 $ok(strpos($css, '.wf127-topbar-place') !== false && strpos($css, '.wf129-institute-link') !== false && strpos($css, '.wf127-topbar-phone') !== false && strpos($css, '.wf127-announcement') !== false, 'Mobile topbar restores location, announcement, institute login and phone access');
-$ok(preg_match('/wellfare-spoken-static-v(15[0-9]|[2-9][0-9]{2,})/', $sw) === 1 && strpos($sw, 'phase150-security-ui.min.css') !== false, 'Service worker cache and Phase 150 CSS are updated');
+$ok(preg_match('/wellfare-spoken-static-v(1[5-9][0-9]|[2-9][0-9]{2,})/', $sw) === 1 && strpos($sw, 'phase150-security-ui.min.css') !== false, 'Service worker cache and Phase 150 CSS are updated');
 
 if ($fail) {
     echo PHP_EOL . $fail . ' Phase 150 static check(s) failed.' . PHP_EOL;

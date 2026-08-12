@@ -408,6 +408,7 @@ function weekly_admin_sample_link(string $type): string {
   </div>
   <div class="head-actions">
     <a class="btn btn-soft" href="students.php">Students</a>
+    <?php if($selectedType==='upcoming'): ?><a class="btn btn-soft" href="upcoming-test-performance.php<?= $selectedTestId>0 ? '?test_id='.e((string)$selectedTestId) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Performance</a><?php endif; ?>
     <a class="btn btn-primary" href="../weekly-test.php" target="_blank">Open Test Page</a>
   </div>
 </div>

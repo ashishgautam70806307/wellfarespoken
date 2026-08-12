@@ -124,6 +124,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             ['Study Materials', 'materials.php', 'Learning CMS', 'fa-solid fa-folder-open'],
             ['Learning Roadmap', 'roadmap.php', 'Learning CMS', 'fa-solid fa-route'],
             ['Weekly Tests', 'weekly-tests.php', 'Learning CMS', 'fa-solid fa-clipboard-check'],
+            ['Upcoming Test Performance', 'upcoming-test-performance.php', 'Learning CMS', 'fa-solid fa-ranking-star'],
             ['Batches', 'batches.php', 'Learning CMS', 'fa-solid fa-clock'],
             ['FAQs', 'faqs.php', 'Learning CMS', 'fa-solid fa-circle-question'],
             ['Content Blocks', 'content.php', 'Website Control', 'fa-solid fa-table-cells-large'],

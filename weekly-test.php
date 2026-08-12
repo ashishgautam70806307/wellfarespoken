@@ -120,6 +120,11 @@ $selectedReady = $selectedTest
     && (int)($selectedTest['ready_now'] ?? 0) === 1
     && strtolower((string)($selectedTest['status'] ?? '')) === 'active'
     && (int)($selectedTest['question_count'] ?? 0) > 0;
+$selectedEligibility = null;
+if ($selectedReady && $student && $selectedType === 'upcoming' && $selectedTest) {
+    $selectedEligibility = weekly_test_upcoming_eligibility((int)$student['id'], (int)$selectedTest['id']);
+    if (empty($selectedEligibility['allowed'])) $selectedReady = false;
+}
 $nativeError = flash('error');
 if ($nativeError === null && $invalidRequestedPaper) {
     $nativeError = 'The selected test paper is no longer available. Choose an available paper again.';
@@ -251,7 +256,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
 
             <footer>
-                <p id="wfTestMessage"><?php if (!$selectedTest): ?>No test paper is available.<?php elseif (!$selectedReady): ?>This paper is not open yet. Check its schedule or ask the institute.<?php else: ?>Ready. Start the selected paper when you are comfortable.<?php endif; ?></p>
+                <p id="wfTestMessage"><?php if (!$selectedTest): ?>No test paper is available.<?php elseif ($selectedEligibility && empty($selectedEligibility['allowed'])): ?><?= e((string)($selectedEligibility['message'] ?? 'This Upcoming Test is temporarily locked.')) ?><?php elseif (!$selectedReady): ?>This paper is not open yet. Check its schedule or ask the institute.<?php else: ?>Ready. Start the selected paper when you are comfortable.<?php endif; ?></p>
                 <button class="wf-btn wf-btn-primary" id="wfStartTest" type="submit" <?= $selectedReady ? '' : 'disabled' ?>><span class="wf-btn-label"><i class="fa-solid fa-play"></i>Start Test</span></button>
             </footer>
             <noscript><p class="wf133-noscript-note"><i class="fa-solid fa-circle-info"></i>JavaScript is off. The form will still open the secure test room after submission.</p></noscript>

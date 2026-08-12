@@ -1,0 +1,27 @@
+{
+  "phase": 161,
+  "php_files": 109,
+  "php_syntax": "PASS",
+  "javascript_service_worker_files": 16,
+  "javascript_syntax": "PASS",
+  "css_files": 78,
+  "css_brace_balance": "PASS",
+  "service_worker_cache": "wellfare-spoken-static-v161",
+  "service_worker_assets": 53,
+  "service_worker_missing_assets": [],
+  "regression_suites": [
+    "148",
+    "149",
+    "150",
+    "151",
+    "158",
+    "159",
+    "160",
+    "161"
+  ],
+  "regression_status": "PASS",
+  "database_schema_changed": false,
+  "new_setting": "weekly_upcoming_min_gap_hours (default 12, range 0-168)",
+  "live_mysql_test": "PENDING - build environment has no project database",
+  "physical_browser_test": "PENDING - use PHASE161_BROWSER_DB_CHECKLIST.md"
+}

@@ -15,7 +15,8 @@ p159_check(substr_count($weekly, 'weekly-test-offline-paper.php') >= 4, 'Weekly 
 p159_check(strpos($weekly, 'Student Paper / PDF') !== false && strpos($weekly, 'Answer Key') !== false, 'Weekly Test cards show paper and key actions');
 p159_check(strpos($css, 'paper-card-actions') !== false && strpos($css, 'white-space:normal') !== false && strpos($css, 'min-width:0') !== false, 'Weekly card buttons are bounded and wrap safely');
 p159_check(strpos($css, '@media(max-width:380px)') !== false, 'Very small Admin screens have one-column action fallback');
-p159_check(strpos($sw, 'wellfare-spoken-static-v159') !== false, 'Service worker cache is v159');
+$swVersion = preg_match('/wellfare-spoken-static-v(\d+)/', $sw, $m) ? (int)$m[1] : 0;
+p159_check($swVersion >= 159, 'Service worker cache is Phase 159 or newer');
 p159_check(strpos($sw, './assets/css/phase159-admin-weekly-papers.min.css') !== false, 'Service worker caches Phase 159 Admin weekly styles');
 $failed = 0; foreach ($checks as [$label,$ok]) { echo ($ok?'[PASS] ':'[FAIL] ').$label.PHP_EOL; if(!$ok)$failed++; }
 if($failed){ fwrite(STDERR, "\nPhase 159 static checks failed: $failed\n"); exit(1);}
