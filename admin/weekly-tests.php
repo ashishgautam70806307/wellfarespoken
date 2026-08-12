@@ -533,7 +533,7 @@ function weekly_admin_sample_link(string $type): string {
         <button class="btn btn-soft" type="submit"><?= $selectedType==='upcoming' ? 'Close Entry' : 'Set Pending' ?></button><span class="ajax-msg"></span>
       </form>
     </div>
-    <div class="weekly-test-active-helper">Delete button paper ko 15 din ke liye hide/archive karega, direct permanent delete nahi karega.<br>Frontend start ke liye <b>Paper Published / Active</b>, <b>Active Questions</b>, <b>schedule open</b> aur Upcoming Test ke liye <b>student batch access</b> required hai. <b>Publish Now</b> selected paper ko turant open karta hai. Upcoming me <b>Close Entry</b> new starts rokta hai; checked copies complete hone ke baad <b>Finalize Top 3</b> karein.</div>
+    <div class="weekly-test-active-helper">Delete button paper ko 15 din ke liye hide/archive karega, direct permanent delete nahi karega.<br>Frontend start ke liye <b>Paper Published / Active</b>, <b>Active Questions</b> aur <b>schedule open</b> required hai. Upcoming Test ka batch reporting/offline paper ke liye use hota hai; strict student-to-batch access sirf optional strict mode me enforce hota hai. <b>Publish Now</b> selected paper ko turant open karta hai. Upcoming me <b>Close Entry</b> new starts rokta hai; checked copies complete hone ke baad <b>Finalize Top 3</b> karein.</div>
     <form class="ajax-admin-form form-grid compact-admin-form" action="weekly-test-ajax.php" method="post">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="save_test">

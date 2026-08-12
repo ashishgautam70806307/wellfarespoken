@@ -4007,6 +4007,15 @@ function weekly_test_upcoming_gap_hours(): int
     return max(0, min(168, $hours));
 }
 
+function weekly_test_batch_restriction_enabled(): bool
+{
+    // Keep the original simple Upcoming Test flow as the safe default: a published
+    // official paper is available to every active logged-in student. The paper can
+    // still carry a batch for reporting/offline printing. Strict student-to-batch
+    // gating is opt-in so legacy accounts are never unexpectedly locked out.
+    return in_array(strtolower(trim((string)app_setting('weekly_upcoming_enforce_batch_access', '0'))), ['1','yes','true','on'], true);
+}
+
 function weekly_test_student_batch_eligibility(int $studentId, array $test): array
 {
     $studentId = max(0, $studentId);
@@ -4018,6 +4027,22 @@ function weekly_test_student_batch_eligibility(int $studentId, array $test): arr
     if ($studentId <= 0) {
         return ['allowed'=>false, 'message'=>'Student login is required for this batch test.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel, 'source'=>'login_required'];
     }
+
+    if (!weekly_test_batch_restriction_enabled()) {
+        return [
+            'allowed'=>true,
+            'message'=>'Published Upcoming Test is open to active logged-in students. Batch is used for reporting and paper organisation only.',
+            'batch_id'=>$batchId,
+            'batch_label'=>$batchLabel,
+            'source'=>'batch_filter_disabled',
+        ];
+    }
+
+    $normaliseBatchText = static function(string $value): string {
+        $value = mb_strtolower(trim($value), 'UTF-8');
+        $value = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $value) ?? $value;
+        return trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
+    };
 
     $checkAccess = static function(int $sid, int $bid): ?string {
         if (table_exists('student_batch_memberships')) {
@@ -4046,6 +4071,33 @@ function weekly_test_student_batch_eligibility(int $studentId, array $test): arr
             return ['allowed'=>true,'message'=>$source==='membership'?'Student belongs to this batch.':'Student admission belongs to this batch.','batch_id'=>$batchId,'batch_label'=>$batchLabel,'source'=>$source];
         }
 
+        // Legacy linked admissions may still carry only the old free-text batch preference.
+        // When the admission is already linked to this exact student, an exact normalised
+        // text match is safe enough for test eligibility and does not mutate historical data.
+        if (table_exists('admissions') && column_exists('admissions','student_id') && column_exists('admissions','batch_preference')) {
+            $where = "student_id=? AND batch_preference IS NOT NULL AND TRIM(batch_preference)<>''";
+            if(column_exists('admissions','status_deleted')) $where .= " AND COALESCE(status_deleted,0)=0";
+            if(column_exists('admissions','published')) $where .= " AND published='Yes'";
+            if(column_exists('admissions','admission_status')) $where .= " AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
+            $stmt = db()->prepare("SELECT batch_preference FROM admissions WHERE $where ORDER BY id DESC");
+            $stmt->execute([$studentId]);
+            $targetLabels = [$batchLabel];
+            if (table_exists('batch_timings')) {
+                $bs = db()->prepare("SELECT batch_name,timing FROM batch_timings WHERE id=? LIMIT 1");
+                $bs->execute([$batchId]);
+                if ($batchRow = $bs->fetch()) {
+                    $targetLabels[] = (string)($batchRow['batch_name'] ?? '');
+                    $targetLabels[] = trim((string)($batchRow['batch_name'] ?? '') . ' - ' . (string)($batchRow['timing'] ?? ''));
+                }
+            }
+            $targets = array_filter(array_unique(array_map($normaliseBatchText, $targetLabels)));
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $legacyBatch) {
+                if (in_array($normaliseBatchText((string)$legacyBatch), $targets, true)) {
+                    return ['allowed'=>true,'message'=>'Student batch access matched the linked legacy admission.','batch_id'=>$batchId,'batch_label'=>$batchLabel,'source'=>'legacy_admission_text'];
+                }
+            }
+        }
+
         // Safely reconcile older verified student accounts whose admission existed before
         // the lifecycle tables were introduced. Unverified self-entered phone numbers are
         // never auto-linked here.
@@ -4062,9 +4114,51 @@ function weekly_test_student_batch_eligibility(int $studentId, array $test): arr
             }
         }
 
+        // Compatibility fallback for older students that genuinely have no batch relation yet:
+        // if exactly one Upcoming paper is open institute-wide, there is no batch ambiguity.
+        // Students who already have any known batch assignment never receive this fallback.
+        $knownBatchIds = [];
+        if (table_exists('student_batch_memberships')) {
+            $stmt = db()->prepare("SELECT DISTINCT batch_id FROM student_batch_memberships WHERE student_id=? AND membership_status='Active' AND batch_id IS NOT NULL");
+            $stmt->execute([$studentId]);
+            $knownBatchIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        }
+        if (table_exists('admissions') && column_exists('admissions','student_id') && column_exists('admissions','batch_id')) {
+            $where = "student_id=? AND batch_id IS NOT NULL";
+            if(column_exists('admissions','status_deleted')) $where .= " AND COALESCE(status_deleted,0)=0";
+            if(column_exists('admissions','published')) $where .= " AND published='Yes'";
+            if(column_exists('admissions','admission_status')) $where .= " AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
+            $stmt = db()->prepare("SELECT DISTINCT batch_id FROM admissions WHERE $where");
+            $stmt->execute([$studentId]);
+            $knownBatchIds = array_values(array_unique(array_merge($knownBatchIds, array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)))));
+        }
+        $knownBatchIds = array_values(array_filter($knownBatchIds, static fn(int $id): bool => $id > 0));
+
+        if (!$knownBatchIds && table_exists('weekly_tests')) {
+            $openCountStmt = db()->query("SELECT COUNT(*) FROM weekly_tests t
+                WHERE t.test_type='upcoming' AND t.status_deleted=0 AND t.published='Yes' AND LOWER(t.status)='active'
+                  AND (t.starts_at IS NULL OR t.starts_at<=NOW()) AND (t.ends_at IS NULL OR t.ends_at>=NOW())
+                  AND EXISTS (SELECT 1 FROM weekly_test_questions q WHERE q.test_id=t.id AND q.status_deleted=0 AND q.published='Yes')");
+            $openCount = (int)$openCountStmt->fetchColumn();
+            if ($openCount === 1 && strtolower((string)($test['status'] ?? '')) === 'active' && (string)($test['published'] ?? 'Yes') === 'Yes') {
+                $now = time();
+                $scheduleOpen = (empty($test['starts_at']) || strtotime((string)$test['starts_at']) <= $now)
+                    && (empty($test['ends_at']) || strtotime((string)$test['ends_at']) >= $now);
+                if ($scheduleOpen) {
+                    return [
+                        'allowed'=>true,
+                        'message'=>'This is the only open Upcoming Test. Legacy student access was allowed without creating a permanent batch link.',
+                        'batch_id'=>$batchId,
+                        'batch_label'=>$batchLabel,
+                        'source'=>'single_open_legacy_fallback',
+                    ];
+                }
+            }
+        }
+
         return [
             'allowed'=>false,
-            'message'=>'This Upcoming Test is for '.$batchLabel.'. Admin can open Student Accounts → this student → Upcoming Test Batch Access and grant the correct batch without changing the admission record.',
+            'message'=>'This Upcoming Test is for '.$batchLabel.'. Your account is linked to a different batch or still needs batch assignment. Ask the institute to check Student Account → Upcoming Test Batch Access.',
             'batch_id'=>$batchId,
             'batch_label'=>$batchLabel,
             'source'=>'not_assigned',
@@ -4204,9 +4298,10 @@ function weekly_test_set_single_active_by_type(int $testId, bool $clearSchedule 
     $batchId = max(0, (int)($paper['batch_id'] ?? 0));
     if ($type === '') return;
 
-    // Basic/Previous keep one active paper globally. Upcoming is scoped per batch so
-    // different batches can have independent official tests at the same time.
-    if ($type === 'upcoming') {
+    // Default keeps the original predictable flow: one active paper per test type.
+    // Strict batch-gated Upcoming mode is opt-in; only then can separate batches keep
+    // independent active Upcoming papers at the same time.
+    if ($type === 'upcoming' && weekly_test_batch_restriction_enabled()) {
         if ($batchId > 0) {
             db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE test_type='upcoming' AND id<>? AND COALESCE(batch_id,0)=? AND status_deleted=0 AND LOWER(status)='active'")
                 ->execute([$testId, $batchId]);

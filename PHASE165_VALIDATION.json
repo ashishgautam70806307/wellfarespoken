@@ -1,0 +1,18 @@
+{
+  "phase": "165",
+  "php_files": 112,
+  "js_files": 16,
+  "focused_checks": {
+    "batch_restriction_default_off": true,
+    "default_batch_gate_bypass": true,
+    "upcoming_publish_global_when_default": true,
+    "student_paper_safe_select": true,
+    "student_paper_meta_answer_key_only": true,
+    "student_result_hides_topic_type": true,
+    "admin_copy_no_longer_claims_batch_required_default": true,
+    "service_worker_v165": true
+  },
+  "all_focused_checks_pass": true,
+  "database_schema_changed": false,
+  "real_mysql_tested": false
+}

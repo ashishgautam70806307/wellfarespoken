@@ -120,7 +120,7 @@ require_once __DIR__ . '/includes/header.php';
                         $answerText = trim((string)($answer['answer_text'] ?? ''));
                     ?>
                         <article class="wf145-answer-card <?= e($stateClass) ?>">
-                            <header><span>Q<?= e((string)($index + 1)) ?></span><div><b><?= e((string)($answer['topic_name'] ?? $answer['question_type'] ?? 'Question')) ?></b><small><?= e((string)($answer['marks_awarded'] ?? 0)) ?>/<?= e((string)($answer['marks'] ?? 0)) ?> marks</small></div><strong><?= e($stateLabel) ?></strong></header>
+                            <header><span>Q<?= e((string)($index + 1)) ?></span><div><b>Question</b><small><?= e((string)($answer['marks_awarded'] ?? 0)) ?>/<?= e((string)($answer['marks'] ?? 0)) ?> marks</small></div><strong><?= e($stateLabel) ?></strong></header>
                             <h3><?= e((string)($answer['question_text'] ?? '')) ?></h3>
                             <div class="wf145-answer-comparison">
                                 <div><span>Your answer</span><p><?= e($answerText !== '' ? $answerText : 'No answer submitted') ?></p></div>

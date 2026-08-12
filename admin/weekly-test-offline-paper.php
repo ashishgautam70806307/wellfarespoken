@@ -20,7 +20,12 @@ if (!$test) {
 }
 
 $limit = max(1, min(200, (int)($test['total_questions'] ?? 30)));
-$qStmt = db()->prepare("SELECT * FROM weekly_test_questions WHERE test_id=? AND status_deleted=0 AND published='Yes' ORDER BY sort_order ASC, id ASC LIMIT {$limit}");
+// Student paper intentionally fetches only exam-safe fields. Topic/tense/use,
+// question type, level and master answers never enter the student-paper render data.
+$qSelect = $mode === 'answer-key'
+    ? '*'
+    : 'id,test_id,question_text,option_a,option_b,option_c,option_d,marks,sort_order,published';
+$qStmt = db()->prepare("SELECT {$qSelect} FROM weekly_test_questions WHERE test_id=? AND status_deleted=0 AND published='Yes' ORDER BY sort_order ASC, id ASC LIMIT {$limit}");
 $qStmt->execute([$testId]);
 $questions = $qStmt->fetchAll();
 
@@ -96,7 +101,8 @@ $title = $mode === 'answer-key' ? 'Answer Key' : 'Offline Question Paper';
   <span class="q-no"><?= e((string)($index + 1)) ?></span>
   <div class="q-main">
     <div class="q-text"><?= e((string)$q['question_text']) ?></div>
-    <?php if (!empty($q['topic_name']) || !empty($q['question_type'])): ?><div class="q-meta"><span><?= e((string)($q['topic_name'] ?? '')) ?></span><span><?= e(str_replace('_',' ',(string)($q['question_type'] ?? ''))) ?></span></div><?php endif; ?>
+    <?php /* Student paper must not reveal topic/use/type metadata because it can hint at the expected grammar pattern. Keep that metadata admin-only in the answer key. */ ?>
+    <?php if ($mode === 'answer-key' && (!empty($q['topic_name']) || !empty($q['question_type']))): ?><div class="q-meta"><span><?= e((string)($q['topic_name'] ?? '')) ?></span><span><?= e(str_replace('_',' ',(string)($q['question_type'] ?? ''))) ?></span></div><?php endif; ?>
     <?php if ($options): ?><div class="q-options"><?php foreach ($options as $oi => $opt): ?><span><?= e(chr(65 + $oi) . '. ' . $opt) ?></span><?php endforeach; ?></div><?php endif; ?>
     <?php if ($mode === 'answer-key'): ?><div class="answer-key"><?php if ($accepted): ?><?php foreach ($accepted as $ans): ?><p><?= e($ans) ?></p><?php endforeach; ?><?php else: ?><p>No master answer uploaded.</p><?php endif; ?></div><?php else: ?><div class="answer-space" aria-label="Answer writing space"></div><?php endif; ?>
   </div>
