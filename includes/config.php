@@ -158,9 +158,9 @@ $liveDbDefaults = [
     // Production credentials must never live in source code. Configure DB_LIVE_* in .env.
     'host' => 'localhost',
     'port' => '3306',
-    'name' => '',
-    'user' => '',
-    'pass' => '',
+    'name' => 'u790281974_wellfarespoken',
+    'user' => 'u790281974_wellfarespoken',
+    'pass' => '1yh3OewsWO=',
 ];
 
 if ($dbConnectionMode === 'manual') {
