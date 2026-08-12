@@ -75,7 +75,7 @@ function admin_page_permission(?string $page = null): ?string
         'courses.php'=>'courses.manage','batches.php'=>'batches.manage',
         'materials.php'=>'materials.manage','materials-ajax.php'=>'materials.manage',
         'roadmap.php'=>'roadmap.manage',
-        'weekly-tests.php'=>'tests.manage','weekly-test-paper.php'=>'tests.manage','weekly-test-ajax.php'=>'tests.manage','weekly-student-record.php'=>'tests.manage',
+        'weekly-tests.php'=>'tests.manage','weekly-test-paper.php'=>'tests.manage','weekly-test-offline-paper.php'=>'tests.manage','weekly-test-ajax.php'=>'tests.manage','weekly-student-record.php'=>'tests.manage',
         'testimonials.php'=>'content.manage','faculty.php'=>'content.manage','videos.php'=>'content.manage','gallery.php'=>'content.manage','faqs.php'=>'content.manage','content.php'=>'content.manage','hero-banners.php'=>'content.manage','form-options.php'=>'content.manage','nav-menus.php'=>'content.manage','seo.php'=>'content.manage',
         'settings.php'=>'settings.manage',
         'system-check.php'=>'system.manage','ui-library.php'=>'system.manage',

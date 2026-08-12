@@ -19,13 +19,19 @@ if (!$dashboardWinners) {
     $dashboardWinners = weekly_test_active_winners(null);
 }
 $levelPercent = student_level_progress_percent((string)$student['current_level'], $metrics);
+$studentUpcomingRank = weekly_test_latest_upcoming_rank_for_student($studentId, (string)($student['phone'] ?? ''));
+$studentRankNo = (int)($studentUpcomingRank['rank_no'] ?? 0);
+if (!in_array($studentRankNo, [1, 2, 3], true)) $studentRankNo = 0;
+$rankClass = $studentRankNo > 0 ? ('wf158-dashboard-rank-' . $studentRankNo) : '';
+$page_final_styles = ['assets/css/phase158-test-results.css'];
+$page_scripts = ['assets/js/phase158-test-results.js'];
 
 $page_title = 'Student Dashboard | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Student dashboard for spoken English practice, learning roadmap and weekly test results.';
 $lightweight_layout = true;
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="section student-dash-section pro-student-dashboard">
+<section class="section student-dash-section pro-student-dashboard <?= e($rankClass) ?>">
     <div class="container">
         <?php $successMessage = flash('success'); if ($successMessage): ?>
             <div class="alert alert-success"><p><?= e($successMessage) ?></p></div>
@@ -47,6 +53,17 @@ require_once __DIR__ . '/includes/header.php';
                 <div><strong><?= e((string)$levelPercent) ?>%</strong><span><?= e($student['current_level']) ?> Progress</span></div>
             </div>
         </div>
+
+        <?php if ($studentRankNo > 0 && $studentUpcomingRank):
+            $rankLabels = [1 => '1st Position', 2 => '2nd Position', 3 => '3rd Position'];
+            $rankIcons = [1 => 'fa-trophy', 2 => 'fa-medal', 3 => 'fa-award'];
+        ?>
+            <aside class="wf158-rank-achievement" aria-label="Upcoming test achievement">
+                <span class="wf158-rank-medal"><i class="fa-solid <?= e($rankIcons[$studentRankNo]) ?>" aria-hidden="true"></i></span>
+                <div><span>Upcoming Test Achievement</span><h2><?= e($rankLabels[$studentRankNo]) ?></h2><p><?= e((string)($studentUpcomingRank['test_title'] ?? 'Upcoming Test')) ?> - <?= e((string)($studentUpcomingRank['score'] ?? 0)) ?>/<?= e((string)($studentUpcomingRank['total_marks'] ?? 0)) ?> marks</p></div>
+                <strong>#<?= e((string)$studentRankNo) ?></strong>
+            </aside>
+        <?php endif; ?>
 
         <?php if (!empty($dashboardWinners)): ?>
             <div class="card student-winner-dashboard flower-dashboard">
@@ -111,6 +128,12 @@ require_once __DIR__ . '/includes/header.php';
                                 <div class="wf145-history-percent" style="--score:<?= e((string)($percent ?? 0)) ?>"><span><?= $percent !== null ? e((string)$percent) . '%' : '—' ?></span></div>
                             </div>
                             <a class="wf145-history-action" href="<?= e($attemptUrl) ?>"><span><?= $attemptStatus === 'started' ? 'Resume Test' : 'View Answer Review' ?></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                            <?php if (in_array($attemptStatus, ['submitted', 'checked'], true)): ?>
+                                <details class="wf158-history-answers" data-answer-review="student-weekly-answer-review.php?attempt_id=<?= e((string)(int)$attempt['id']) ?>">
+                                    <summary><span><i class="fa-solid fa-list-check" aria-hidden="true"></i> Questions &amp; Answers</span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+                                    <div class="wf158-history-answer-body" data-answer-review-body><p class="wf158-answer-loading">Open to load your saved answers.</p></div>
+                                </details>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>

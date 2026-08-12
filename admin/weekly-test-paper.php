@@ -20,7 +20,7 @@ require_once __DIR__ . '/_header.php';
 ?>
 <div class="admin-top weekly-admin-head">
   <div><span class="eyebrow">Batch Paper</span><h1><?= e($paper['title']) ?></h1><p><?= e(ucfirst($type)) ?> • <?= e($paper['batch_label'] ?: ($paper['batch_name'] ?: 'Common paper')) ?><?= !empty($paper['timing']) ? ' • '.e($paper['timing']) : '' ?></p></div>
-  <div class="admin-actions"><a class="btn btn-soft" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#setup">Edit Setup</a><a class="btn btn-soft" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#question-bank">Question Bank</a><a class="btn btn-primary" target="_blank" href="../weekly-test.php">Open Test Page</a></div>
+  <div class="admin-actions"><a class="btn btn-soft" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#setup">Edit Setup</a><a class="btn btn-soft" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#question-bank">Question Bank</a><?php if($type==='upcoming'): ?><a class="btn btn-soft" target="_blank" href="weekly-test-offline-paper.php?id=<?= e((string)$id) ?>&mode=paper">Offline PDF</a><a class="btn btn-soft" target="_blank" href="weekly-test-offline-paper.php?id=<?= e((string)$id) ?>&mode=answer-key">Answer Key</a><?php endif; ?><a class="btn btn-primary" target="_blank" href="../weekly-test.php">Open Test Page</a></div>
 </div>
 <div class="weekly-paper-detail-grid">
   <section class="admin-card paper-detail-status <?= $ready==='ready'?'published':'pending' ?>">
@@ -31,7 +31,7 @@ require_once __DIR__ . '/_header.php';
     <div class="paper-detail-actions">
       <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$id) ?>"><button class="btn btn-primary" type="submit">Publish Now</button><span class="ajax-msg"></span></form>
       <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$id) ?>"><button class="btn btn-soft" type="submit">Set Pending</button><span class="ajax-msg"></span></form>
-      <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Complete this batch test and publish top 3 winners for 2 days?"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$id) ?>"><button class="btn btn-green" type="submit">Complete Test</button><span class="ajax-msg"></span></form>
+      <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="<?= e($type==='upcoming' ? 'Complete this upcoming test and freeze the final Top 3 positions? Review all submitted copies first.' : 'Complete this batch test and publish top 3 winners for 2 days?') ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$id) ?>"><button class="btn btn-green" type="submit"><?= $type==='upcoming' ? 'Complete + Rank Top 3' : 'Complete Test' ?></button><span class="ajax-msg"></span></form>
       <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Hide/archive this batch paper?"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="archive_test_paper"><input type="hidden" name="test_id" value="<?= e((string)$id) ?>"><button class="btn btn-red" type="submit">Delete / Archive</button><span class="ajax-msg"></span></form>
     </div>
   </section>
@@ -42,6 +42,7 @@ require_once __DIR__ . '/_header.php';
       <a class="weekly-flow-card" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#upload"><span>02</span><b>Upload sheet</b><small>CSV/XLSX answer sheet</small></a>
       <a class="weekly-flow-card" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#question-bank"><span>03</span><b>Questions</b><small>edit / active / delete</small></a>
       <a class="weekly-flow-card" href="weekly-tests.php?type=<?= e($type) ?>&test_id=<?= e((string)$id) ?>#student-copies"><span>04</span><b>Student copies</b><small>review attempts</small></a>
+      <?php if($type==='upcoming'): ?><a class="weekly-flow-card" target="_blank" href="weekly-test-offline-paper.php?id=<?= e((string)$id) ?>&mode=paper"><span>05</span><b>Offline PDF</b><small>printable batch paper</small></a><?php endif; ?>
     </div>
   </section>
 </div>

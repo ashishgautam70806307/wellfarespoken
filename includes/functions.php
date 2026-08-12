@@ -4134,7 +4134,7 @@ function weekly_test_parse_upload(string $path, string $name): array
 function weekly_test_fetch_attempts_for_student(int $studentId, int $limit = 20): array
 {
     weekly_test_ensure_schema();
-    $stmt = db()->prepare("SELECT a.*, t.title test_title, t.test_type, t.duration_minutes FROM weekly_test_attempts a JOIN weekly_tests t ON t.id=a.test_id WHERE a.student_id=? AND COALESCE(a.status_deleted,0)=0 ORDER BY a.id DESC LIMIT " . (int)$limit);
+    $stmt = db()->prepare("SELECT a.*, t.title test_title, t.test_type, t.duration_minutes, t.status test_status, t.starts_at test_starts_at, t.ends_at test_ends_at FROM weekly_test_attempts a JOIN weekly_tests t ON t.id=a.test_id WHERE a.student_id=? AND COALESCE(a.status_deleted,0)=0 ORDER BY a.id DESC LIMIT " . (int)$limit);
     $stmt->execute([$studentId]);
     return $stmt->fetchAll();
 }
@@ -4142,7 +4142,7 @@ function weekly_test_fetch_attempts_for_student(int $studentId, int $limit = 20)
 function weekly_test_attempt_detail(int $attemptId): ?array
 {
     weekly_test_ensure_schema();
-    $stmt = db()->prepare("SELECT a.*, t.title test_title, t.test_type, t.instructions, t.penalty_after_warnings, t.penalty_per_warning, t.warning_limit, s.full_name student_name, s.phone student_phone FROM weekly_test_attempts a JOIN weekly_tests t ON t.id=a.test_id LEFT JOIN students s ON s.id=a.student_id WHERE a.id=? AND COALESCE(a.status_deleted,0)=0 LIMIT 1");
+    $stmt = db()->prepare("SELECT a.*, t.title test_title, t.test_type, t.status test_status, t.starts_at test_starts_at, t.ends_at test_ends_at, t.instructions, t.penalty_after_warnings, t.penalty_per_warning, t.warning_limit, s.full_name student_name, s.phone student_phone FROM weekly_test_attempts a JOIN weekly_tests t ON t.id=a.test_id LEFT JOIN students s ON s.id=a.student_id WHERE a.id=? AND COALESCE(a.status_deleted,0)=0 LIMIT 1");
     $stmt->execute([$attemptId]);
     $attempt = $stmt->fetch();
     if (!$attempt) return null;
@@ -4180,6 +4180,41 @@ function weekly_test_status_badge(string $status): string
     if ($status === 'submitted') return 'Submitted / Pending Check';
     if ($status === 'started') return 'In Progress';
     return ucwords($status ?: 'Draft');
+}
+
+/**
+ * Decide when the uploaded master answer may be revealed to the student.
+ * Basic/Previous are practice/revision flows, so the key can be shown after final submit.
+ * Upcoming is exam-like: revealing the key while the paper is still open would let one
+ * student share answers with others, so it unlocks only after the window closes or the
+ * admin completes/archives the paper.
+ */
+function weekly_test_expected_answers_releasable(array $attempt): bool
+{
+    $attemptStatus = strtolower(trim((string)($attempt['status'] ?? '')));
+    if (!in_array($attemptStatus, ['submitted', 'checked'], true)) return false;
+
+    $type = strtolower(trim((string)($attempt['test_type'] ?? 'basic')));
+    if ($type !== 'upcoming') return true;
+
+    $testStatus = strtolower(trim((string)($attempt['test_status'] ?? '')));
+    if (in_array($testStatus, ['archived', 'closed', 'completed'], true)) return true;
+
+    $endsAt = trim((string)($attempt['test_ends_at'] ?? ''));
+    if ($endsAt !== '') {
+        $ts = strtotime($endsAt);
+        if ($ts !== false && $ts <= time()) return true;
+    }
+    return false;
+}
+
+function weekly_test_answer_release_note(array $attempt): string
+{
+    if (weekly_test_expected_answers_releasable($attempt)) return '';
+    if (strtolower((string)($attempt['test_type'] ?? '')) === 'upcoming') {
+        return 'Your submitted answer is visible now. The master answer will unlock after the upcoming test closes or the admin completes the batch paper.';
+    }
+    return 'The master answer is not available for this attempt yet.';
 }
 
 function weekly_test_split_expected_answers(string $expected): array
@@ -4404,20 +4439,64 @@ function weekly_test_complete_batch(int $testId): array
     $testId = max(0, $testId);
     if ($testId <= 0) return ['success'=>false,'message'=>'Invalid test paper.'];
 
-    $stmt = db()->prepare("SELECT a.*, COALESCE(NULLIF(s.full_name,''), NULLIF(a.guest_name,''), 'Guest Student') student_name, COALESCE(NULLIF(s.phone,''), NULLIF(a.guest_phone,''), '') student_phone, COALESCE(a.admin_score,a.auto_score,0) final_score FROM weekly_test_attempts a LEFT JOIN students s ON s.id=a.student_id WHERE COALESCE(a.status_deleted,0)=0 AND a.test_id=? AND a.status IN ('submitted','checked') ORDER BY final_score DESC, COALESCE(a.submitted_at,a.started_at) ASC LIMIT 3");
+    $testStmt = db()->prepare("SELECT id,test_type,title,status FROM weekly_tests WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1");
+    $testStmt->execute([$testId]);
+    $test = $testStmt->fetch();
+    if (!$test) return ['success'=>false,'message'=>'Test paper not found.'];
+
+    // Upcoming positions should be trustworthy. Do not freeze 1st/2nd/3rd while
+    // the paper is still open, a student is still inside the exam, or submitted
+    // copies are waiting for teacher review.
+    if (($test['test_type'] ?? '') === 'upcoming') {
+        $liveStmt = db()->prepare("SELECT status, ends_at FROM weekly_tests WHERE id=? LIMIT 1");
+        $liveStmt->execute([$testId]);
+        $live = $liveStmt->fetch() ?: [];
+        $endsTs = !empty($live['ends_at']) ? strtotime((string)$live['ends_at']) : false;
+        if (strtolower((string)($live['status'] ?? '')) === 'active' && (!$endsTs || $endsTs > time())) {
+            return ['success'=>false,'message'=>'This upcoming test is still open. Wait for the schedule to close or set the paper to Pending before fixing the Top 3 positions.'];
+        }
+        $running = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='started'");
+        $running->execute([$testId]);
+        $runningCount = (int)$running->fetchColumn();
+        if ($runningCount > 0) {
+            return ['success'=>false,'message'=>$runningCount.' student attempt'.($runningCount===1?' is':'s are').' still in progress. Finish or safely close those attempts before ranking.'];
+        }
+        $pending = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='submitted'");
+        $pending->execute([$testId]);
+        $pendingCount = (int)$pending->fetchColumn();
+        if ($pendingCount > 0) {
+            return ['success'=>false,'message'=>'Review and publish marks for '.$pendingCount.' submitted upcoming-test cop'.($pendingCount===1?'y':'ies').' before fixing the Top 3 positions.'];
+        }
+    }
+
+    $stmt = db()->prepare("SELECT a.*, COALESCE(NULLIF(s.full_name,''), NULLIF(a.guest_name,''), 'Guest Student') student_name, COALESCE(NULLIF(s.phone,''), NULLIF(a.guest_phone,''), '') student_phone, COALESCE(a.admin_score,a.auto_score,0) final_score FROM weekly_test_attempts a LEFT JOIN students s ON s.id=a.student_id WHERE COALESCE(a.status_deleted,0)=0 AND a.test_id=? AND a.status IN ('submitted','checked') ORDER BY final_score DESC, COALESCE(a.submitted_at,a.started_at) ASC, a.id ASC LIMIT 3");
     $stmt->execute([$testId]);
     $rows = $stmt->fetchAll();
     if (!$rows) return ['success'=>false,'message'=>'No submitted copies found for this test yet.'];
 
-    db()->prepare("DELETE FROM weekly_test_winners WHERE test_id=?")->execute([$testId]);
-    $ins = db()->prepare("INSERT INTO weekly_test_winners (test_id,attempt_id,rank_no,student_name,student_phone,score,total_marks,published_until) VALUES (?,?,?,?,?,?,?,DATE_ADD(NOW(), INTERVAL 2 DAY))");
-    $rank = 1;
-    foreach ($rows as $r) {
-        $ins->execute([$testId,(int)$r['id'],$rank,trim((string)$r['student_name']),weekly_test_clean_phone((string)$r['student_phone']),(float)$r['final_score'],(float)($r['total_marks'] ?? 0)]);
-        $rank++;
+    $pdo = db();
+    $startedTransaction = !$pdo->inTransaction();
+    try {
+        if ($startedTransaction) $pdo->beginTransaction();
+        $pdo->prepare("DELETE FROM weekly_test_winners WHERE test_id=?")->execute([$testId]);
+        $ins = $pdo->prepare("INSERT INTO weekly_test_winners (test_id,attempt_id,rank_no,student_name,student_phone,score,total_marks,published_until) VALUES (?,?,?,?,?,?,?,DATE_ADD(NOW(), INTERVAL 2 DAY))");
+        $rank = 1;
+        foreach ($rows as $r) {
+            $ins->execute([$testId,(int)$r['id'],$rank,trim((string)$r['student_name']),weekly_test_clean_phone((string)$r['student_phone']),(float)$r['final_score'],(float)($r['total_marks'] ?? 0)]);
+            $rank++;
+        }
+        $pdo->prepare("UPDATE weekly_tests SET status='archived', updated_at=NOW() WHERE id=?")->execute([$testId]);
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->commit();
+    } catch (Throwable $e) {
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('[weekly-complete] ' . $e->__toString());
+        return ['success'=>false,'message'=>'The test could not be completed safely. Please try again.'];
     }
-    db()->prepare("UPDATE weekly_tests SET status='archived', updated_at=NOW() WHERE id=?")->execute([$testId]);
-    return ['success'=>true,'message'=>'Batch test completed. Top '.count($rows).' winner(s) published for 2 days.'];
+
+    $rankMessage = (($test['test_type'] ?? '') === 'upcoming')
+        ? ' Top 3 positions are stored; winner dashboards use Gold, Purple and Parrot Green rank themes.'
+        : '';
+    return ['success'=>true,'message'=>'Batch test completed. Top '.count($rows).' winner(s) published for 2 days.'.$rankMessage];
 }
 
 function weekly_test_active_winners(?int $testId = null): array
@@ -4447,6 +4526,29 @@ function weekly_test_active_winners_for_phone(string $phone = ''): array
         }
     } catch (Throwable $e) {}
     return weekly_test_active_winners(null);
+}
+
+/** Return a rank only when the student's latest finalized Upcoming Test earned Top 3. */
+function weekly_test_latest_upcoming_rank_for_student(int $studentId, string $phone = ''): ?array
+{
+    weekly_test_ensure_schema();
+    if ($studentId <= 0) return null;
+    try {
+        $stmt = db()->prepare("SELECT w.*, t.title test_title, t.test_type, a.student_id, a.submitted_at
+            FROM weekly_test_attempts a
+            JOIN weekly_tests t ON t.id=a.test_id
+            LEFT JOIN weekly_test_winners w ON w.attempt_id=a.id AND w.test_id=a.test_id
+            WHERE a.student_id=? AND COALESCE(a.status_deleted,0)=0
+              AND t.test_type='upcoming' AND a.status IN ('submitted','checked')
+            ORDER BY COALESCE(a.submitted_at,a.started_at,a.created_at) DESC, a.id DESC
+            LIMIT 1");
+        $stmt->execute([$studentId]);
+        $row = $stmt->fetch();
+        $rank = (int)($row['rank_no'] ?? 0);
+        return ($row && in_array($rank, [1,2,3], true)) ? $row : null;
+    } catch (Throwable $e) {
+        return null;
+    }
 }
 
 function weekly_test_fetch_attempts_by_phone(string $phone, int $limit = 30): array

@@ -1,0 +1,31 @@
+{
+  "phase": 158,
+  "php_files": 105,
+  "php_syntax": "PASS",
+  "javascript_files": 16,
+  "javascript_syntax": "PASS",
+  "css_files": 74,
+  "css_brace_validation": "PASS",
+  "css_bad": [],
+  "static_suites": [
+    "phase148 PASS",
+    "phase149 PASS",
+    "phase150 PASS",
+    "phase151 PASS",
+    "phase158 PASS (30 checks)"
+  ],
+  "literal_local_references_checked": 216,
+  "genuine_missing_local_references": [],
+  "duplicate_literal_id_files": [],
+  "service_worker_cache": "wellfare-spoken-static-v158",
+  "service_worker_local_assets": 51,
+  "service_worker_missing_assets": [],
+  "database_schema_change": false,
+  "browser_mysql_print_validation": "PENDING - build environment has no usable authenticated MySQL/browser route",
+  "ignored_dynamic_reference_false_positives": [
+    [
+      "includes/functions.php",
+      ". json_encode($path) ."
+    ]
+  ]
+}

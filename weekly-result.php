@@ -9,6 +9,7 @@ $attemptId = max(0, (int)($_GET['attempt_id'] ?? 0));
 $resultToken = trim((string)($_GET['token'] ?? ''));
 $attempt = $attemptId > 0 ? weekly_test_attempt_detail($attemptId) : null;
 $lightweight_layout = true;
+$page_final_styles = ['assets/css/phase158-test-results.css'];
 $page_title = 'Weekly Test Result | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Secure weekly-test score, attempt details and answer review.';
 
@@ -35,7 +36,8 @@ $percentage = ($score !== null && $totalMarks > 0)
     : null;
 $statusKey = strtolower(trim((string)($attempt['status'] ?? '')));
 $status = weekly_test_status_badge($statusKey);
-$canShowExpected = (($attempt['test_type'] ?? 'basic') === 'basic') || $statusKey === 'checked';
+$canShowExpected = weekly_test_expected_answers_releasable($attempt);
+$answerReleaseNote = weekly_test_answer_release_note($attempt);
 $answers = is_array($attempt['answers'] ?? null) ? $attempt['answers'] : [];
 $answeredCount = 0;
 $correctCount = 0;
@@ -99,7 +101,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="wf145-result-notices">
                 <?php if (!empty($attempt['penalty_marks']) && (float)$attempt['penalty_marks'] > 0): ?><p class="is-warning"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span><b>Security penalty:</b> -<?= e((string)$attempt['penalty_marks']) ?> mark(s).</span></p><?php endif; ?>
                 <?php if (!empty($attempt['admin_note'])): ?><p><i class="fa-solid fa-comment-dots" aria-hidden="true"></i><span><b>Teacher note:</b> <?= e((string)$attempt['admin_note']) ?></span></p><?php endif; ?>
-                <?php if (!$canShowExpected): ?><p><i class="fa-solid fa-lock" aria-hidden="true"></i><span>Correct answers will appear after teacher checking.</span></p><?php endif; ?>
+                <?php if (!$canShowExpected): ?><p><i class="fa-solid fa-lock" aria-hidden="true"></i><span><?= e($answerReleaseNote !== '' ? $answerReleaseNote : 'Master answers are not released yet.') ?></span></p><?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -122,7 +124,12 @@ require_once __DIR__ . '/includes/header.php';
                             <h3><?= e((string)($answer['question_text'] ?? '')) ?></h3>
                             <div class="wf145-answer-comparison">
                                 <div><span>Your answer</span><p><?= e($answerText !== '' ? $answerText : 'No answer submitted') ?></p></div>
-                                <?php if ($canShowExpected): ?><div><span>Expected answer</span><p><?= e((string)($answer['expected_answer'] ?? '')) ?></p></div><?php endif; ?>
+                                <?php if ($canShowExpected): ?>
+                                    <?php $acceptedAnswers = weekly_test_split_expected_answers((string)($answer['expected_answer'] ?? '')); ?>
+                                    <div class="wf158-expected-answer"><span>Accepted answer<?= count($acceptedAnswers) === 1 ? '' : 's' ?></span>
+                                        <?php if ($acceptedAnswers): ?><div class="wf158-answer-variants"><?php foreach ($acceptedAnswers as $acceptedAnswer): ?><p><?= e($acceptedAnswer) ?></p><?php endforeach; ?></div><?php else: ?><p>No master answer uploaded.</p><?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                             <?php if (!empty($answer['admin_note'])): ?><p class="wf145-answer-note"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i><span><?= e((string)$answer['admin_note']) ?></span></p><?php endif; ?>
                         </article>

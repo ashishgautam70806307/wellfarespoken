@@ -38,7 +38,8 @@ $ok(strpos($hero, 'max(0, min(85') !== false && strpos($hero, 'type="range" min=
 $ok(strpos($hero, 'No individual field is required') !== false && strpos($hero, 'Banner title is required') === false && strpos($hero, 'Please upload at least a desktop') === false, 'Hero supports image-only, text-only or combined content without an individually required field');
 $ok(strpos($home, "'has_media' => \$hasMedia") !== false && strpos($home, "empty(\$slide['has_media']) ? 'is-text-only'") !== false && strpos($home, 'max(0, min(85') !== false, 'Homepage renderer supports text-only banners and 0% overlay');
 $ok(strpos($homeCss, '.wf126-slide.is-text-only') !== false && strpos($homeCss, 'var(--overlay-strength)') !== false, 'Homepage CSS has a text-only visual and dynamic overlay variable');
-$ok(strpos($sw, 'wellfare-spoken-static-v151') !== false, 'Service-worker cache version is Phase 151');
+$swVersion = preg_match('/wellfare-spoken-static-v(\d+)/', $sw, $m) ? (int)$m[1] : 0;
+$ok($swVersion >= 151, 'Service-worker cache version is Phase 151 or newer');
 
 $phpFiles = [];
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
