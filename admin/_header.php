@@ -45,6 +45,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path((string)$adminPageFinalStyle))) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase150-security-ui.css'))) ?>">
+    <link rel="stylesheet" href="../<?= e(app_asset_versioned(app_css_asset_path('assets/css/phase166-admin-workflow.css'))) ?>">
 </head>
 <body class="admin-body page-admin-<?= e($adminPageSlug) ?> wf138-admin-mobile wf-ui">
 <div id="appLoader" class="app-loader" aria-hidden="true"><div class="app-loader-card"><span class="app-loader-spinner"></span><b>Loading...</b></div></div>

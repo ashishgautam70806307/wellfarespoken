@@ -92,6 +92,13 @@ try{
    aj(['success'=>true,'message'=>$closeType==='upcoming'?'Upcoming Test entry closed. No new student can start; students already inside keep their own exam timer. Review submitted copies, then Finalize Top 3.':'Set to Pending/Draft. Students cannot start this paper now.','test_id'=>$testId]);
  }
 
+ if($action==='release_answer_key'){
+   $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
+   if($testId<=0) aj(['success'=>false,'message'=>'Select an Upcoming Test paper first.']);
+   $res=weekly_test_release_answers_to_students($testId);
+   aj($res, !empty($res['success']) ? 200 : 422);
+ }
+
  if($action==='create_demo_batch_tests'){
    $kind=in_array($_POST['test_type']??'upcoming',['basic','previous','upcoming'],true)?$_POST['test_type']:'upcoming';
    $created=[];
@@ -153,7 +160,7 @@ try{
    $rows=weekly_test_parse_upload($_FILES['file']['tmp_name'], $fileName);
    if(!$rows) aj(['success'=>false,'message'=>'No rows found. Check sheet columns: question_text, expected_answer, question_type, topic_name, level, marks, option_a, option_b, option_c, option_d']);
    $added=weekly_test_import_rows($testId,$rows);
-   if($added<=0) aj(['success'=>false,'message'=>'File read ho gayi, but no valid question imported. question_text and expected_answer columns check karein.']);
+   if($added<=0) aj(['success'=>false,'message'=>'File read ho gayi, but no valid question imported. question_text is required. expected_answer should be filled for automatic checking/result answers.']);
    aj(['success'=>true,'message'=>$added.' question(s) imported successfully']);
  }
 

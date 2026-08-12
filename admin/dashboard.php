@@ -231,6 +231,7 @@ if ($dashboardRbacReady) {
                     <a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
                     <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
                     <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=upcoming&test_id=<?= e((string)$paperId) ?>#question-bank"><i class="fa-solid fa-pen-to-square"></i><span>Manage Questions</span></a>
+                    <a class="btn btn-gold btn-sm" href="weekly-tests.php?type=upcoming&test_id=<?= e((string)$paperId) ?>#paper-board"><i class="fa-solid fa-unlock-keyhole"></i><span><?= weekly_test_answers_manually_released($paperId) ? 'Answers Released' : 'Release Answers' ?></span></a>
                 </div>
             </article>
         <?php endforeach; ?>

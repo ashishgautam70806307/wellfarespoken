@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
             $rows=weekly_test_parse_upload($_FILES['file']['tmp_name'], $fileName);
             if(!$rows) weekly_admin_post_reply(false, 'No rows found. Check columns: question_text, expected_answer, question_type, topic_name, level, marks, option_a, option_b, option_c, option_d');
             $added=weekly_test_import_rows($testId,$rows);
-            if($added<=0) weekly_admin_post_reply(false, 'File read ho gayi, but no valid question imported. question_text and expected_answer columns check karein.');
+            if($added<=0) weekly_admin_post_reply(false, 'File read ho gayi, but no valid question imported. question_text is required. expected_answer should be filled for automatic checking/result answers.');
             weekly_admin_post_reply(true, $added.' question(s) imported successfully', ['test_id'=>$testId]);
         }
         if ($action === 'clear_questions') {
@@ -450,7 +450,7 @@ function weekly_admin_sample_link(string $type): string {
       <h2><?= e($typeLabel[$selectedType] ?? 'Test') ?> Batch / Test Papers</h2>
       <p class="muted small">Har batch/test paper card me status, schedule, questions aur copies ka short summary rahega. Published card light green rahega. Open/Edit se selected paper ka setup, upload, questions aur student copies scoped open honge.</p>
     </div>
-    <div class="wf159-board-head-actions"><a class="btn btn-soft btn-sm" href="#setup">Create / Edit Paper</a><?php if($selectedType==='upcoming' && $selectedTestId>0): ?><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i> Student PDF</a><a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i> Answer Key</a><?php endif; ?></div>
+    <div class="wf159-board-head-actions"><a class="btn btn-soft btn-sm" href="#setup">Create / Edit Paper</a><?php if($selectedType==='upcoming' && $selectedTestId>0): ?><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i> Student PDF</a><a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$selectedTestId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i> Admin Answer Key</a><?php if(weekly_test_answers_manually_released($selectedTestId)): ?><span class="wf166-release-chip"><i class="fa-solid fa-lock-open"></i> Answers Released</span><?php else: ?><a class="btn btn-gold btn-sm" href="#paper-board" title="Close entry first, then release the uploaded master answers to submitted students"><i class="fa-solid fa-unlock-keyhole"></i> Release Answers</a><?php endif; ?><?php endif; ?></div>
   </div>
   <div class="paper-card-grid">
     <?php if(!$paperCards): ?><p class="muted">No paper yet. Create a test paper from Test Setup.</p><?php endif; ?>
@@ -459,6 +459,7 @@ function weekly_admin_sample_link(string $type): string {
       $ready=weekly_test_ready_reason($pt);
       $stat=$paperAttemptStats[$pid] ?? ['attempts'=>0,'pending'=>0,'checked'=>0,'warnings'=>0];
       $winner=$paperWinnerStats[$pid] ?? null;
+      $answersReleased=(($pt['test_type'] ?? '')==='upcoming') ? weekly_test_answers_manually_released($pid) : false;
       $cardClass=$ready==='ready'?'published':($ready==='scheduled_later'?'scheduled':($ready==='expired'?'closed':'pending'));
     ?>
     <div class="paper-batch-card <?= e($cardClass) ?> <?= $selectedTestId===$pid?'selected':'' ?>">
@@ -473,6 +474,7 @@ function weekly_admin_sample_link(string $type): string {
           <em><?= e((string)($stat['pending'] ?? 0)) ?> pending</em>
         </div>
         <small><?= e(weekly_admin_paper_schedule_label($pt)) ?></small>
+        <?php if(($pt['test_type'] ?? '')==='upcoming'): ?><strong class="wf166-answer-release-state <?= $answersReleased ? 'is-released' : 'is-locked' ?>"><i class="fa-solid <?= $answersReleased ? 'fa-lock-open' : 'fa-lock' ?>"></i> <?= $answersReleased ? 'Master answers released to students' : 'Master answers locked for students' ?></strong><?php endif; ?>
         <?php if($winner): ?><strong class="winner-mini">Winner published • <?= e((string)$winner['winners']) ?> rank(s)</strong><?php endif; ?>
       </a>
       <div class="paper-card-actions paper-actions-grid">
@@ -480,7 +482,12 @@ function weekly_admin_sample_link(string $type): string {
         <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=<?= e($selectedType) ?>&test_id=<?= e((string)$pid) ?>#question-bank">Questions</a>
         <?php if(($pt['test_type'] ?? '')==='upcoming'): ?>
           <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
-          <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
+          <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$pid) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Admin Answer Key</span></a>
+          <?php if($answersReleased): ?>
+            <span class="btn btn-sm wf166-release-done" aria-label="Answer key released to students"><i class="fa-solid fa-circle-check"></i><span>Answers Released</span></span>
+          <?php else: ?>
+            <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Release the uploaded master/accepted answers to students who submitted this Upcoming Test? For safety, close new entry first and make sure no student is still inside the exam."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="release_answer_key"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-gold btn-sm" type="submit"><i class="fa-solid fa-unlock-keyhole"></i><span>Release Answer Key</span></button><span class="ajax-msg"></span></form>
+          <?php endif; ?>
         <?php endif; ?>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-primary btn-sm" type="submit">Publish</button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-soft btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Close Entry' : 'Pending' ?></button><span class="ajax-msg"></span></form>
@@ -495,18 +502,27 @@ function weekly_admin_sample_link(string $type): string {
 <details class="admin-card weekly-guide" open>
   <summary>How to manage weekly tests in 3 simple steps</summary>
   <div class="weekly-guide-grid">
-    <div><b>1. Create Test</b><span>Select Basic / Previous / Upcoming and set status active.</span></div>
-    <div><b>2. Upload Answer Sheet</b><span>Use the CSV columns below. Expected Answer is the master answer sheet used for auto-checking.</span></div>
-    <div><b>3. Review Copies</b><span>Student records appear as cards by mobile number. Open a card to see date-wise attempts.</span></div>
+    <div><b>1. Create Test</b><span>Create/select Basic, Previous or Upcoming paper and set its schedule/status.</span></div>
+    <div><b>2. Add Questions</b><span>Upload CSV/XLSX in the exact importer format, or add questions manually if you do not have Excel.</span></div>
+    <div><b>3. Review & Release</b><span>Check student copies. Upcoming master answers stay locked until the window ends/finalizes, or Admin safely releases the answer key after entry closes.</span></div>
   </div>
-  <div class="excel-format-box weekly-format">
-    <b>CSV / Excel columns:</b>
+  <div class="excel-format-box weekly-format wf166-format-guide">
+    <div class="wf166-format-title"><div><b>Exact CSV / Excel importer format</b><span>First sheet / first row must use these column names.</span></div><a class="btn btn-primary btn-sm" href="../assets/downloads/weekly_test_upload_template.xlsx" download><i class="fa-solid fa-file-excel"></i> Blank Excel Template</a></div>
     <code>question_text, expected_answer, question_type, topic_name, level, marks, option_a, option_b, option_c, option_d</code>
-    <p>Multiple accepted answers: use new line, <b>||</b> or <b>;</b>. Example: <code>I cannot go || I can't go</code></p>
-    <div class="sample-links">
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Download Basic Sample</a>
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Download Previous Sample</a>
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Download Upcoming Sample</a>
+    <div class="wf166-format-rules">
+      <span><b>question_text</b> — required</span>
+      <span><b>expected_answer</b> — fill for auto-check + result answer key</span>
+      <span><b>question_type</b> — hindi_to_english / english_to_hindi / correction / short_answer / mcq</span>
+      <span><b>topic_name + level</b> — Admin metadata only; student paper/result does not reveal these hints</span>
+      <span><b>marks</b> — default 1</span>
+      <span><b>option_a...option_d</b> — only needed for MCQ</span>
+    </div>
+    <p>Multiple accepted answers: separate valid answers with <b>||</b>. Example: <code>I cannot go || I can't go</code>.</p>
+    <div class="sample-links wf166-template-actions">
+      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Basic CSV Example</a>
+      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Previous CSV Example</a>
+      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Upcoming CSV Example</a>
+      <a class="btn btn-gold btn-sm" href="#manual-question-editor"><i class="fa-solid fa-keyboard"></i> No Excel? Add Manually</a>
     </div>
   </div>
 </details>
@@ -570,17 +586,23 @@ function weekly_admin_sample_link(string $type): string {
   </div>
 
   <div class="admin-card" id="answer-sheet">
-    <h2>Upload Answer Sheet / Questions</h2>
-    <p class="muted small">Select exact test, upload CSV/XLSX. The <b>expected_answer</b> column is the answer sheet.</p>
+    <h2>Upload Questions / Answer Sheet</h2>
+    <p class="muted small">Choose the exact paper and upload the universal template. If you do not have Excel, use <b>Add Question Manually</b> below—both methods save into the same Question Bank.</p>
+    <div class="wf166-upload-help">
+      <a class="btn btn-primary btn-sm" href="../assets/downloads/weekly_test_upload_template.xlsx" download><i class="fa-solid fa-file-excel"></i> Download Blank Excel Template</a>
+      <a class="btn btn-soft btn-sm" href="#manual-question-editor"><i class="fa-solid fa-keyboard"></i> Add Question Manually</a>
+      <small>For automatic marking and post-test answers, fill <b>expected_answer</b>. Use <b>||</b> for multiple accepted answers.</small>
+    </div>
     <form class="ajax-admin-form form-stack compact-upload-form" action="weekly-test-ajax.php" method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="upload_questions">
       <label>Select Test <select name="test_id" required><?php foreach(($testsByType[$selectedType] ?? []) as $t): ?><option value="<?= e((string)$t['id']) ?>" <?= (int)$t['id']===$selectedTestId?'selected':'' ?>><?= e($t['title']) ?></option><?php endforeach; ?></select></label>
       <label>CSV / XLSX File <input type="file" name="file" accept=".csv,.xlsx,.txt" required></label>
       <div class="sample-links">
-        <a href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Basic sample</a>
-        <a href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Previous sample</a>
-        <a href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Upcoming sample</a>
+        <a href="../assets/downloads/weekly_test_upload_template.xlsx" download>Blank Excel template</a>
+        <a href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Basic CSV example</a>
+        <a href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Previous CSV example</a>
+        <a href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Upcoming CSV example</a>
       </div>
       <button class="btn btn-primary" type="submit">Upload Questions</button><span class="ajax-msg"></span>
     </form>
@@ -588,16 +610,6 @@ function weekly_admin_sample_link(string $type): string {
       <form class="ajax-admin-form clear-form" action="weekly-test-ajax.php" method="post" data-confirm="Clear all questions from selected test?">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="clear_questions"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>">
         <button class="btn btn-danger btn-sm" type="submit">Clear Selected Test Questions</button><span class="ajax-msg"></span>
-      </form>
-    <?php endif; ?>
-    <?php if(in_array($selectedType, ['previous','upcoming'], true)): ?>
-      <form class="ajax-admin-form demo-test-form" action="weekly-test-ajax.php" method="post">
-        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="action" value="create_demo_batch_tests">
-        <input type="hidden" name="test_type" value="<?= e($selectedType) ?>">
-        <button class="btn btn-soft btn-sm" type="submit">Create 2 Demo Batch Papers</button>
-        <small>Testing ke liye Morning/Evening batch paper with 30 active questions ban jayega.</small>
-        <span class="ajax-msg"></span>
       </form>
     <?php endif; ?>
   </div>
@@ -616,7 +628,7 @@ function weekly_admin_sample_link(string $type): string {
     </div>
   </div>
   <?php if($selectedTestId<=0): ?><p class="muted">Create/select test first.</p><?php else: ?>
-  <details class="question-editor" <?= $editQ ? 'open' : '' ?>>
+  <details class="question-editor" id="manual-question-editor" <?= $editQ ? 'open' : '' ?>>
     <summary><?= $editQ ? 'Edit selected question' : 'Add one question manually' ?></summary>
     <form class="ajax-admin-form form-grid compact-admin-form" action="weekly-test-ajax.php" method="post">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save_question"><input type="hidden" name="id" value="<?= e((string)($editQ['id'] ?? 0)) ?>">
@@ -753,8 +765,8 @@ function weekly_admin_sample_link(string $type): string {
    if(document.getElementById('testStrictMode')) document.getElementById('testStrictMode').value=o.dataset.strictMode||'Yes';
    if(document.getElementById('testAutoSubmitWarn')) document.getElementById('testAutoSubmitWarn').value=o.dataset.autoSubmitWarn||'Yes';
    if(document.getElementById('testAllowJump')) document.getElementById('testAllowJump').value=o.dataset.allowJump||'Yes';
-   if(document.getElementById('testStartsAt')) document.getElementById('testStartsAt').value=o.dataset.startsAt||'';
-   if(document.getElementById('testEndsAt')) document.getElementById('testEndsAt').value=o.dataset.endsAt||'';
+   if(document.getElementById('testStartsAt')){ const el=document.getElementById('testStartsAt'); el.value=o.dataset.startsAt||''; el.dispatchEvent(new Event('wf-native-value-changed')); }
+   if(document.getElementById('testEndsAt')){ const el=document.getElementById('testEndsAt'); el.value=o.dataset.endsAt||''; el.dispatchEvent(new Event('wf-native-value-changed')); }
    if(document.getElementById('testBatchId')) document.getElementById('testBatchId').value=o.dataset.batchId||'0';
    if(document.getElementById('testBatchLabel')) document.getElementById('testBatchLabel').value=o.dataset.batchLabel||'';
    document.getElementById('testInstructions').value=o.dataset.instructions||'';

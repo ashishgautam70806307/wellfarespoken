@@ -4320,6 +4320,12 @@ function weekly_test_set_single_active_by_type(int $testId, bool $clearSchedule 
         db()->prepare("UPDATE weekly_tests SET status='active', published='Yes', updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);
     }
 
+    // Re-opening/re-publishing an Upcoming paper must always lock its answer key again.
+    // Otherwise a previously released key could leak immediately if the Admin reuses the same paper.
+    if ($type === 'upcoming') {
+        weekly_test_clear_manual_answer_release($testId);
+    }
+
     // Publishing a batch-specific Upcoming paper should immediately repair/sync the
     // lifecycle memberships for admissions that are already explicitly linked to a
     // student account. This is safe because it never links an unverified phone-only
@@ -4580,12 +4586,81 @@ function weekly_test_status_badge(string $status): string
     return ucwords($status ?: 'Draft');
 }
 
+function weekly_test_answer_release_setting_key(int $testId): string
+{
+    return 'weekly_test_answer_release_' . max(0, $testId);
+}
+
+function weekly_test_answers_manually_released(int $testId): bool
+{
+    if ($testId <= 0) return false;
+    return trim((string)app_setting(weekly_test_answer_release_setting_key($testId), '')) !== '';
+}
+
+function weekly_test_clear_manual_answer_release(int $testId): void
+{
+    if ($testId <= 0) return;
+    save_app_setting(weekly_test_answer_release_setting_key($testId), '');
+}
+
+/**
+ * Explicitly release an Upcoming paper's uploaded/master answer key to students.
+ * This is intentionally allowed only after new entry is closed (or the schedule ended),
+ * no student is still inside the exam, and at least one final/submitted copy exists.
+ */
+function weekly_test_release_answers_to_students(int $testId): array
+{
+    weekly_test_ensure_schema();
+    $testId = max(0, $testId);
+    if ($testId <= 0) return ['success'=>false,'message'=>'Invalid test paper.'];
+
+    $stmt = db()->prepare("SELECT id,test_type,title,status,ends_at FROM weekly_tests WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1");
+    $stmt->execute([$testId]);
+    $test = $stmt->fetch();
+    if (!$test) return ['success'=>false,'message'=>'Test paper not found.'];
+    if (strtolower((string)($test['test_type'] ?? '')) !== 'upcoming') {
+        return ['success'=>false,'message'=>'Manual answer-key release is only for Upcoming Tests.'];
+    }
+    if (weekly_test_answers_manually_released($testId)) {
+        return ['success'=>true,'message'=>'Answer key is already released to students.'];
+    }
+
+    $running = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='started'");
+    $running->execute([$testId]);
+    $runningCount = (int)$running->fetchColumn();
+    if ($runningCount > 0) {
+        return ['success'=>false,'message'=>$runningCount.' student attempt'.($runningCount===1?' is':'s are').' still in progress. Wait for them to finish before releasing the answer key.'];
+    }
+
+    $finished = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status IN ('submitted','checked')");
+    $finished->execute([$testId]);
+    $finishedCount = (int)$finished->fetchColumn();
+    if ($finishedCount <= 0) {
+        return ['success'=>false,'message'=>'No submitted student copy exists yet. Release the answer key only after the exam has been attempted.'];
+    }
+
+    $status = strtolower(trim((string)($test['status'] ?? '')));
+    $endTs = !empty($test['ends_at']) ? strtotime((string)$test['ends_at']) : false;
+    $scheduleEnded = $endTs !== false && $endTs <= time();
+    $entryClosed = $status !== 'active';
+    if (!$entryClosed && !$scheduleEnded) {
+        return ['success'=>false,'message'=>'The Upcoming Test is still open for new students. Use Close Entry first (or wait for Available Until), then release the answer key.'];
+    }
+
+    $releasedAt = date('Y-m-d H:i:s');
+    save_app_setting(weekly_test_answer_release_setting_key($testId), $releasedAt);
+    if (function_exists('admin_audit_log')) {
+        admin_audit_log('weekly_test.answer_key_released','weekly_test',$testId,'Upcoming Test master answers released to students at '.$releasedAt.'.');
+    }
+    return ['success'=>true,'message'=>'Answer key released. Students can now open their final result/review and see all uploaded accepted answers.','released_at'=>$releasedAt];
+}
+
 /**
  * Decide when the uploaded master answer may be revealed to the student.
  * Basic/Previous are practice/revision flows, so the key can be shown after final submit.
  * Upcoming is exam-like: revealing the key while the paper is still open would let one
- * student share answers with others, so it unlocks only after the window closes or the
- * admin completes/archives the paper.
+ * student share answers with others, so it unlocks after the window closes, Admin finalizes
+ * the paper, or Admin explicitly releases the key after entry is safely closed.
  */
 function weekly_test_expected_answers_releasable(array $attempt): bool
 {
@@ -4594,6 +4669,9 @@ function weekly_test_expected_answers_releasable(array $attempt): bool
 
     $type = strtolower(trim((string)($attempt['test_type'] ?? 'basic')));
     if ($type !== 'upcoming') return true;
+
+    $testId = (int)($attempt['test_id'] ?? 0);
+    if ($testId > 0 && weekly_test_answers_manually_released($testId)) return true;
 
     $testStatus = strtolower(trim((string)($attempt['test_status'] ?? '')));
     if (in_array($testStatus, ['archived', 'closed', 'completed'], true)) return true;
@@ -4610,7 +4688,7 @@ function weekly_test_answer_release_note(array $attempt): string
 {
     if (weekly_test_expected_answers_releasable($attempt)) return '';
     if (strtolower((string)($attempt['test_type'] ?? '')) === 'upcoming') {
-        return 'Your submitted answer is visible now. The master answer will unlock after the upcoming test closes or the admin completes the batch paper.';
+        return 'Your submitted answer is visible now. The master answer will unlock after the Upcoming Test window closes, the paper is finalized, or the Admin safely releases the answer key after closing entry.';
     }
     return 'The master answer is not available for this attempt yet.';
 }
