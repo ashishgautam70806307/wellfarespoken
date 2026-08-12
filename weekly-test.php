@@ -37,6 +37,23 @@ if (!($weeklySchema['ready'] ?? false)) {
         $testSystemError = 'Weekly Test data could not be loaded. Please contact the institute.';
     }
 }
+$student = is_student() ? fetch_current_student() : null;
+if ($student) private_no_store();
+$batchAccessError = null;
+if ($student && $testSystemError === '' && !empty($testPools['upcoming'])) {
+    $studentIdForBatch = (int)($student['id'] ?? 0);
+    $eligibleUpcoming = [];
+    foreach ($testPools['upcoming'] as $paper) {
+        $batchCheck = weekly_test_student_batch_eligibility($studentIdForBatch, $paper);
+        if (!empty($batchCheck['allowed'])) {
+            $eligibleUpcoming[] = $paper;
+        } elseif ($requestedType === 'upcoming' && $requestedTestId > 0 && (int)($paper['id'] ?? 0) === $requestedTestId) {
+            $batchAccessError = (string)($batchCheck['message'] ?? 'This test is not assigned to your batch.');
+        }
+    }
+    $testPools['upcoming'] = $eligibleUpcoming;
+}
+
 $invalidRequestedPaper = false;
 if ($requestedType !== '' && $requestedTestId > 0) {
     $requestedPool = $testPools[$requestedType] ?? [];
@@ -46,9 +63,6 @@ if ($requestedType !== '' && $requestedTestId > 0) {
         $requestedTestId = 0;
     }
 }
-
-$student = is_student() ? fetch_current_student() : null;
-if ($student) private_no_store();
 $studentName = trim((string)($student['full_name'] ?? $student['student_name'] ?? $student['name'] ?? 'Student'));
 $studentAttempts = [];
 if ($student && $testSystemError === '') {
@@ -126,8 +140,10 @@ if ($selectedReady && $student && $selectedType === 'upcoming' && $selectedTest)
     if (empty($selectedEligibility['allowed'])) $selectedReady = false;
 }
 $nativeError = flash('error');
-if ($nativeError === null && $invalidRequestedPaper) {
-    $nativeError = 'The selected test paper is no longer available. Choose an available paper again.';
+if ($nativeError === null && $batchAccessError !== null) {
+    $nativeError = $batchAccessError;
+} elseif ($nativeError === null && $invalidRequestedPaper) {
+    $nativeError = 'The selected test paper is no longer available for your account. Choose an available paper again.';
 }
 if ($nativeError === null && $testSystemError !== '') $nativeError = $testSystemError;
 

@@ -3921,6 +3921,65 @@ function weekly_test_upcoming_gap_hours(): int
     return max(0, min(168, $hours));
 }
 
+function weekly_test_student_batch_eligibility(int $studentId, array $test): array
+{
+    $studentId = max(0, $studentId);
+    $batchId = max(0, (int)($test['batch_id'] ?? 0));
+    $batchLabel = trim((string)(($test['batch_label'] ?? '') ?: ($test['batch_name'] ?? '') ?: 'selected batch'));
+    if ($batchId <= 0) {
+        return ['allowed'=>true, 'message'=>'Common Upcoming Test is available to all active students.', 'batch_id'=>0, 'batch_label'=>'Common / All Batches'];
+    }
+    if ($studentId <= 0) {
+        return ['allowed'=>false, 'message'=>'Student login is required for this batch test.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
+    }
+
+    try {
+        if (table_exists('student_batch_memberships')) {
+            $sql = "SELECT sbm.id FROM student_batch_memberships sbm";
+            if (table_exists('student_enrollments')) {
+                $sql .= " LEFT JOIN student_enrollments se ON se.id=sbm.enrollment_id";
+            }
+            $sql .= " WHERE sbm.student_id=? AND sbm.batch_id=? AND sbm.membership_status='Active'";
+            if (table_exists('student_enrollments')) {
+                $sql .= " AND (se.id IS NULL OR se.enrollment_status NOT IN ('Cancelled','Rejected'))";
+            }
+            $sql .= " LIMIT 1";
+            $stmt = db()->prepare($sql);
+            $stmt->execute([$studentId, $batchId]);
+            if ($stmt->fetchColumn()) {
+                return ['allowed'=>true, 'message'=>'Student belongs to this batch.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
+            }
+        }
+
+        if (table_exists('admissions') && column_exists('admissions', 'student_id') && column_exists('admissions', 'batch_id')) {
+            $where = "student_id=? AND batch_id=?";
+            if (column_exists('admissions', 'status_deleted')) $where .= " AND COALESCE(status_deleted,0)=0";
+            if (column_exists('admissions', 'published')) $where .= " AND published='Yes'";
+            if (column_exists('admissions', 'admission_status')) $where .= " AND COALESCE(admission_status,'') NOT IN ('Cancelled','Rejected')";
+            $stmt = db()->prepare("SELECT id FROM admissions WHERE $where ORDER BY id DESC LIMIT 1");
+            $stmt->execute([$studentId, $batchId]);
+            if ($stmt->fetchColumn()) {
+                return ['allowed'=>true, 'message'=>'Student admission belongs to this batch.', 'batch_id'=>$batchId, 'batch_label'=>$batchLabel];
+            }
+        }
+
+        return [
+            'allowed'=>false,
+            'message'=>'This Upcoming Test is only for '.$batchLabel.'. Ask the institute to assign your student account to this batch.',
+            'batch_id'=>$batchId,
+            'batch_label'=>$batchLabel,
+        ];
+    } catch (Throwable $e) {
+        error_log('[weekly-batch-eligibility] ' . $e->getMessage());
+        return [
+            'allowed'=>false,
+            'message'=>'Your batch eligibility could not be verified safely. Please contact the institute.',
+            'batch_id'=>$batchId,
+            'batch_label'=>$batchLabel,
+        ];
+    }
+}
+
 function weekly_test_upcoming_eligibility(int $studentId, int $testId): array
 {
     $studentId = max(0, $studentId);
@@ -4008,13 +4067,27 @@ function weekly_test_set_single_active_by_type(int $testId, bool $clearSchedule 
 {
     weekly_test_ensure_schema();
     if ($testId <= 0) return;
-    $stmt = db()->prepare("SELECT test_type FROM weekly_tests WHERE id=? AND status_deleted=0 LIMIT 1");
+    $stmt = db()->prepare("SELECT test_type, COALESCE(batch_id,0) batch_id FROM weekly_tests WHERE id=? AND status_deleted=0 LIMIT 1");
     $stmt->execute([$testId]);
-    $type = (string)($stmt->fetchColumn() ?: '');
+    $paper = $stmt->fetch();
+    $type = (string)($paper['test_type'] ?? '');
+    $batchId = max(0, (int)($paper['batch_id'] ?? 0));
     if ($type === '') return;
 
-    // Only one paper of the selected test type should be student-visible at one time.
-    db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE test_type=? AND id<>? AND status_deleted=0 AND LOWER(status)='active'")->execute([$type, $testId]);
+    // Basic/Previous keep one active paper globally. Upcoming is scoped per batch so
+    // different batches can have independent official tests at the same time.
+    if ($type === 'upcoming') {
+        if ($batchId > 0) {
+            db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE test_type='upcoming' AND id<>? AND COALESCE(batch_id,0)=? AND status_deleted=0 AND LOWER(status)='active'")
+                ->execute([$testId, $batchId]);
+        } else {
+            db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE test_type='upcoming' AND id<>? AND COALESCE(batch_id,0)=0 AND status_deleted=0 AND LOWER(status)='active'")
+                ->execute([$testId]);
+        }
+    } else {
+        db()->prepare("UPDATE weekly_tests SET status='draft', updated_at=NOW() WHERE test_type=? AND id<>? AND status_deleted=0 AND LOWER(status)='active'")
+            ->execute([$type, $testId]);
+    }
 
     if ($clearSchedule) {
         db()->prepare("UPDATE weekly_tests SET status='active', published='Yes', starts_at=NULL, ends_at=NULL, updated_at=NOW() WHERE id=? AND status_deleted=0")->execute([$testId]);

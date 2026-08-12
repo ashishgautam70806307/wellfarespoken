@@ -70,7 +70,7 @@ try{
      $id=(int)db()->lastInsertId();
    }
    if($status==='active') weekly_test_set_single_active_by_type($id, false);
-   aj(['success'=>true,'message'=>'Test saved successfully. '.($status==='active'?'Only this '.$type.' paper is active now. Other '.$type.' papers moved to Pending.':'Paper saved as Pending/Draft.'),'test_id'=>$id,'type'=>$type]);
+   aj(['success'=>true,'message'=>'Test saved successfully. '.($status==='active'?($type==='upcoming'?'This Upcoming paper is active for its selected batch. Other active Upcoming papers for the same batch moved to Pending.':'Only this '.$type.' paper is active now. Other '.$type.' papers moved to Pending.'):'Paper saved as Pending/Draft.'),'test_id'=>$id,'type'=>$type]);
  }
 
 

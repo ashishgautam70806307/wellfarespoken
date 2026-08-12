@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
                 $id=(int)db()->lastInsertId();
             }
             if($status==='active') weekly_test_set_single_active_by_type($id, false);
-            weekly_admin_post_reply(true, 'Test saved successfully. '.($status==='active'?'Only this '.$type.' paper is active now. Other '.$type.' papers moved to Pending.':'Status: '.ucfirst($status).'.'), ['test_id'=>$id, 'type'=>$type]);
+            weekly_admin_post_reply(true, 'Test saved successfully. '.($status==='active'?($type==='upcoming'?'This Upcoming paper is active for its selected batch. Other active Upcoming papers for the same batch moved to Pending.':'Only this '.$type.' paper is active now. Other '.$type.' papers moved to Pending.'):'Status: '.ucfirst($status).'.'), ['test_id'=>$id, 'type'=>$type]);
         }
         if ($action === 'publish_test_now') {
             $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);

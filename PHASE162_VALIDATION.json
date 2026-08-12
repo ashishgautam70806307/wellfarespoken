@@ -1,0 +1,37 @@
+{
+  "phase": 162,
+  "base": "spoken_phase161_upcoming_test_performance.zip",
+  "php_files": 110,
+  "javascript_service_worker_files": 16,
+  "css_files": 80,
+  "literal_local_references_checked": 220,
+  "missing_literal_local_references": 0,
+  "duplicate_literal_ids": 0,
+  "service_worker_precache_assets": 54,
+  "missing_service_worker_assets": 0,
+  "regression_suites": [
+    "Phase 148",
+    "Phase 149",
+    "Phase 150",
+    "Phase 151",
+    "Phase 158",
+    "Phase 159",
+    "Phase 160",
+    "Phase 161",
+    "Phase 162"
+  ],
+  "regression_status": "PASS",
+  "database_schema_changed": false,
+  "real_mysql_test": "PENDING - MySQL server is not available in build environment",
+  "key_verified_fixes": [
+    "Dashboard offline paper center is above lower dashboard sections",
+    "Dashboard grid-4 admin-dashboard-links is above lower dashboard sections",
+    "Separate Dashboard 1st-3rd winner card",
+    "Batch-first Upcoming performance selector",
+    "Top 10 explicitly labeled by selected batch",
+    "Upcoming active paper scoped per batch",
+    "Batch-specific Upcoming start protected server-side",
+    "Student Test Center filters batch-specific Upcoming papers",
+    "Dashboard/performance button typography compacted"
+  ]
+}

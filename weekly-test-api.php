@@ -203,6 +203,12 @@ try {
         }
 
         $studentId = is_student() ? current_student_id() : null;
+        if ($isOfficialExam && $studentId) {
+            $batchEligibility = weekly_test_student_batch_eligibility($studentId, $test);
+            if (empty($batchEligibility['allowed'])) {
+                jt(['success'=>false, 'message'=>(string)($batchEligibility['message'] ?? 'This test is not assigned to your batch.')], 403);
+            }
+        }
         $duration = max(1, min(240, (int)($test['duration_minutes'] ?? 30)));
         $startTransactionOpen = false;
         if (($test['test_type'] ?? '') === 'upcoming' && $studentId) {

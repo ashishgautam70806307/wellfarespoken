@@ -1,5 +1,5 @@
 <?php
-$admin_page_final_styles = ['assets/css/phase161-upcoming-performance.css'];
+$admin_page_final_styles = ['assets/css/phase161-upcoming-performance.css', 'assets/css/phase162-dashboard-performance.css'];
 require_once __DIR__ . '/_header.php';
 weekly_test_ensure_schema();
 
@@ -20,20 +20,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tests = weekly_test_fetch_tests('upcoming');
+$batchOptions = [];
+foreach ($tests as $test) {
+    $batchId = max(0, (int)($test['batch_id'] ?? 0));
+    $batchLabel = trim((string)(($test['batch_label'] ?? '') ?: ($test['batch_name'] ?? '') ?: 'Common / All Batches'));
+    $batchKey = $batchId > 0 ? 'batch-' . $batchId : 'common';
+    if (!isset($batchOptions[$batchKey])) {
+        $batchOptions[$batchKey] = ['key'=>$batchKey, 'id'=>$batchId, 'label'=>$batchLabel, 'tests'=>[]];
+    }
+    $batchOptions[$batchKey]['tests'][] = $test;
+}
+
 $testId = max(0, (int)($_GET['test_id'] ?? 0));
+$requestedBatch = trim((string)($_GET['batch'] ?? ''));
 $selected = null;
 if ($testId > 0) {
     foreach ($tests as $test) {
         if ((int)($test['id'] ?? 0) === $testId) { $selected = $test; break; }
     }
 }
+if (!$selected && $requestedBatch !== '' && isset($batchOptions[$requestedBatch])) {
+    foreach ($batchOptions[$requestedBatch]['tests'] as $test) {
+        if (strtolower((string)($test['status'] ?? '')) === 'active') { $selected = $test; break; }
+    }
+    if (!$selected) $selected = $batchOptions[$requestedBatch]['tests'][0] ?? null;
+}
 if (!$selected && $tests) {
     foreach ($tests as $test) {
         if (strtolower((string)($test['status'] ?? '')) === 'active') { $selected = $test; break; }
     }
     if (!$selected) $selected = $tests[0];
-    $testId = (int)($selected['id'] ?? 0);
 }
+if ($selected) $testId = (int)($selected['id'] ?? 0);
+$selectedBatchId = $selected ? max(0, (int)($selected['batch_id'] ?? 0)) : 0;
+$selectedBatchKey = $selected ? ($selectedBatchId > 0 ? 'batch-' . $selectedBatchId : 'common') : ($requestedBatch !== '' ? $requestedBatch : '');
+$selectedBatchLabel = $selected
+    ? trim((string)(($selected['batch_label'] ?? '') ?: ($selected['batch_name'] ?? '') ?: 'Common / All Batches'))
+    : (($selectedBatchKey !== '' && isset($batchOptions[$selectedBatchKey])) ? (string)$batchOptions[$selectedBatchKey]['label'] : 'No batch selected');
+$visibleTests = ($selectedBatchKey !== '' && isset($batchOptions[$selectedBatchKey])) ? $batchOptions[$selectedBatchKey]['tests'] : $tests;
 
 $gapHours = weekly_test_upcoming_gap_hours();
 $stats = ['attempts'=>0,'started'=>0,'submitted'=>0,'checked'=>0,'avg_score'=>0,'high_score'=>0,'total_marks'=>0];
@@ -118,20 +142,33 @@ $totalMarks = max(0, (float)($stats['total_marks'] ?? ($selected['total_marks'] 
     <a class="btn btn-primary" href="weekly-tests.php?type=upcoming#setup">Create Upcoming Test</a>
 </section>
 <?php else: ?>
-<section class="admin-card wf161-selector-card">
-    <form method="get" class="wf161-test-selector">
-        <label>Choose Upcoming Test
-            <select name="test_id" onchange="this.form.submit()">
-                <?php foreach ($tests as $test): ?>
-                <option value="<?= e((string)$test['id']) ?>" <?= (int)$test['id'] === $testId ? 'selected' : '' ?>><?= e((string)$test['title']) ?><?= !empty($test['batch_name']) ? ' • '.e((string)$test['batch_name']) : '' ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <noscript><button class="btn btn-soft" type="submit">Open</button></noscript>
-    </form>
-    <div class="wf161-selected-status">
+<section class="admin-card wf161-selector-card wf162-batch-test-selector">
+    <div class="wf162-selector-stack">
+        <form method="get" class="wf161-test-selector">
+            <label>1. Choose Batch
+                <select name="batch" onchange="this.form.submit()">
+                    <?php foreach ($batchOptions as $option): ?>
+                    <option value="<?= e((string)$option['key']) ?>" <?= (string)$option['key'] === $selectedBatchKey ? 'selected' : '' ?>><?= e((string)$option['label']) ?> • <?= e((string)count($option['tests'])) ?> test<?= count($option['tests'])===1?'':'s' ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <noscript><button class="btn btn-soft" type="submit">Open Batch</button></noscript>
+        </form>
+        <form method="get" class="wf161-test-selector">
+            <input type="hidden" name="batch" value="<?= e($selectedBatchKey) ?>">
+            <label>2. Choose Test
+                <select name="test_id" onchange="this.form.submit()">
+                    <?php foreach ($visibleTests as $test): ?>
+                    <option value="<?= e((string)$test['id']) ?>" <?= (int)$test['id'] === $testId ? 'selected' : '' ?>><?= e((string)$test['title']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <noscript><button class="btn btn-soft" type="submit">Open Test</button></noscript>
+        </form>
+    </div>
+    <div class="wf161-selected-status wf162-selected-batch-status">
         <span class="wf161-status-dot"></span>
-        <div><b><?= e($statusLabel) ?></b><small><?= e((string)($selected['starts_at'] ?? 'No fixed start')) ?> → <?= e((string)($selected['ends_at'] ?? 'No fixed end')) ?></small></div>
+        <div><b><?= e($selectedBatchLabel) ?></b><small><?= e($statusLabel) ?> • <?= e((string)($selected['starts_at'] ?? 'No fixed start')) ?> → <?= e((string)($selected['ends_at'] ?? 'No fixed end')) ?></small></div>
     </div>
 </section>
 
@@ -144,9 +181,9 @@ $totalMarks = max(0, (float)($stats['total_marks'] ?? ($selected['total_marks'] 
     <article><span>Highest</span><b><?= e(number_format((float)$stats['high_score'], 1)) ?></b><small>Out of <?= e(number_format($totalMarks, 1)) ?></small></article>
 </section>
 
-<section class="admin-card wf161-podium-shell">
+<section class="admin-card wf161-podium-shell" id="winner-cards">
     <div class="section-between wf161-section-head">
-        <div><span class="dash-mini">Top performers</span><h2><?= $officialWinners ? 'Official Top 3' : 'Provisional Top 3' ?></h2><p><?= $officialWinners ? 'These positions are already finalized in the winner table.' : 'Based only on Admin-checked copies. Finalize the paper before treating these positions as official.' ?></p></div>
+        <div><span class="dash-mini">Separate winner cards • <?= e($selectedBatchLabel) ?></span><h2><?= $officialWinners ? 'Official 1st – 3rd Winners' : 'Provisional 1st – 3rd Winners' ?></h2><p><?= $officialWinners ? 'These three positions are finalized for this batch test.' : 'Based only on Admin-checked copies for this selected batch test. Finalize the paper before treating these positions as official.' ?></p></div>
         <?php if (!$officialWinners): ?><span class="wf161-provisional"><i class="fa-solid fa-clock"></i> Waiting for final ranking</span><?php endif; ?>
     </div>
     <?php if (!$topThree): ?>
@@ -167,7 +204,7 @@ $totalMarks = max(0, (float)($stats['total_marks'] ?? ($selected['total_marks'] 
 
 <div class="wf161-two-col">
 <section class="admin-card wf161-top10-card">
-    <div class="wf161-section-head"><span class="dash-mini">Checked copies only</span><h2>Top 10 by Marks</h2><p>Tie-breaker: higher marks first, then earlier submission.</p></div>
+    <div class="wf161-section-head"><span class="dash-mini">Batch-wise checked result</span><h2>Top 10 — <?= e($selectedBatchLabel) ?></h2><p><?= e((string)($selected['title'] ?? 'Upcoming Test')) ?> • Tie-breaker: higher marks first, then earlier submission.</p></div>
     <?php if (!$standings): ?><p class="muted">No checked result available yet.</p><?php else: ?>
     <div class="wf161-leaderboard">
         <?php foreach ($standings as $index => $row): $rank=$index+1; $pct=((float)($row['total_marks']??0)>0)?(((float)$row['final_score']/(float)$row['total_marks'])*100):0; ?>

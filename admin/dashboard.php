@@ -1,5 +1,5 @@
 <?php
-$admin_page_final_styles = ['assets/css/phase147-student-accounts.css', 'assets/css/phase159-admin-weekly-papers.css', 'assets/css/phase161-upcoming-performance.css'];
+$admin_page_final_styles = ['assets/css/phase147-student-accounts.css', 'assets/css/phase159-admin-weekly-papers.css', 'assets/css/phase161-upcoming-performance.css', 'assets/css/phase162-dashboard-performance.css'];
 require_once __DIR__ . '/_header.php';
 student_account_ensure_schema();
 
@@ -185,6 +185,127 @@ if ($dashboardRbacReady) {
     <div class="admin-actions"><?php if(admin_can('enquiries.manage')):?><a class="btn btn-primary" href="enquiries.php">View Enquiries</a><?php endif;?><?php if(admin_can('materials.manage')):?><a class="btn btn-soft" href="materials.php">Study Materials</a><?php endif;?><?php if(admin_can('tests.manage')):?><a class="btn btn-soft" href="weekly-tests.php">Weekly Tests</a><a class="btn btn-soft" href="weekly-tests.php?type=upcoming#paper-board"><i class="fa-solid fa-file-pdf"></i> Offline Papers</a><?php endif;?><a class="btn btn-soft" href="../index.php" target="_blank">Open Website</a></div>
 </div>
 
+
+<?php if(admin_can('tests.manage')): ?>
+<section class="panel-card wf159-offline-papers wf162-dashboard-priority" id="offline-test-papers">
+    <div class="wf159-paper-head">
+        <div>
+            <span class="dash-mini">Upcoming Test • Offline Mode</span>
+            <h2>Batch-wise Question Papers & Answer Keys</h2>
+            <p>Print the student paper batch-wise, open the confidential answer key, or manage the exact Upcoming Test question set.</p>
+        </div>
+        <div class="wf159-paper-head-actions">
+            <a class="btn btn-primary" href="weekly-tests.php?type=upcoming#paper-board"><i class="fa-solid fa-list-check"></i> Manage Upcoming Tests</a>
+            <a class="btn btn-soft" href="weekly-tests.php?type=upcoming#answer-sheet"><i class="fa-solid fa-file-arrow-up"></i> Upload Questions</a>
+        </div>
+    </div>
+    <?php if (!$dashboardUpcomingPapers): ?>
+        <div class="wf159-paper-empty">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            <div><b>No Upcoming Test paper yet.</b><span>Create an Upcoming Test and upload its Excel/CSV question sheet. Offline paper buttons will appear here automatically.</span></div>
+            <a class="btn btn-primary btn-sm" href="weekly-tests.php?type=upcoming#setup">Create Upcoming Test</a>
+        </div>
+    <?php else: ?>
+        <div class="wf159-paper-grid">
+        <?php foreach ($dashboardUpcomingPapers as $paper):
+            $paperId = (int)($paper['id'] ?? 0);
+            $paperReady = weekly_test_ready_reason($paper);
+            $paperStatus = $paperReady === 'ready' ? 'Published' : ($paperReady === 'scheduled_later' ? 'Scheduled' : ($paperReady === 'expired' ? 'Closed' : 'Pending'));
+            $paperBatch = trim((string)(($paper['batch_label'] ?? '') ?: ($paper['batch_name'] ?? '') ?: 'Common / All Batches'));
+            $paperTiming = trim((string)($paper['batch_timing'] ?? ''));
+            $paperDays = trim((string)($paper['batch_days'] ?? ''));
+        ?>
+            <article class="wf159-paper-card status-<?= e(strtolower($paperStatus)) ?>">
+                <div class="wf159-paper-card-top">
+                    <span class="wf159-paper-status"><?= e($paperStatus) ?></span>
+                    <span class="wf159-paper-count"><i class="fa-solid fa-list-ol"></i> <?= e((string)($paper['question_count'] ?? 0)) ?> Q</span>
+                </div>
+                <h3><?= e((string)($paper['title'] ?? 'Upcoming Weekly Test')) ?></h3>
+                <p><i class="fa-solid fa-users"></i> <?= e($paperBatch) ?></p>
+                <div class="wf159-paper-meta">
+                    <span><b><?= e((string)($paper['duration_minutes'] ?? 30)) ?></b> min</span>
+                    <span><b><?= e((string)($paper['total_marks'] ?? 0)) ?></b> marks</span>
+                    <span><b><?= e($paperTiming !== '' ? $paperTiming : 'Flexible') ?></b><?= $paperDays !== '' ? '<small>'.e($paperDays).'</small>' : '<small>Timing</small>' ?></span>
+                </div>
+                <div class="wf159-paper-actions">
+                    <a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
+                    <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
+                    <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=upcoming&test_id=<?= e((string)$paperId) ?>#question-bank"><i class="fa-solid fa-pen-to-square"></i><span>Manage Questions</span></a>
+                </div>
+            </article>
+        <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<div class="grid-4 admin-dashboard-links wf162-dashboard-priority-links">
+    <?php if(admin_can('enquiries.manage')): ?><a class="card dash-card dash-link" href="enquiries.php"><span class="dash-mini">Open</span><strong><?= e((string)$enquiries) ?></strong><p>Total Enquiries</p></a>
+    <a class="card dash-card dash-link" href="enquiries.php?status=New"><span class="dash-mini">Today</span><strong><?= e((string)$today) ?></strong><p>Today’s Enquiries</p></a><?php endif; ?>
+    <?php if(admin_can('admissions.manage')): ?><a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">CRM</span><strong><?= e((string)$admissions) ?></strong><p>Admissions</p></a>
+    <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">Fee</span><strong><?= e((string)$admissionDue) ?></strong><p>Fee Due</p></a><?php endif; ?>
+    <?php if(admin_can('students.manage')): ?><a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Student Accounts</p></a><?php endif; ?>
+    <?php if(admin_can('courses.manage')): ?><a class="card dash-card dash-link" href="courses.php"><span class="dash-mini">Edit</span><strong><?= e((string)$courses) ?></strong><p>Published Courses</p></a><?php endif; ?>
+    <?php if(admin_can('materials.manage')): ?><a class="card dash-card dash-link" href="materials.php"><span class="dash-mini">Practice</span><strong><?= e((string)$materials) ?></strong><p>Practice Sentences</p></a><?php endif; ?>
+    <?php if(admin_can('tests.manage')): ?><a class="card dash-card dash-link" href="weekly-tests.php"><span class="dash-mini">Tests</span><strong><?= e((string)$weeklyTests) ?></strong><p>Weekly Tests</p></a>
+    <a class="card dash-card dash-link" href="weekly-tests.php#question-bank"><span class="dash-mini">Questions</span><strong><?= e((string)$weeklyQuestions) ?></strong><p>Weekly Question Bank</p></a>
+    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Copies</span><strong><?= e((string)$weeklyAttempts) ?></strong><p>Student Test Copies</p></a>
+    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Check</span><strong><?= e((string)$weeklyPendingChecks) ?></strong><p>Pending Review</p></a><?php endif; ?>
+    <?php if(admin_can('content.manage')): ?><a class="card dash-card dash-link" href="testimonials.php"><span class="dash-mini">Review</span><strong><?= e((string)$reviews) ?></strong><p>Published Reviews</p></a>
+    <a class="card dash-card dash-link" href="gallery.php"><span class="dash-mini">Media</span><strong><?= e((string)$gallery) ?></strong><p>Gallery Photos</p></a>
+    <a class="card dash-card dash-link" href="faqs.php"><span class="dash-mini">Help</span><strong><?= e((string)$faqs) ?></strong><p>Published FAQs</p></a>
+    <a class="card dash-card dash-link" href="nav-menus.php"><span class="dash-mini">Menu</span><strong><?= e((string)$navs) ?></strong><p>Menu Links</p></a>
+    <a class="card dash-card dash-link" href="faculty.php"><span class="dash-mini">Team</span><strong><?= e((string)$faculty) ?></strong><p>Faculty Profiles</p></a><?php endif; ?>
+    <?php if(admin_can('batches.manage')): ?><a class="card dash-card dash-link" href="batches.php"><span class="dash-mini">Timing</span><strong><?= e((string)$batches) ?></strong><p>Batch Timings</p></a><?php endif; ?>
+    <?php if(admin_can('roadmap.manage')): ?><a class="card dash-card dash-link" href="roadmap.php"><span class="dash-mini">Roadmap</span><strong><?= e((string)$roadmapItems) ?></strong><p>Roadmap Practice</p></a><?php endif; ?>
+</div>
+
+<?php if(admin_can('tests.manage')):
+    $dashboardPerformanceBatch = $dashboardUpcomingPerformanceTest
+        ? trim((string)(($dashboardUpcomingPerformanceTest['batch_label'] ?? '') ?: ($dashboardUpcomingPerformanceTest['batch_name'] ?? '') ?: 'Common / All Batches'))
+        : 'No Upcoming Test selected';
+?>
+<div class="wf162-dashboard-performance-grid" id="upcoming-test-performance">
+    <section class="panel-card wf161-dashboard-performance wf162-performance-summary">
+        <div class="wf162-performance-summary-inner">
+            <span class="dash-mini">Upcoming Test Performance</span>
+            <h2><?= $dashboardUpcomingPerformanceTest ? e((string)($dashboardUpcomingPerformanceTest['title'] ?? 'Upcoming Test')) : 'Batch-wise Top 10 & score tracking' ?></h2>
+            <p><?= $dashboardUpcomingPerformanceTest ? 'Performance is tied to this test and its assigned batch. Open the board to view the batch-wise Top 10, marks distribution and security status.' : 'Create an Upcoming Test and assign a batch. The performance board will show that batch’s checked results.' ?></p>
+            <span class="wf162-batch-chip"><i class="fa-solid fa-users"></i> <?= e($dashboardPerformanceBatch) ?></span>
+            <div class="wf161-dashboard-metrics">
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['attempts'] ?? 0)) ?></b> students</span>
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['checked'] ?? 0)) ?></b> checked</span>
+                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['pending'] ?? 0)) ?></b> pending</span>
+                <span><b><?= e((string)weekly_test_upcoming_gap_hours()) ?>h</b> anti-repeat gap</span>
+            </div>
+            <div class="admin-actions">
+                <a class="btn btn-primary" href="upcoming-test-performance.php<?= $dashboardUpcomingPerformanceTest ? '?test_id='.e((string)$dashboardUpcomingPerformanceTest['id']) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Open Batch Performance</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel-card wf162-dashboard-winners" aria-label="Upcoming Test first to third winners">
+        <div class="wf162-winner-head">
+            <div><span class="dash-mini">Separate Winner Card</span><h2>1st – 3rd Winners</h2><p><?= e($dashboardPerformanceBatch) ?></p></div>
+            <?php if($dashboardUpcomingPerformanceTest): ?><a class="btn btn-soft btn-sm" href="upcoming-test-performance.php?test_id=<?= e((string)$dashboardUpcomingPerformanceTest['id']) ?>#winner-cards">View All</a><?php endif; ?>
+        </div>
+        <?php if (!$dashboardUpcomingTopThree): ?>
+            <div class="wf162-winner-empty"><i class="fa-solid fa-medal"></i><span>Winner names will appear after checked copies are available.</span></div>
+        <?php else: ?>
+            <div class="wf162-dashboard-winner-list">
+            <?php foreach ($dashboardUpcomingTopThree as $rankRow): $rankNo=(int)($rankRow['rank_no'] ?? 0); ?>
+                <a class="rank-<?= e((string)$rankNo) ?>" href="upcoming-test-performance.php?test_id=<?= e((string)($dashboardUpcomingPerformanceTest['id'] ?? 0)) ?>#winner-cards">
+                    <i><?= $rankNo===1 ? '<span class="fa-solid fa-crown"></span>' : '<span class="fa-solid fa-medal"></span>' ?></i>
+                    <div><small>#<?= e((string)$rankNo) ?></small><b><?= e((string)($rankRow['student_name'] ?? 'Student')) ?></b></div>
+                    <strong><?= e(number_format((float)($rankRow['score'] ?? 0),1)) ?><small>/<?= e(number_format((float)($rankRow['total_marks'] ?? 0),1)) ?></small></strong>
+                </a>
+            <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+</div>
+<?php endif; ?>
+
 <section class="wf150-security-card" aria-label="Administrator access security">
     <div>
         <span class="dash-mini">Security & Access Control</span>
@@ -247,110 +368,7 @@ $dashLogo = site_asset_url(app_setting('site_logo',''));
     <div class="admin-actions"><a class="btn btn-primary" href="settings.php#director-settings">Manage Director Profile</a><a class="btn btn-soft" href="../about.php" target="_blank">View About Page</a></div>
 </div>
 <?php endif; ?>
-<?php if(admin_can('tests.manage')): ?>
-<section class="panel-card wf161-dashboard-performance" id="upcoming-test-performance">
-    <div class="wf161-dashboard-performance-inner">
-        <div>
-            <span class="dash-mini">Upcoming Test Performance</span>
-            <h2><?= $dashboardUpcomingPerformanceTest ? e((string)($dashboardUpcomingPerformanceTest['title'] ?? 'Upcoming Test')) : 'Top 10, score bands and rank tracking' ?></h2>
-            <p><?= $dashboardUpcomingPerformanceTest ? 'Open the performance board to see marks 0–10 distribution, Top 10 standings, Top 3 and rapid-repeat security.' : 'Create an Upcoming Test first. This card will automatically show participation and Top 3 standings.' ?></p>
-            <div class="wf161-dashboard-metrics">
-                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['attempts'] ?? 0)) ?></b> students</span>
-                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['checked'] ?? 0)) ?></b> checked</span>
-                <span><b><?= e((string)(int)($dashboardUpcomingPerformance['pending'] ?? 0)) ?></b> pending</span>
-                <span><b><?= e((string)weekly_test_upcoming_gap_hours()) ?>h</b> anti-repeat gap</span>
-            </div>
-            <div class="admin-actions">
-                <a class="btn btn-primary" href="upcoming-test-performance.php<?= $dashboardUpcomingPerformanceTest ? '?test_id='.e((string)$dashboardUpcomingPerformanceTest['id']) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Open Performance Board</a>
-            </div>
-        </div>
-        <div class="wf161-dashboard-top3" aria-label="Upcoming Test Top 3 preview">
-            <?php if (!$dashboardUpcomingTopThree): ?>
-                <div class="wf161-dashboard-empty-ranks">Top 3 names will appear after Admin checks student copies.</div>
-            <?php else: ?>
-                <?php foreach ($dashboardUpcomingTopThree as $rankRow): ?>
-                <a href="upcoming-test-performance.php?test_id=<?= e((string)($dashboardUpcomingPerformanceTest['id'] ?? 0)) ?>">
-                    <i>#<?= e((string)($rankRow['rank_no'] ?? '')) ?></i>
-                    <b><?= e((string)($rankRow['student_name'] ?? 'Student')) ?></b>
-                    <small><?= e(number_format((float)($rankRow['score'] ?? 0),1)) ?> / <?= e(number_format((float)($rankRow['total_marks'] ?? 0),1)) ?></small>
-                </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-</section>
 
-<section class="panel-card wf159-offline-papers" id="offline-test-papers">
-    <div class="wf159-paper-head">
-        <div>
-            <span class="dash-mini">Upcoming Test • Offline Mode</span>
-            <h2>Batch-wise Question Papers & Answer Keys</h2>
-            <p>Print a student paper for learners without a phone, or open the confidential Admin answer key. The paper uses the same uploaded Upcoming Test questions and marks.</p>
-        </div>
-        <div class="wf159-paper-head-actions">
-            <a class="btn btn-primary" href="weekly-tests.php?type=upcoming#paper-board"><i class="fa-solid fa-list-check"></i> Manage Upcoming Tests</a>
-            <a class="btn btn-soft" href="weekly-tests.php?type=upcoming#answer-sheet"><i class="fa-solid fa-file-arrow-up"></i> Upload Questions</a>
-        </div>
-    </div>
-    <?php if (!$dashboardUpcomingPapers): ?>
-        <div class="wf159-paper-empty">
-            <i class="fa-solid fa-file-circle-plus"></i>
-            <div><b>No Upcoming Test paper yet.</b><span>Create an Upcoming Test and upload its Excel/CSV question sheet. Offline paper buttons will appear here automatically.</span></div>
-            <a class="btn btn-primary btn-sm" href="weekly-tests.php?type=upcoming#setup">Create Upcoming Test</a>
-        </div>
-    <?php else: ?>
-        <div class="wf159-paper-grid">
-        <?php foreach ($dashboardUpcomingPapers as $paper):
-            $paperId = (int)($paper['id'] ?? 0);
-            $paperReady = weekly_test_ready_reason($paper);
-            $paperStatus = $paperReady === 'ready' ? 'Published' : ($paperReady === 'scheduled_later' ? 'Scheduled' : ($paperReady === 'expired' ? 'Closed' : 'Pending'));
-            $paperBatch = trim((string)(($paper['batch_label'] ?? '') ?: ($paper['batch_name'] ?? '') ?: 'Common Batch'));
-            $paperTiming = trim((string)($paper['batch_timing'] ?? ''));
-            $paperDays = trim((string)($paper['batch_days'] ?? ''));
-        ?>
-            <article class="wf159-paper-card status-<?= e(strtolower($paperStatus)) ?>">
-                <div class="wf159-paper-card-top">
-                    <span class="wf159-paper-status"><?= e($paperStatus) ?></span>
-                    <span class="wf159-paper-count"><i class="fa-solid fa-list-ol"></i> <?= e((string)($paper['question_count'] ?? 0)) ?> Q</span>
-                </div>
-                <h3><?= e((string)($paper['title'] ?? 'Upcoming Weekly Test')) ?></h3>
-                <p><i class="fa-solid fa-users"></i> <?= e($paperBatch) ?></p>
-                <div class="wf159-paper-meta">
-                    <span><b><?= e((string)($paper['duration_minutes'] ?? 30)) ?></b> min</span>
-                    <span><b><?= e((string)($paper['total_marks'] ?? 0)) ?></b> marks</span>
-                    <span><b><?= e($paperTiming !== '' ? $paperTiming : 'Flexible') ?></b><?= $paperDays !== '' ? '<small>'.e($paperDays).'</small>' : '<small>Timing</small>' ?></span>
-                </div>
-                <div class="wf159-paper-actions">
-                    <a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=paper&autoprint=1"><i class="fa-solid fa-file-pdf"></i><span>Student Paper / PDF</span></a>
-                    <a class="btn btn-soft btn-sm" target="_blank" rel="noopener" href="weekly-test-offline-paper.php?id=<?= e((string)$paperId) ?>&mode=answer-key"><i class="fa-solid fa-key"></i><span>Answer Key</span></a>
-                    <a class="btn btn-soft btn-sm" href="weekly-tests.php?type=upcoming&test_id=<?= e((string)$paperId) ?>#question-bank"><i class="fa-solid fa-pen-to-square"></i><span>Manage Questions</span></a>
-                </div>
-            </article>
-        <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-</section>
-<?php endif; ?>
-<div class="grid-4 admin-dashboard-links">
-    <?php if(admin_can('enquiries.manage')): ?><a class="card dash-card dash-link" href="enquiries.php"><span class="dash-mini">Open</span><strong><?= e((string)$enquiries) ?></strong><p>Total Enquiries</p></a>
-    <a class="card dash-card dash-link" href="enquiries.php?status=New"><span class="dash-mini">Today</span><strong><?= e((string)$today) ?></strong><p>Today’s Enquiries</p></a><?php endif; ?>
-    <?php if(admin_can('admissions.manage')): ?><a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">CRM</span><strong><?= e((string)$admissions) ?></strong><p>Admissions</p></a>
-    <a class="card dash-card dash-link" href="admissions.php"><span class="dash-mini">Fee</span><strong><?= e((string)$admissionDue) ?></strong><p>Fee Due</p></a><?php endif; ?>
-    <?php if(admin_can('students.manage')): ?><a class="card dash-card dash-link" href="students.php"><span class="dash-mini">Manage</span><strong><?= e((string)$students) ?></strong><p>Student Accounts</p></a><?php endif; ?>
-    <?php if(admin_can('courses.manage')): ?><a class="card dash-card dash-link" href="courses.php"><span class="dash-mini">Edit</span><strong><?= e((string)$courses) ?></strong><p>Published Courses</p></a><?php endif; ?>
-    <?php if(admin_can('materials.manage')): ?><a class="card dash-card dash-link" href="materials.php"><span class="dash-mini">Practice</span><strong><?= e((string)$materials) ?></strong><p>Practice Sentences</p></a><?php endif; ?>
-    <?php if(admin_can('tests.manage')): ?><a class="card dash-card dash-link" href="weekly-tests.php"><span class="dash-mini">Tests</span><strong><?= e((string)$weeklyTests) ?></strong><p>Weekly Tests</p></a>
-    <a class="card dash-card dash-link" href="weekly-tests.php#question-bank"><span class="dash-mini">Questions</span><strong><?= e((string)$weeklyQuestions) ?></strong><p>Weekly Question Bank</p></a>
-    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Copies</span><strong><?= e((string)$weeklyAttempts) ?></strong><p>Student Test Copies</p></a>
-    <a class="card dash-card dash-link" href="weekly-tests.php#student-copies"><span class="dash-mini">Check</span><strong><?= e((string)$weeklyPendingChecks) ?></strong><p>Pending Review</p></a><?php endif; ?>
-    <?php if(admin_can('content.manage')): ?><a class="card dash-card dash-link" href="testimonials.php"><span class="dash-mini">Review</span><strong><?= e((string)$reviews) ?></strong><p>Published Reviews</p></a>
-    <a class="card dash-card dash-link" href="gallery.php"><span class="dash-mini">Media</span><strong><?= e((string)$gallery) ?></strong><p>Gallery Photos</p></a>
-    <a class="card dash-card dash-link" href="faqs.php"><span class="dash-mini">Help</span><strong><?= e((string)$faqs) ?></strong><p>Published FAQs</p></a>
-    <a class="card dash-card dash-link" href="nav-menus.php"><span class="dash-mini">Menu</span><strong><?= e((string)$navs) ?></strong><p>Menu Links</p></a>
-    <a class="card dash-card dash-link" href="faculty.php"><span class="dash-mini">Team</span><strong><?= e((string)$faculty) ?></strong><p>Faculty Profiles</p></a><?php endif; ?>
-    <?php if(admin_can('batches.manage')): ?><a class="card dash-card dash-link" href="batches.php"><span class="dash-mini">Timing</span><strong><?= e((string)$batches) ?></strong><p>Batch Timings</p></a><?php endif; ?>
-    <?php if(admin_can('roadmap.manage')): ?><a class="card dash-card dash-link" href="roadmap.php"><span class="dash-mini">Roadmap</span><strong><?= e((string)$roadmapItems) ?></strong><p>Roadmap Practice</p></a><?php endif; ?>
-</div>
 <?php if(admin_can('enquiries.manage')): ?>
 <br>
 <div class="panel-card">
