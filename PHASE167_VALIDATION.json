@@ -1,0 +1,26 @@
+{
+  "php_files": 114,
+  "js_files": 17,
+  "css_files": 84,
+  "service_worker_cache": "v167",
+  "service_worker_assets": 57,
+  "service_worker_missing": [],
+  "duplicate_literal_ids": [],
+  "remaining_flex_min_compatibility_risks": [],
+  "phase167_static": "PASS",
+  "prior_static_suites": [
+    "148",
+    "149",
+    "150",
+    "151",
+    "158",
+    "159",
+    "160",
+    "161",
+    "162",
+    "163",
+    "164"
+  ],
+  "prior_static_suites_status": "PASS",
+  "note": "Real authenticated MySQL/device rendering was not available in the build environment; use the Phase 167 device checklist."
+}

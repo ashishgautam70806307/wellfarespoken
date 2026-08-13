@@ -130,7 +130,7 @@
   .page-spoken-materials .practice-mode-intro{align-items:flex-start;flex-direction:column;padding:20px 18px 15px}
   .page-spoken-materials .goal-tabs{display:flex;overflow-x:auto;padding:0 18px 18px;scroll-snap-type:x mandatory;scrollbar-width:none}
   .page-spoken-materials .goal-tabs::-webkit-scrollbar{display:none}
-  .page-spoken-materials .goal-tab{flex:0 0 min(82vw,300px);min-height:106px;scroll-snap-align:start}
+  .page-spoken-materials .goal-tab{flex:0 0 82%;width:82%;max-width:300px;min-height:106px;scroll-snap-align:start}
   .page-spoken-materials .ajax-practice-filter{grid-template-columns:1fr;padding:18px}
   .page-spoken-materials .practice-progress-card{display:block;padding:19px}
   .page-spoken-materials .practice-meter{margin:10px 0 17px}
