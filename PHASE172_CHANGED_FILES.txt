@@ -1,0 +1,5 @@
+admin/weekly-tests.php
+assets/css/phase172-weekly-admin-compact.css
+sw.js
+README_PHASE172_WEEKLY_ADMIN_COMPACT.md
+PHASE172_BROWSER_DB_CHECKLIST.md

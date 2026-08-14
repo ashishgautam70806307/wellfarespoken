@@ -1,0 +1,229 @@
+/* Phase 172: compact step-based Weekly Test admin.
+   Scoped to admin/weekly-tests.php only. */
+.admin-body.page-admin-weekly-tests{
+  --wf172-field-h:42px;
+  --wf172-border:#dbe4ee;
+  --wf172-soft:#f7f9fc;
+  --wf172-ink:#10233f;
+  --wf172-muted:#6f7f93;
+  --wf172-gold:#dcae2c;
+  --wf172-blue:#104f8d;
+}
+
+/* Remove copy-heavy UI and keep the useful controls close together. */
+.admin-body.page-admin-weekly-tests .admin-page-head.weekly-pro-head{margin-bottom:8px!important;padding-bottom:8px!important}
+.admin-body.page-admin-weekly-tests .admin-page-head.weekly-pro-head h1{margin-bottom:4px!important}
+.admin-body.page-admin-weekly-tests .weekly-scope-chip{margin-top:4px!important;padding:5px 9px!important;font-size:10px!important}
+.admin-body.page-admin-weekly-tests .weekly-dashboard-grid{gap:7px!important;margin:8px 0 10px!important}
+.admin-body.page-admin-weekly-tests .weekly-dash-card{min-height:70px!important;padding:10px!important}
+.admin-body.page-admin-weekly-tests .weekly-dash-card span{font-size:9.5px!important;line-height:1.25!important}
+
+/* One small workflow rail instead of instruction cards. */
+.admin-body.page-admin-weekly-tests .wf172-step-rail{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin:8px 0 12px;
+  padding:6px;
+  border:1px solid var(--wf172-border);
+  border-radius:11px;
+  background:#fff;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-rail a{
+  min-height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:6px 8px;
+  border-radius:8px;
+  color:#28435f;
+  font-size:11px;
+  font-weight:850;
+  text-decoration:none;
+  background:#f8fafc;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-rail a:hover{background:#edf4fb;color:#0d4f8a}
+.admin-body.page-admin-weekly-tests .wf172-step-rail span{
+  width:22px;height:22px;display:grid;place-items:center;
+  border-radius:7px;background:#e8eef5;color:#173b61;font-size:10px;font-weight:900;
+}
+
+/* Compress paper board text/spacing without touching behavior. */
+.admin-body.page-admin-weekly-tests .weekly-paper-board{padding:14px!important;margin-bottom:12px!important}
+.admin-body.page-admin-weekly-tests .paper-board-head{margin-bottom:9px!important}
+.admin-body.page-admin-weekly-tests .paper-board-head h2{font-size:16px!important;margin:0!important}
+.admin-body.page-admin-weekly-tests .paper-card-grid{gap:9px!important}
+
+/* Main setup + upload column layout. */
+.admin-body.page-admin-weekly-tests .weekly-admin-grid{
+  grid-template-columns:minmax(0,1.12fr) minmax(330px,.88fr)!important;
+  gap:12px!important;
+  margin-bottom:12px!important;
+}
+.admin-body.page-admin-weekly-tests .weekly-admin-grid>.admin-card{
+  padding:14px!important;
+  border-radius:12px!important;
+  box-shadow:0 5px 18px rgba(16,35,63,.035)!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 9px;padding:0 0 9px;border-bottom:1px solid #edf1f5;
+}
+.admin-body.page-admin-weekly-tests .wf172-card-head>div{min-width:0}
+.admin-body.page-admin-weekly-tests .wf172-card-head span{
+  display:block;margin-bottom:1px;color:#8a6a17;font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
+}
+.admin-body.page-admin-weekly-tests .wf172-card-head h2{margin:0!important;font-size:17px!important;line-height:1.2!important;color:#0c2544!important}
+.admin-body.page-admin-weekly-tests .wf172-status-chip{
+  flex:0 0 auto;margin:0!important;padding:5px 8px!important;border-radius:999px!important;
+  font-size:9px!important;font-weight:900!important;letter-spacing:0!important;text-transform:none!important;
+  background:#fff6df!important;color:#805d0b!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-status-chip.ready{background:#eaf8ef!important;color:#187444!important}
+
+/* Selected test is one compact action strip instead of a large status panel. */
+.admin-body.page-admin-weekly-tests .wf172-paper-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:9px;padding:8px 9px;border:1px solid #e3e9f0;border-radius:9px;background:#f9fbfd;
+}
+.admin-body.page-admin-weekly-tests .wf172-paper-strip>div:first-child{min-width:0}
+.admin-body.page-admin-weekly-tests .wf172-paper-strip b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#142b48;font-size:11.5px}
+.admin-body.page-admin-weekly-tests .wf172-paper-strip span{display:block;margin-top:2px;color:#718095;font-size:9.5px}
+.admin-body.page-admin-weekly-tests .wf172-paper-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.admin-body.page-admin-weekly-tests .wf172-paper-actions form{margin:0!important}
+.admin-body.page-admin-weekly-tests .wf172-paper-actions .btn{min-height:32px!important;padding:6px 9px!important;border-radius:8px!important;font-size:10px!important}
+.admin-body.page-admin-weekly-tests .wf172-paper-actions .ajax-msg{display:none!important}
+
+/* Accordion-like field steps: only what the admin needs is open. */
+.admin-body.page-admin-weekly-tests .wf172-step-form{display:grid!important;gap:7px!important}
+.admin-body.page-admin-weekly-tests .wf172-step-card{
+  margin:0!important;border:1px solid #dfe7f0!important;border-radius:10px!important;background:#fff!important;overflow:hidden!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-card>summary{
+  min-height:42px;display:flex;align-items:center;gap:9px;padding:7px 9px;cursor:pointer;list-style:none;
+  background:#f8fafc;color:#17324f;font-size:11.5px;font-weight:900;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-card>summary::-webkit-details-marker{display:none}
+.admin-body.page-admin-weekly-tests .wf172-step-card>summary>span{
+  width:25px;height:25px;display:grid;place-items:center;flex:0 0 25px;border-radius:7px;background:#0d315a;color:#fff;font-size:10px;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-card>summary>b{flex:1}
+.admin-body.page-admin-weekly-tests .wf172-step-card>summary>i{font-size:9px;color:#7d8b9d;transition:transform .18s ease}
+.admin-body.page-admin-weekly-tests .wf172-step-card[open]>summary{background:#f1f6fb;border-bottom:1px solid #e4ebf2}
+.admin-body.page-admin-weekly-tests .wf172-step-card[open]>summary>i{transform:rotate(180deg)}
+.admin-body.page-admin-weekly-tests .wf172-step-body{padding:10px!important}
+.admin-body.page-admin-weekly-tests .wf172-step-body.wf168-simple-grid{gap:8px 9px!important}
+.admin-body.page-admin-weekly-tests .wf172-step-body label,
+.admin-body.page-admin-weekly-tests .wf172-step-form label{
+  gap:4px!important;font-size:10.5px!important;line-height:1.25!important;color:#34485f!important;font-weight:850!important;
+}
+.admin-body.page-admin-weekly-tests :is(
+  .wf172-step-form input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]),
+  .wf172-step-form select
+){
+  height:var(--wf172-field-h)!important;min-height:var(--wf172-field-h)!important;
+  padding:0 11px!important;border-radius:8px!important;border-color:#d9e2ec!important;
+  background:#fbfcfe!important;font-size:12px!important;font-weight:700!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-step-form textarea{
+  min-height:68px!important;padding:9px 11px!important;border-radius:8px!important;border-color:#d9e2ec!important;font-size:12px!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-input-suffix{position:relative}
+.admin-body.page-admin-weekly-tests .wf172-input-suffix input{padding-right:42px!important}
+.admin-body.page-admin-weekly-tests .wf172-input-suffix span{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#7a8798;font-size:10px;font-weight:800;pointer-events:none;
+}
+
+/* Opening mode fits in less height. */
+.admin-body.page-admin-weekly-tests .wf172-access-choice{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin:0!important}
+.admin-body.page-admin-weekly-tests .wf172-access-choice span{min-height:48px!important;padding:7px 8px!important;border-radius:8px!important}
+.admin-body.page-admin-weekly-tests .wf172-access-choice span>i{width:25px!important;height:25px!important;font-size:11px!important}
+.admin-body.page-admin-weekly-tests .wf172-access-choice b{font-size:10.5px!important}
+.admin-body.page-admin-weekly-tests .wf172-access-choice small{font-size:8.8px!important}
+.admin-body.page-admin-weekly-tests .wf168-schedule-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin-top:8px!important}
+.admin-body.page-admin-weekly-tests .wf168-schedule-fields>label:last-child{grid-column:1/-1!important}
+.admin-body.page-admin-weekly-tests .wf168-time-parts{grid-template-columns:1fr 1fr 1fr!important;gap:5px!important}
+.admin-body.page-admin-weekly-tests .wf172-schedule-summary{margin-top:7px!important;padding:6px 8px!important;min-height:30px!important;border-radius:7px!important;font-size:9.5px!important}
+
+/* Optional settings should stay secondary. */
+.admin-body.page-admin-weekly-tests .wf172-advanced-box{margin-top:8px!important;border-radius:8px!important}
+.admin-body.page-admin-weekly-tests .wf172-advanced-box>summary{min-height:38px!important;padding:7px 9px!important;font-size:10.5px!important}
+.admin-body.page-admin-weekly-tests .wf172-save-row{
+  display:flex!important;align-items:center!important;gap:8px!important;padding-top:1px!important;margin-top:0!important;
+}
+.admin-body.page-admin-weekly-tests .wf172-save-row .btn{min-height:40px!important;padding:8px 14px!important;border-radius:8px!important;font-size:11px!important}
+
+/* Upload card: one sample row, no duplicate links. */
+.admin-body.page-admin-weekly-tests .wf172-quick-links{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 9px;
+}
+.admin-body.page-admin-weekly-tests .wf172-quick-links a{
+  min-height:36px;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;
+  border:1px solid #dce6f0;border-radius:8px;background:#f8fbff;color:#1d4770;font-size:9.5px;font-weight:850;text-align:center;
+}
+.admin-body.page-admin-weekly-tests .wf172-quick-links a:first-child{background:#eef7f1;border-color:#d2e9da;color:#1a7042}
+.admin-body.page-admin-weekly-tests .compact-upload-form{gap:8px!important}
+.admin-body.page-admin-weekly-tests .compact-upload-form label{font-size:10.5px!important;gap:4px!important}
+.admin-body.page-admin-weekly-tests .compact-upload-form select{height:var(--wf172-field-h)!important;min-height:var(--wf172-field-h)!important;border-radius:8px!important;font-size:12px!important}
+.admin-body.page-admin-weekly-tests .compact-upload-form input[type="file"]{min-height:48px!important;border-radius:8px!important;padding:5px!important}
+.admin-body.page-admin-weekly-tests .compact-upload-form input[type="file"]::file-selector-button{min-height:36px!important;border-radius:7px!important}
+.admin-body.page-admin-weekly-tests .compact-upload-form>.btn{min-height:40px!important;border-radius:8px!important;font-size:11px!important}
+.admin-body.page-admin-weekly-tests .wf171-upload-empty{padding:10px!important;border-radius:9px!important}
+.admin-body.page-admin-weekly-tests .wf171-upload-empty span{font-size:9.5px!important}
+.admin-body.page-admin-weekly-tests .clear-form{margin-top:9px!important;padding-top:9px!important}
+
+/* Lower sections: remove duplicate-looking numbered pagination. Each list names itself. */
+.admin-body.page-admin-weekly-tests #question-bank,
+.admin-body.page-admin-weekly-tests #student-copies{padding:14px!important;margin-top:12px!important}
+.admin-body.page-admin-weekly-tests #question-bank h2,
+.admin-body.page-admin-weekly-tests #student-copies h2{font-size:16px!important;margin:0!important}
+.admin-body.page-admin-weekly-tests .wf172-list-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  margin-top:8px;padding:7px 8px;border:1px solid #e2e8ef;border-radius:8px;background:#fafbfd;color:#64748a;font-size:9.5px;
+}
+.admin-body.page-admin-weekly-tests .wf172-list-nav>span b{color:#243d59}
+.admin-body.page-admin-weekly-tests .wf172-list-nav nav{display:flex;align-items:center;gap:5px}
+.admin-body.page-admin-weekly-tests .wf172-list-nav nav>span{padding:0 4px;color:#738096;font-size:9px;font-weight:800}
+.admin-body.page-admin-weekly-tests .wf172-list-nav a{
+  min-height:30px;display:inline-flex;align-items:center;padding:5px 8px;border:1px solid #d8e2ec;border-radius:7px;background:#fff;color:#164d7e;font-size:9.5px;font-weight:850;text-decoration:none;
+}
+.admin-body.page-admin-weekly-tests .wf172-copy-nav{margin-top:10px}
+
+/* Search/filter row should not visually compete with the list. */
+.admin-body.page-admin-weekly-tests .weekly-search-form{gap:6px!important}
+.admin-body.page-admin-weekly-tests .weekly-search-form :is(input,select){min-height:38px!important;height:38px!important;border-radius:8px!important;font-size:11px!important}
+.admin-body.page-admin-weekly-tests .weekly-search-form .btn{min-height:38px!important;border-radius:8px!important;font-size:10px!important}
+
+@media(max-width:1180px){
+  .admin-body.page-admin-weekly-tests .weekly-admin-grid{grid-template-columns:1fr!important}
+}
+@media(max-width:760px){
+  .admin-body.page-admin-weekly-tests{--wf172-field-h:42px}
+  .admin-body.page-admin-weekly-tests .wf172-step-rail{position:sticky;top:0;z-index:18;grid-template-columns:repeat(4,minmax(80px,1fr));overflow-x:auto}
+  .admin-body.page-admin-weekly-tests .wf172-step-rail a{min-width:80px;font-size:10px}
+  .admin-body.page-admin-weekly-tests .weekly-admin-grid>.admin-card{padding:11px!important}
+  .admin-body.page-admin-weekly-tests .wf172-paper-strip{align-items:flex-start;flex-direction:column}
+  .admin-body.page-admin-weekly-tests .wf172-paper-actions{width:100%}
+  .admin-body.page-admin-weekly-tests .wf172-paper-actions form{flex:1}
+  .admin-body.page-admin-weekly-tests .wf172-paper-actions .btn{width:100%!important}
+  .admin-body.page-admin-weekly-tests .wf172-quick-links{grid-template-columns:1fr 1fr}
+  .admin-body.page-admin-weekly-tests .wf172-quick-links a:last-child{grid-column:1/-1}
+  .admin-body.page-admin-weekly-tests .wf172-list-nav{align-items:stretch;flex-direction:column}
+  .admin-body.page-admin-weekly-tests .wf172-list-nav nav{justify-content:space-between;width:100%}
+}
+@media(max-width:520px){
+  .admin-body.page-admin-weekly-tests{--wf172-field-h:40px}
+  .admin-body.page-admin-weekly-tests .weekly-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .admin-body.page-admin-weekly-tests .weekly-dash-card{min-height:64px!important}
+  .admin-body.page-admin-weekly-tests .wf172-step-rail{margin-inline:-2px;padding:5px;gap:4px}
+  .admin-body.page-admin-weekly-tests .wf172-step-rail a{min-height:34px;padding:5px;font-size:9.5px}
+  .admin-body.page-admin-weekly-tests .wf172-step-rail span{width:20px;height:20px;border-radius:6px;font-size:9px}
+  .admin-body.page-admin-weekly-tests .wf172-step-body{padding:8px!important}
+  .admin-body.page-admin-weekly-tests .wf172-access-choice{grid-template-columns:1fr 1fr!important}
+  .admin-body.page-admin-weekly-tests .wf168-schedule-fields{grid-template-columns:1fr!important}
+  .admin-body.page-admin-weekly-tests .wf168-schedule-fields>label:last-child{grid-column:auto!important}
+  .admin-body.page-admin-weekly-tests .wf172-quick-links{grid-template-columns:1fr!important}
+  .admin-body.page-admin-weekly-tests .wf172-quick-links a:last-child{grid-column:auto}
+  .admin-body.page-admin-weekly-tests .wf172-save-row .btn{width:100%!important}
+}
