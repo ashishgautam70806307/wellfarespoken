@@ -6,8 +6,8 @@ require_once __DIR__ . '/../includes/functions.php'; require_admin(); ensure_sch
 $adminPageSlug = preg_replace('/[^a-z0-9-]+/i', '-', pathinfo(basename($_SERVER['PHP_SELF'] ?? 'admin'), PATHINFO_FILENAME));
 $adminPageStyles = isset($admin_page_styles) && is_array($admin_page_styles) ? $admin_page_styles : [];
 $adminPageFinalStyles = isset($admin_page_final_styles) && is_array($admin_page_final_styles) ? $admin_page_final_styles : [];
-$canMainMenu = admin_can('dashboard.view') || admin_can('enquiries.manage') || admin_can('admissions.manage') || admin_can('students.manage') || admin_can('courses.manage') || admin_can('content.manage');
-$canLearningMenu = admin_can('materials.manage') || admin_can('roadmap.manage') || admin_can('tests.manage') || admin_can('batches.manage') || admin_can('content.manage');
+$canMainMenu = admin_can('dashboard.view') || admin_can('enquiries.manage') || admin_can('batches.manage') || admin_can('admissions.manage') || admin_can('students.manage') || admin_can('courses.manage') || admin_can('content.manage');
+$canLearningMenu = admin_can('materials.manage') || admin_can('roadmap.manage') || admin_can('tests.manage') || admin_can('content.manage');
 $canWebsiteMenu = admin_can('content.manage') || admin_can('settings.manage');
 $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schema_ready() : true;
 $adminPasswordGate = function_exists('admin_password_gate_active') ? admin_password_gate_active() : false;
@@ -69,6 +69,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             <?php if ($canMainMenu): ?><div class="admin-menu-title">Main</div><?php endif; ?>
             <?php if (admin_can('dashboard.view')): ?><a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a><?php endif; ?>
             <?php if (admin_can('enquiries.manage')): ?><a class="<?= active_nav('enquiries.php') ?>" href="enquiries.php"><span class="menu-ico"><i class="fa-solid fa-phone-volume"></i></span><span>Enquiries</span></a><?php endif; ?>
+            <?php if (admin_can('batches.manage')): ?><a class="<?= active_nav('batches.php') ?>" href="batches.php"><span class="menu-ico"><i class="fa-solid fa-clock"></i></span><span>Batch Timing Management</span></a><?php endif; ?>
             <?php if (admin_can('admissions.manage')): ?><a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['admissions.php','admission-view.php'], true) ? 'active' : '' ?>" href="admissions.php"><span class="menu-ico"><i class="fa-solid fa-user-plus"></i></span><span>Admissions</span></a><?php endif; ?>
             <?php if (admin_can('students.manage')): ?><a class="<?= in_array(basename($_SERVER['PHP_SELF']), ['students.php','student-view.php'], true) ? 'active' : '' ?>" href="students.php"><span class="menu-ico"><i class="fa-solid fa-user-graduate"></i></span><span>Student Accounts</span></a><?php endif; ?>
             <?php if (admin_can('courses.manage')): ?><a class="<?= active_nav('courses.php') ?>" href="courses.php"><span class="menu-ico"><i class="fa-solid fa-book-open"></i></span><span>Courses</span></a><?php endif; ?>
@@ -81,7 +82,6 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             <?php if (admin_can('materials.manage')): ?><a class="<?= active_nav('materials.php') ?>" href="materials.php"><span class="menu-ico"><i class="fa-solid fa-folder-open"></i></span><span>Study Materials</span></a><?php endif; ?>
             <?php if (admin_can('roadmap.manage')): ?><a class="<?= active_nav('roadmap.php') ?>" href="roadmap.php"><span class="menu-ico"><i class="fa-solid fa-route"></i></span><span>Learning Roadmap</span></a><?php endif; ?>
             <?php if (admin_can('tests.manage')): ?><a class="<?= active_nav('weekly-tests.php') ?>" href="weekly-tests.php"><span class="menu-ico"><i class="fa-solid fa-clipboard-check"></i></span><span>Weekly Tests</span></a><?php endif; ?>
-            <?php if (admin_can('batches.manage')): ?><a class="<?= active_nav('batches.php') ?>" href="batches.php"><span class="menu-ico"><i class="fa-solid fa-clock"></i></span><span>Batches</span></a><?php endif; ?>
             <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('faqs.php') ?>" href="faqs.php"><span class="menu-ico"><i class="fa-solid fa-circle-question"></i></span><span>FAQs</span></a><?php endif; ?>
 
             <?php if ($canWebsiteMenu): ?><div class="admin-menu-title">Website Control</div><?php endif; ?>
@@ -116,6 +116,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
         $adminQuickLinks = [
             ['Dashboard', 'dashboard.php', 'Main', 'fa-solid fa-gauge-high'],
             ['Enquiries', 'enquiries.php', 'Main', 'fa-solid fa-phone-volume'],
+            ['Batch Timing Management', 'batches.php', 'Main', 'fa-solid fa-clock'],
             ['Admissions', 'admissions.php', 'Main', 'fa-solid fa-user-plus'],
             ['Student Accounts', 'students.php', 'Main', 'fa-solid fa-user-graduate'],
             ['Courses', 'courses.php', 'Main', 'fa-solid fa-book-open'],
@@ -126,7 +127,6 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             ['Learning Roadmap', 'roadmap.php', 'Learning CMS', 'fa-solid fa-route'],
             ['Weekly Tests', 'weekly-tests.php', 'Learning CMS', 'fa-solid fa-clipboard-check'],
             ['Upcoming Test Performance', 'upcoming-test-performance.php', 'Learning CMS', 'fa-solid fa-ranking-star'],
-            ['Batches', 'batches.php', 'Learning CMS', 'fa-solid fa-clock'],
             ['FAQs', 'faqs.php', 'Learning CMS', 'fa-solid fa-circle-question'],
             ['Content Blocks', 'content.php', 'Website Control', 'fa-solid fa-table-cells-large'],
             ['Hero Banners', 'hero-banners.php', 'Website Control', 'fa-solid fa-image'],

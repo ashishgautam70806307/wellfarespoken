@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wellfare-spoken-static-v167';
+const CACHE_NAME = 'wellfare-spoken-static-v169';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './assets/css/phase123-shell.min.css',
@@ -21,6 +21,9 @@ const STATIC_ASSETS = [
   './assets/css/phase150-security-ui.min.css',
   './assets/css/phase155-pwa-footer.min.css',
   './assets/css/phase167-mobile-layout-safety.min.css',
+  './assets/css/phase168-weekly-admin-easy.css',
+  './assets/css/phase169-admin-usability.css',
+  './assets/css/phase169-spoken-materials.css',
   './assets/css/phase158-test-results.min.css',
   './assets/css/phase159-admin-weekly-papers.min.css',
   './assets/css/phase166-admin-workflow.min.css',
@@ -51,10 +54,6 @@ const STATIC_ASSETS = [
   './assets/js/phase158-test-results.js',
   './assets/js/phase126-home.js',
   './assets/js/main.js',
-  './assets/uploads/banners/home-banner-speaking-desktop.webp',
-  './assets/uploads/banners/home-banner-speaking-mobile.webp',
-  './assets/uploads/banners/home-banner-online-class-desktop.webp',
-  './assets/uploads/banners/home-banner-online-class-mobile.webp',
   './assets/uploads/brand/wf-pwa-icon-192.png',
   './assets/uploads/brand/wf-pwa-icon-512.png'
 ];

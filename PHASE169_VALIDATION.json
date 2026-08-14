@@ -1,0 +1,51 @@
+{
+  "phase": 169,
+  "base": "spoken_phase168_weekly_admin_easy_full.zip",
+  "php_lint": {
+    "passed": true,
+    "files": 129
+  },
+  "javascript_syntax": {
+    "passed": true,
+    "files": [
+      "admin/materials.php inline script",
+      "assets/js/main.js",
+      "assets/js/phase143-spoken-practice.js",
+      "sw.js"
+    ]
+  },
+  "css_brace_integrity": {
+    "passed": true,
+    "files": [
+      "assets/css/phase169-admin-usability.css",
+      "assets/css/phase169-spoken-materials.css"
+    ]
+  },
+  "phase169_static_checks": {
+    "passed": true,
+    "checks": 16
+  },
+  "service_worker": {
+    "passed": true,
+    "cache": "wellfare-spoken-static-v169",
+    "precache_assets": 56,
+    "missing_assets": []
+  },
+  "requirements": {
+    "materials_category_topic_guided_flow": true,
+    "materials_selected_topic_bulk_lock_default": true,
+    "roadmap_compact_expandable_create_cards": true,
+    "weekly_three_step_guide_removed": true,
+    "weekly_student_copy_cards_improved": true,
+    "batch_timing_menu_after_enquiries": true,
+    "active_admin_menu_centered": true,
+    "spoken_materials_mobile_bottom_nav_fix": true,
+    "voice_correct_auto_next": true,
+    "voice_wrong_retry_same_sentence": true
+  },
+  "not_executed": [
+    "Authenticated browser/device test against the live deployment",
+    "Live MySQL write test for new Category/Topic flow"
+  ],
+  "known_pre_existing_note": "Phase 148 historical security static test still flags the existing live database credential source fallback; Phase 169 does not modify deployment credentials."
+}

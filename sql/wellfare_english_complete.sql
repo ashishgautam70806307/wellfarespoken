@@ -183,6 +183,7 @@ CREATE TABLE IF NOT EXISTS `faqs` (
 -- Table: batch_timings
 CREATE TABLE IF NOT EXISTS `batch_timings` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` INT UNSIGNED NULL,
   `batch_name` VARCHAR(160) NOT NULL,
   `course_name` VARCHAR(160) NULL,
   `timing` VARCHAR(120) NULL,

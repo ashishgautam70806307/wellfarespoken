@@ -3,6 +3,7 @@ ensure_core_schema_columns();
 ensure_schema_updates();
 material_ensure_schema();
 weekly_test_ensure_schema();
+batch_ensure_schema();
 student_account_ensure_schema();
 $checks = [];
 $schemaUpdatesEnabled = defined('APP_ALLOW_SCHEMA_UPDATES') ? APP_ALLOW_SCHEMA_UPDATES : true;
@@ -13,6 +14,7 @@ $addCheck('Runtime environment', in_array(APP_RUNTIME_ENV, ['local','live'], tru
 $addCheck('Database import file', is_file(dirname(__DIR__) . '/sql/wellfare_english_complete.sql'), 'Single canonical database file.');
 $weeklySchemaStatus = weekly_test_schema_status();
 $addCheck('Weekly Test complete schema', (bool)($weeklySchemaStatus['ready'] ?? false), ($weeklySchemaStatus['ready'] ?? false) ? 'All required test tables and columns are available.' : ('Missing: ' . implode(', ', (array)($weeklySchemaStatus['missing'] ?? []))));
+$addCheck('Batch course link column', column_exists('batch_timings', 'course_id'), column_exists('batch_timings', 'course_id') ? 'Batch Management can save the selected course normally.' : 'Missing batch_timings.course_id. Apply the latest migration if automatic schema updates are disabled.');
 foreach (['current_level','preferred_batch','lead_source','enquiry_status','lead_priority','follow_up_date','last_contacted_at','admin_note','updated_at'] as $column) {
     $addCheck('Enquiries column: ' . $column, column_exists('enquiries', $column), 'Required for admission form and enquiry workflow.');
 }

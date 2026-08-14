@@ -11,6 +11,7 @@ $skip_phase141_learning_css = true;
 $skip_phase142_interaction_css = true;
 $skip_phase139_mobile_learning_script = true;
 $page_late_styles = ['assets/css/phase143-practice-stability.css'];
+$page_final_styles = ['assets/css/phase169-spoken-materials.css'];
 $page_scripts = ['assets/js/phase143-spoken-practice.js'];
 
 $allowedGoals = ['speak', 'hindi_to_english', 'english_to_hindi', 'revision'];
@@ -114,16 +115,16 @@ wf_page_hero([
                     <label class="wf144-voice-toggle" for="practiceHandsfree">
                         <input type="checkbox" id="practiceHandsfree" checked>
                         <span class="wf144-voice-switch" aria-hidden="true"><i></i></span>
-                        <span class="wf144-voice-copy"><b>Voice coach</b><small>Question plays once, then the mic listens for one answer.</small></span>
+                        <span class="wf144-voice-copy"><b>Voice coach</b><small>Correct answer moves to the next sentence automatically. Wrong answer repeats until you get it right.</small></span>
                     </label>
-                    <p><i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Say “again” or “dobara bolo” to hear the question again.</span></p>
+                    <p><i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Correct → next automatically. Wrong → listen to the correct sentence, then speak again.</span></p>
                 </div>
                 <div class="wf143-audio-actions">
                     <button type="button" id="practiceListen"><i class="fa-solid fa-volume-high" aria-hidden="true"></i><span>Listen</span></button>
                     <button type="button" id="practiceSpeak"><i class="fa-solid fa-microphone" aria-hidden="true"></i><span>Speak answer</span></button>
                     <button type="button" id="practiceStop" hidden><i class="fa-solid fa-stop" aria-hidden="true"></i><span>Stop</span></button>
                 </div>
-                <p class="wf143-voice-status" id="practiceVoiceStatus" aria-live="polite">Voice coach is ready. You can also use Listen or Speak answer manually.</p>
+                <p class="wf143-voice-status" id="practiceVoiceStatus" aria-live="polite">Voice coach is ready. Correct answers move forward; wrong answers stay on the same sentence for another try.</p>
                 <label for="practiceAnswer"><span>Your answer</span><small>Type or use the microphone.</small></label>
                 <textarea id="practiceAnswer" rows="3" spellcheck="false" autocomplete="off" placeholder="Write your answer here..."></textarea>
                 <div class="wf143-answer-actions">

@@ -93,7 +93,7 @@ function mat_xlsx_cells(string $path): array {
     $zip->close();
     return $rows;
 }
-function mat_rows_to_records(array $rows, int $collectionId, int $defaultUnitId, string $defaultTopic, string $defaultLevel): array {
+function mat_rows_to_records(array $rows, int $collectionId, int $defaultUnitId, string $defaultTopic, string $defaultLevel, bool $lockToDefaultUnit = false): array {
     $records = [];
     if (!$rows) return $records;
     $first = array_map(fn($x)=>strtolower(trim((string)$x)), $rows[0]);
@@ -137,7 +137,8 @@ function mat_rows_to_records(array $rows, int $collectionId, int $defaultUnitId,
         $hindi = mat_clean((string)$hindi); $english = mat_clean((string)$english);
         if ($hindi === '' || $english === '') continue;
         $topic = mat_clean((string)$topic) ?: $defaultTopic;
-        $unitId = ($topic && $topic !== $defaultTopic) ? mat_get_or_create_unit($collectionId, $topic, $level ?: $defaultLevel) : $defaultUnitId;
+        if ($lockToDefaultUnit) $topic = $defaultTopic;
+        $unitId = $lockToDefaultUnit ? $defaultUnitId : (($topic && $topic !== $defaultTopic) ? mat_get_or_create_unit($collectionId, $topic, $level ?: $defaultLevel) : $defaultUnitId);
         $records[] = compact('hindi','english','roman','topic','tag','level','accepted','acceptedHi','sentenceType','mistakes','hint','mode','explanation','unitId');
     }
     return $records;
@@ -172,18 +173,41 @@ try {
         mat_json(['success'=>true,'message'=>($count > 0 ? $count.' ready practice sentence(s) loaded.' : 'Practice library already loaded. No duplicate records added.'),'count'=>$count]);
     }
 
+    if ($action === 'create_category') {
+        $title = mat_clean($_POST['collection_title'] ?? '');
+        if ($title === '') mat_json(['success'=>false,'message'=>'Category name is required.'],422);
+        $collectionId = mat_get_or_create_collection($title, $_POST['level'] ?? 'Beginner to Advanced');
+        mat_json(['success'=>true,'message'=>'Category is ready. Now create a topic inside it.','collection_id'=>$collectionId,'collection_title'=>$title]);
+    }
+
     if ($action === 'create_lesson') {
-        $collectionId = mat_get_or_create_collection($_POST['collection_title'] ?? 'Spoken Practice Lessons', $_POST['level'] ?? 'Beginner to Advanced');
-        $unitId = mat_get_or_create_unit($collectionId, $_POST['topic_name'] ?? 'Daily Speaking Practice', $_POST['level'] ?? 'Beginner', $_POST['instructions'] ?? '');
-        mat_json(['success'=>true,'message'=>'Lesson/topic created successfully.','collection_id'=>$collectionId,'unit_id'=>$unitId]);
+        $collectionId = (int)($_POST['collection_id'] ?? 0);
+        $collectionTitle = '';
+        if ($collectionId > 0) {
+            $stmt = db()->prepare('SELECT title FROM material_collections WHERE id=? AND status_deleted=0 LIMIT 1');
+            $stmt->execute([$collectionId]);
+            $collectionTitle = (string)($stmt->fetchColumn() ?: '');
+            if ($collectionTitle === '') mat_json(['success'=>false,'message'=>'Selected category was not found. Please choose the category again.'],422);
+        } else {
+            $collectionTitle = mat_clean($_POST['collection_title'] ?? 'Spoken Practice Lessons');
+            $collectionId = mat_get_or_create_collection($collectionTitle, $_POST['level'] ?? 'Beginner to Advanced');
+        }
+        $topicName = mat_clean($_POST['topic_name'] ?? '');
+        if ($topicName === '') mat_json(['success'=>false,'message'=>'Topic name is required.'],422);
+        $unitId = mat_get_or_create_unit($collectionId, $topicName, $_POST['level'] ?? 'Beginner', $_POST['instructions'] ?? '');
+        mat_json(['success'=>true,'message'=>'Topic created. You can upload questions now.','collection_id'=>$collectionId,'collection_title'=>$collectionTitle,'unit_id'=>$unitId]);
     }
 
     if ($action === 'save_sentence') {
         $id = (int)($_POST['id'] ?? 0);
-        $collectionId = (int)($_POST['collection_id'] ?? 0) ?: mat_get_or_create_collection($_POST['collection_title'] ?? 'Spoken Practice Lessons');
+        $collectionId = (int)($_POST['collection_id'] ?? 0);
         $unitId = (int)($_POST['unit_id'] ?? 0);
-        $topic = mat_clean($_POST['tense_name'] ?? $_POST['topic_name'] ?? 'Daily Speaking Practice');
-        if (!$unitId) $unitId = mat_get_or_create_unit($collectionId, $topic, $_POST['level'] ?? 'Beginner');
+        if ($collectionId <= 0) mat_json(['success'=>false,'message'=>'Please select a category first.'],422);
+        if ($unitId <= 0) mat_json(['success'=>false,'message'=>'Please select a topic first.'],422);
+        $stmt = db()->prepare('SELECT title FROM material_units WHERE id=? AND collection_id=? AND status_deleted=0 LIMIT 1');
+        $stmt->execute([$unitId,$collectionId]);
+        $topic = mat_clean((string)($stmt->fetchColumn() ?: ''));
+        if ($topic === '') mat_json(['success'=>false,'message'=>'Selected topic does not belong to this category. Please choose again.'],422);
         $hindi = mat_clean($_POST['hindi_text'] ?? '');
         $english = mat_clean($_POST['english_text'] ?? '');
         if ($hindi === '' || $english === '') mat_json(['success'=>false,'message'=>'Hindi and English sentence both are required.'],422);
@@ -217,10 +241,15 @@ try {
     }
 
     if ($action === 'import_sentences') {
-        $collectionId = (int)($_POST['collection_id'] ?? 0) ?: mat_get_or_create_collection($_POST['collection_title'] ?? 'Spoken Practice Lessons');
-        $topic = mat_clean($_POST['topic_name'] ?? $_POST['tense_name'] ?? 'Daily Speaking Practice');
+        $collectionId = (int)($_POST['collection_id'] ?? 0);
+        $unitId = (int)($_POST['unit_id'] ?? 0);
+        if ($collectionId <= 0) mat_json(['success'=>false,'message'=>'Please select a category first.'],422);
+        if ($unitId <= 0) mat_json(['success'=>false,'message'=>'Please select a topic before uploading sentences.'],422);
+        $stmt = db()->prepare('SELECT title FROM material_units WHERE id=? AND collection_id=? AND status_deleted=0 LIMIT 1');
+        $stmt->execute([$unitId,$collectionId]);
+        $topic = mat_clean((string)($stmt->fetchColumn() ?: ''));
+        if ($topic === '') mat_json(['success'=>false,'message'=>'Selected topic does not belong to this category. Please choose again.'],422);
         $level = mat_clean($_POST['level'] ?? 'Beginner');
-        $unitId = (int)($_POST['unit_id'] ?? 0) ?: mat_get_or_create_unit($collectionId, $topic, $level);
         $rows = [];
         $pasted = trim($_POST['bulk_text'] ?? '');
         if ($pasted !== '') $rows = array_merge($rows, mat_parse_csv_text($pasted));
@@ -229,7 +258,7 @@ try {
             if (str_ends_with($name, '.xlsx')) $rows = array_merge($rows, mat_xlsx_cells($_FILES['sentence_file']['tmp_name']));
             else $rows = array_merge($rows, mat_parse_csv_text((string)file_get_contents($_FILES['sentence_file']['tmp_name'])));
         }
-        $records = mat_rows_to_records($rows, $collectionId, $unitId, $topic, $level);
+        $records = mat_rows_to_records($rows, $collectionId, $unitId, $topic, $level, (($_POST['allow_row_topics'] ?? 'No') !== 'Yes'));
         if (!$records) mat_json(['success'=>false,'message'=>'No valid rows found. Required: Hindi Sentence and English Sentence.'],422);
         $stmt = db()->prepare('INSERT INTO translation_pairs (collection_id, unit_id, hindi_text, english_text, roman_text, tense_name, situation_tag, level, explanation, accepted_english_answers, accepted_hindi_answers, sentence_type, common_mistakes, teacher_hint, answer_match_mode, published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
         $count = 0;

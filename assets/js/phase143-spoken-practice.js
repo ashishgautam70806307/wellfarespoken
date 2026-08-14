@@ -469,13 +469,65 @@
     }
   }
 
-  function listenCorrectAnswer(text, language) {
+  function listenCorrectAnswer(text, language, callbacks = {}) {
+    const onEnd = typeof callbacks.onEnd === 'function' ? callbacks.onEnd : null;
+    const onError = typeof callbacks.onError === 'function' ? callbacks.onError : null;
     voiceStatus.textContent = 'Playing the correct answer...';
     speakText(text, language, {
       onStart: () => { voiceStatus.textContent = 'Playing the correct answer...'; },
-      onEnd: () => { voiceStatus.textContent = 'Correct answer played. Repeat it once, then continue.'; },
-      onError: () => { voiceStatus.textContent = 'The correct answer could not be played in this browser.'; }
+      onEnd: () => {
+        voiceStatus.textContent = onEnd ? 'Correct answer played. Now say it again.' : 'Correct answer played. Repeat it once, then continue.';
+        if (onEnd) onEnd();
+      },
+      onError: () => {
+        voiceStatus.textContent = onError ? 'Audio was unavailable. Try speaking the answer again.' : 'The correct answer could not be played in this browser.';
+        if (onError) onError();
+      }
     });
+  }
+
+  function advanceAfterVoiceCorrect() {
+    const item = currentItem();
+    if (!item || !handsfree.checked || app.hidden) return;
+    const expectedIndex = currentIndex;
+    const expectedId = String(item.id || '');
+    let advanced = false;
+    const advance = () => {
+      if (advanced || !handsfree.checked || app.hidden || currentIndex !== expectedIndex) return;
+      const now = currentItem();
+      if (!now || String(now.id || '') !== expectedId) return;
+      advanced = true;
+      currentIndex += 1;
+      renderQuestion();
+    };
+    const queueAdvance = () => {
+      window.clearTimeout(autoCheckTimer);
+      autoCheckTimer = window.setTimeout(advance, 320);
+    };
+    voiceStatus.textContent = 'Correct. Moving to the next sentence...';
+    const spoken = speakText('Correct. Next sentence.', 'en-IN', { onEnd: queueAdvance, onError: queueAdvance });
+    if (!spoken) queueAdvance();
+  }
+
+  function retryVoiceAfterWrong(correctAnswer, language) {
+    const item = currentItem();
+    if (!item || !handsfree.checked || app.hidden) return;
+    const expectedIndex = currentIndex;
+    const expectedId = String(item.id || '');
+    const retry = () => {
+      if (!handsfree.checked || app.hidden || currentIndex !== expectedIndex) return;
+      const now = currentItem();
+      if (!now || String(now.id || '') !== expectedId) return;
+      answer.value = '';
+      voiceStatus.textContent = 'Now say the answer again.';
+      window.clearTimeout(voiceCoachTimer);
+      voiceCoachTimer = window.setTimeout(() => {
+        if (handsfree.checked && !app.hidden && currentIndex === expectedIndex) startRecognition(true);
+      }, 520);
+    };
+    answer.value = '';
+    voiceStatus.textContent = 'Not correct yet. Listen carefully, then say it again.';
+    listenCorrectAnswer(correctAnswer, language, { onEnd: retry, onError: retry });
   }
 
   async function checkAnswer(source = 'manual') {
@@ -523,19 +575,15 @@
       result.className = `wf143-result ${correct ? 'is-correct' : 'is-wrong'}`;
       if (correct) {
         result.innerHTML = '<span class="wf143-result-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span><div><strong>Correct answer</strong><p>Your sentence matches the accepted answer.</p></div>';
-        voiceStatus.textContent = 'Correct. Continue when you are ready.';
-        if (source === 'voice' && handsfree.checked) {
-          speakText('Correct.', 'en-IN', {
-            onEnd: () => { voiceStatus.textContent = 'Correct. Continue when you are ready.'; },
-            onError: () => { voiceStatus.textContent = 'Correct. Continue when you are ready.'; }
-          });
-        }
+        voiceStatus.textContent = source === 'voice' && handsfree.checked ? 'Correct. Moving to the next sentence...' : 'Correct. Continue when you are ready.';
+        if (source === 'voice' && handsfree.checked) advanceAfterVoiceCorrect();
       } else {
         result.innerHTML = `<span class="wf143-result-icon"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i></span><div><strong>Review this answer</strong><p>${escapeHtml(checked.feedback || 'Use the same tense and sentence order.')}</p><div class="wf143-correct-answer"><span>Correct answer</span><b>${escapeHtml(correctAnswer)}</b></div><button type="button" class="wf144-listen-correct"><i class="fa-solid fa-volume-high" aria-hidden="true"></i><span>Listen Correct Answer</span></button></div>`;
         result.querySelector('.wf144-listen-correct')?.addEventListener('click', () => listenCorrectAnswer(correctAnswer, answerLanguage(qa)));
-        voiceStatus.textContent = 'Answer needs improvement. Listen to the correct answer and try again.';
+        voiceStatus.textContent = 'Answer needs improvement. Stay on this sentence and try again.';
         if (source === 'voice' && handsfree.checked && correctAnswer) {
-          autoCheckTimer = window.setTimeout(() => listenCorrectAnswer(correctAnswer, answerLanguage(qa)), 450);
+          window.clearTimeout(autoCheckTimer);
+          autoCheckTimer = window.setTimeout(() => retryVoiceAfterWrong(correctAnswer, answerLanguage(qa)), 420);
         }
       }
     } catch (error) {

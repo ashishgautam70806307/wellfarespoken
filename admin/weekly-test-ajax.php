@@ -147,13 +147,19 @@ try{
    $testId=(int)($_POST['test_id']??0);
    if($testId<=0) aj(['success'=>false,'message'=>'Select test first']);
    db()->prepare("UPDATE weekly_test_questions SET status_deleted=1, deleted_at=NOW() WHERE test_id=?")->execute([$testId]);
+   weekly_test_sync_question_totals($testId);
    aj(['success'=>true,'message'=>'Questions cleared']);
  }
 
  if($action==='upload_questions'){
    $testId=(int)($_POST['test_id']??0);
    if($testId<=0) aj(['success'=>false,'message'=>'Select test first']);
-   if(empty($_FILES['file']['tmp_name'])) aj(['success'=>false,'message'=>'Upload CSV or XLSX file']);
+   $uploadError=(int)($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);
+   if($uploadError!==UPLOAD_ERR_OK || empty($_FILES['file']['tmp_name'])){
+     $uploadMessage=$uploadError===UPLOAD_ERR_NO_FILE?'Choose an Excel (.xlsx) or CSV file first.':(($uploadError===UPLOAD_ERR_INI_SIZE || $uploadError===UPLOAD_ERR_FORM_SIZE)?'Question file is too large for this server. Try a smaller Excel/CSV file.':'Question file upload could not complete. Please select the file again.');
+     aj(['success'=>false,'message'=>$uploadMessage]);
+   }
+   if((int)($_FILES['file']['size'] ?? 0) > 10*1024*1024) aj(['success'=>false,'message'=>'Question file is too large. Maximum allowed here is 10 MB.']);
    $fileName=(string)($_FILES['file']['name'] ?? '');
    $ext=strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
    if(!in_array($ext, ['csv','txt','xlsx'], true)) aj(['success'=>false,'message'=>'Please upload CSV or XLSX only. If your file is XLS, open it in Excel and Save As CSV or XLSX.']);
@@ -185,12 +191,15 @@ try{
     db()->prepare("INSERT INTO weekly_test_questions (test_id,question_type,topic_name,level,question_text,expected_answer,option_a,option_b,option_c,option_d,marks,sort_order,published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
       ->execute([$testId,$type,$topic,$level,$question,$expected,$opts[0],$opts[1],$opts[2],$opts[3],$marks,$order,$published]);
    }
+   weekly_test_sync_question_totals($testId);
    aj(['success'=>true,'message'=>'Question saved']);
  }
 
  if($action==='delete_question'){
    $id=(int)($_POST['id']??0);
+   $qs=db()->prepare("SELECT test_id FROM weekly_test_questions WHERE id=? LIMIT 1"); $qs->execute([$id]); $questionTestId=(int)($qs->fetchColumn()?:0);
    db()->prepare("UPDATE weekly_test_questions SET status_deleted=1, deleted_at=NOW() WHERE id=?")->execute([$id]);
+   if($questionTestId>0) weekly_test_sync_question_totals($questionTestId);
    aj(['success'=>true,'message'=>'Question deleted']);
  }
 

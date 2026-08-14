@@ -530,3 +530,25 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach((input) =>
   };
   document.querySelectorAll('.student-card-grid,.admission-card-grid').forEach(grid => paginateGrid(grid, 12));
 })();
+
+// Phase 169: keep the active admin menu item centered inside the sidebar scroll area.
+(() => {
+  const side = document.getElementById('adminSide');
+  if (!side) return;
+  const scroll = side.querySelector('.admin-menu-scroll');
+  const active = scroll ? scroll.querySelector('a.active') : null;
+  if (!scroll || !active) return;
+
+  const centerActive = (smooth = false) => {
+    const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+    const target = Math.max(0, Math.min(max, active.offsetTop - ((scroll.clientHeight - active.offsetHeight) / 2)));
+    if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ top: target, behavior: smooth ? 'smooth' : 'auto' });
+    else scroll.scrollTop = target;
+  };
+
+  requestAnimationFrame(() => centerActive(false));
+  window.addEventListener('load', () => setTimeout(() => centerActive(false), 80), { once: true });
+  document.querySelectorAll('[data-admin-menu-open]').forEach((button) => {
+    button.addEventListener('click', () => setTimeout(() => centerActive(true), 120));
+  });
+})();

@@ -52,6 +52,7 @@ if (isset($_GET['download_sample'])) {
     exit;
 }
 
+$admin_page_final_styles = ['assets/css/phase169-admin-usability.css'];
 require_once __DIR__ . '/_header.php';
 
 $typeMap = [
@@ -312,8 +313,14 @@ if (isset($_GET['edit_unit'])) {
     </div>
 </section>
 
-<div class="clean-manager-grid">
-    <section class="card">
+<div class="roadmap-create-launchers">
+    <details class="roadmap-create-toggle" <?= $editUnit ? 'open' : '' ?>>
+        <summary>
+            <span class="roadmap-launch-no">1</span>
+            <span class="roadmap-launch-copy"><b><?= $editUnit ? 'Edit Step / Topic' : 'Create Step / Topic' ?></b><small>Click to <?= $editUnit ? 'edit this topic' : 'add a new topic' ?></small></span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </summary>
+        <section class="card roadmap-create-body">
         <div class="roadmap-card-head-inline">
             <h2><?= $editUnit ? 'Edit Step' : 'Create Step / Topic' ?></h2>
             <?php if ($editUnit): ?><a class="btn btn-sm btn-soft" href="roadmap.php?tab=<?= e($tab) ?>&unit_id=<?= e((string)$selectedUnitId) ?>">Cancel Edit</a><?php endif; ?>
@@ -333,9 +340,17 @@ if (isset($_GET['edit_unit'])) {
             <label class="wide">Target URL optional<input name="target_url" value="<?= e($editUnit['target_url'] ?? '') ?>" placeholder="Optional only"></label>
             <button class="btn btn-primary" type="submit"><?= $editUnit ? 'Update Topic' : 'Create Topic' ?></button>
         </form>
-    </section>
 
-    <section class="card">
+        </section>
+    </details>
+
+    <details class="roadmap-create-toggle" <?= $editItem ? 'open' : '' ?>>
+        <summary>
+            <span class="roadmap-launch-no">2</span>
+            <span class="roadmap-launch-copy"><b><?= $editItem ? 'Edit Record' : 'Add Record' ?></b><small>Click to <?= $editItem ? 'edit this record' : 'add one record manually' ?></small></span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </summary>
+        <section class="card roadmap-create-body">
         <h2><?= $editItem ? 'Edit Record' : 'Add Record' ?></h2>
         <form method="post" class="admin-form-grid">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -354,7 +369,9 @@ if (isset($_GET['edit_unit'])) {
             <label class="wide">Notes<textarea name="example_text" rows="3"><?= e($editItem['example_text'] ?? '') ?></textarea></label>
             <button class="btn btn-primary" type="submit"><?= $editItem ? 'Update Record' : 'Add Record' ?></button>
         </form>
-    </section>
+
+        </section>
+    </details>
 </div>
 
 <section class="card roadmap-topic-manager-card">

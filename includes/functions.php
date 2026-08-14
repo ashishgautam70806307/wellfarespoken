@@ -488,6 +488,7 @@ function ensure_schema_updates(): void
 
         db()->exec("CREATE TABLE IF NOT EXISTS batch_timings (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            course_id INT UNSIGNED NULL,
             batch_name VARCHAR(160) NOT NULL,
             course_name VARCHAR(160) NULL,
             timing VARCHAR(120) NULL,
@@ -1025,6 +1026,44 @@ function ensure_schema_updates(): void
         }
     } catch (Throwable $e) {
         // Keep the website running even if the DB user cannot ALTER/CREATE tables.
+    }
+}
+
+
+/**
+ * Keep Batch Management compatible with both older and current databases.
+ * Phase 168 makes course_id a canonical optional column, but the admin page
+ * still has a legacy fallback when ALTER permission is disabled on hosting.
+ */
+function batch_ensure_schema(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (defined('APP_ALLOW_SCHEMA_UPDATES') && !APP_ALLOW_SCHEMA_UPDATES) return;
+    try {
+        if (!table_exists('batch_timings')) {
+            db()->exec("CREATE TABLE IF NOT EXISTS batch_timings (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                course_id INT UNSIGNED NULL,
+                batch_name VARCHAR(160) NOT NULL,
+                course_name VARCHAR(160) NULL,
+                timing VARCHAR(120) NULL,
+                days VARCHAR(120) NULL,
+                seats_note VARCHAR(160) NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                published ENUM('Yes','No') NOT NULL DEFAULT 'Yes',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_batch_course (course_id),
+                INDEX idx_batch_published (published, sort_order)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            return;
+        }
+        if (!column_exists('batch_timings', 'course_id')) {
+            db_exec_safe("ALTER TABLE batch_timings ADD COLUMN course_id INT UNSIGNED NULL AFTER id");
+        }
+    } catch (Throwable $e) {
+        error_log('[batch-schema] ' . $e->getMessage());
     }
 }
 
@@ -3646,19 +3685,19 @@ function weekly_test_schema_status(): array
 {
     $required = [
         'weekly_tests' => [
-            'id','title','test_type','status','published','requires_login','duration_minutes','total_questions',
-            'starts_at','ends_at','batch_id','instructions','shuffle_questions','shuffle_options','warning_limit',
-            'penalty_after_warnings','penalty_per_warning','auto_submit_on_warning_limit'
+            'id','title','test_type','status','published','requires_login','duration_minutes','total_questions','total_marks',
+            'starts_at','ends_at','batch_id','batch_label','instructions','shuffle_questions','shuffle_options','warning_limit',
+            'penalty_after_warnings','penalty_per_warning','strict_exam_mode','auto_submit_on_warning_limit','allow_question_jump','status_deleted','deleted_at'
         ],
         'weekly_test_questions' => [
             'id','test_id','question_type','question_text','expected_answer','option_a','option_b','option_c','option_d',
-            'marks','sort_order','published','status_deleted'
+            'marks','sort_order','published','status_deleted','deleted_at'
         ],
         'weekly_test_attempts' => [
             'id','test_id','student_id','guest_name','guest_phone','canonical_phone','started_at','submitted_at','expires_at',
             'status','auto_score','admin_score','total_marks','penalty_marks','admin_note','warning_count','activity_log',
             'timing_log','suspicious_flag','access_token','result_token','question_snapshot','question_order',
-            'submission_reason','last_saved_at','status_deleted'
+            'submission_reason','last_saved_at','status_deleted','deleted_at'
         ],
         'weekly_test_answers' => ['id','attempt_id','question_id','answer_text','is_correct','marks_awarded','admin_note'],
     ];
@@ -3689,17 +3728,13 @@ function weekly_test_ensure_schema(): void
     static $done = false;
     if ($done) return;
     $done = true;
-    $weeklySchemaMarker = 'phase122_weekly_schema_v1';
+    $weeklySchemaMarker = 'phase168_weekly_schema_v2';
     try {
         $markerStmt = db()->prepare('SELECT setting_value FROM site_settings WHERE setting_key=? LIMIT 1');
         $markerStmt->execute(['weekly_schema_marker']);
         $markerReady = (string)($markerStmt->fetchColumn() ?: '') === $weeklySchemaMarker;
-        $requiredColumns = ['access_token','result_token','question_snapshot','submission_reason','last_saved_at'];
-        $columnsReady = true;
-        foreach ($requiredColumns as $requiredColumn) {
-            if (!column_exists('weekly_test_attempts', $requiredColumn)) { $columnsReady = false; break; }
-        }
-        if ($markerReady && $columnsReady) return;
+        $schemaStatus = weekly_test_schema_status();
+        if ($markerReady && !empty($schemaStatus['ready'])) return;
     } catch (Throwable $e) {}
     try {
         db()->exec("CREATE TABLE IF NOT EXISTS weekly_tests (
@@ -3868,6 +3903,7 @@ function weekly_test_cleanup_deleted_records(): void
 function weekly_test_get_batches(): array
 {
     try {
+        batch_ensure_schema();
         return db()->query("SELECT id, batch_name, course_name, timing, days FROM batch_timings WHERE published='Yes' ORDER BY sort_order ASC, id DESC")->fetchAll();
     } catch (Throwable $e) { return []; }
 }
@@ -4416,7 +4452,24 @@ function weekly_test_import_rows(int $testId, array $rows): int
         $insert->execute([$testId,$type,$topic,$level,$question,$answer,$opts[0],$opts[1],$opts[2],$opts[3],$marks,++$n]);
         $added++;
     }
+    if ($added > 0) weekly_test_sync_question_totals($testId);
     return $added;
+}
+
+/** Keep the paper size in sync with the active Question Bank so Admin does not have to count manually. */
+function weekly_test_sync_question_totals(int $testId): void
+{
+    if ($testId <= 0) return;
+    try {
+        $stmt = db()->prepare("SELECT COUNT(*) question_count, COALESCE(SUM(marks),0) marks_total FROM weekly_test_questions WHERE test_id=? AND status_deleted=0 AND published='Yes'");
+        $stmt->execute([$testId]);
+        $row = $stmt->fetch() ?: [];
+        $count = max(1, (int)($row['question_count'] ?? 0));
+        $marks = max(1, (int)ceil((float)($row['marks_total'] ?? 0)));
+        db()->prepare("UPDATE weekly_tests SET total_questions=?, total_marks=?, updated_at=NOW() WHERE id=?")->execute([$count, $marks, $testId]);
+    } catch (Throwable $e) {
+        error_log('[weekly-test-sync-totals] ' . $e->getMessage());
+    }
 }
 
 function csv_assoc_rows(string $path): array
@@ -4443,11 +4496,12 @@ function csv_assoc_rows(string $path): array
 function simple_zip_get_file(string $zipPath, string $entryName): ?string
 {
     $data = @file_get_contents($zipPath);
+    $maxEntryBytes = 8 * 1024 * 1024;
     if ($data === false || strlen($data) < 22 || !function_exists('gzinflate')) return null;
     $pos = strrpos($data, "PK\x05\x06");
     if ($pos === false) return null;
     $eocd = substr($data, $pos, 22);
-    $e = @unpack('vdisk/vcdisk/ventriesDisk/ventries/Vsize/Voffset/vcomment', $eocd);
+    $e = @unpack('Vsig/vdisk/vcdisk/ventriesDisk/ventries/Vsize/Voffset/vcomment', $eocd);
     if (!$e) return null;
     $cdOffset = (int)$e['offset'];
     $cdSize = (int)$e['size'];
@@ -4459,16 +4513,17 @@ function simple_zip_get_file(string $zipPath, string $entryName): ?string
         $name = substr($data, $ptr + 46, (int)$h['nlen']);
         $ptr += 46 + (int)$h['nlen'] + (int)$h['elen'] + (int)$h['clen'];
         if ($name !== $entryName) continue;
+        if ((int)$h['usize'] > $maxEntryBytes || (int)$h['csize'] > $maxEntryBytes) return null;
         $lo = (int)$h['lhoff'];
         if (substr($data, $lo, 4) !== "PK\x03\x04") return null;
         $lh = @unpack('Vsig/vver/vflag/vmethod/vtime/vdate/Vcrc/Vcsize/Vusize/vnlen/velen', substr($data, $lo, 30));
         if (!$lh) return null;
         $start = $lo + 30 + (int)$lh['nlen'] + (int)$lh['elen'];
         $compressed = substr($data, $start, (int)$h['csize']);
-        if ((int)$h['method'] === 0) return $compressed;
+        if ((int)$h['method'] === 0) return strlen($compressed) <= $maxEntryBytes ? $compressed : null;
         if ((int)$h['method'] === 8) {
-            $out = @gzinflate($compressed);
-            return $out === false ? null : $out;
+            $out = @gzinflate($compressed, $maxEntryBytes + 1);
+            return ($out === false || strlen($out) > $maxEntryBytes) ? null : $out;
         }
         return null;
     }
@@ -4477,51 +4532,94 @@ function simple_zip_get_file(string $zipPath, string $entryName): ?string
 
 function xlsx_assoc_rows(string $path): array
 {
-    $get = function(string $name) use ($path): ?string {
+    $maxEntryBytes = 8 * 1024 * 1024;
+    $get = function(string $name) use ($path, $maxEntryBytes): ?string {
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive();
             if ($zip->open($path) === true) {
+                $stat = $zip->statName($name);
+                if (is_array($stat) && ((int)($stat['size'] ?? 0) > $maxEntryBytes || (int)($stat['comp_size'] ?? 0) > $maxEntryBytes)) {
+                    $zip->close();
+                    return null;
+                }
                 $xml = $zip->getFromName($name);
                 $zip->close();
-                return $xml === false ? null : $xml;
+                if ($xml === false || strlen($xml) > $maxEntryBytes) return null;
+                return $xml;
             }
         }
         return simple_zip_get_file($path, $name);
     };
-    $shared=[]; $sxml=$get('xl/sharedStrings.xml');
-    if ($sxml) {
-        $sx=@simplexml_load_string($sxml);
-        if ($sx) foreach($sx->si as $si){
-            $txt='';
-            if (isset($si->t)) $txt=(string)$si->t;
-            elseif (isset($si->r)) foreach($si->r as $r){ $txt.=(string)($r->t ?? ''); }
-            $shared[]=$txt;
+
+    $shared = [];
+    $sxml = $get('xl/sharedStrings.xml');
+    if ($sxml && preg_match_all('/<(?:[a-zA-Z0-9_]+:)?si\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?si>/si', $sxml, $siMatches)) {
+        foreach ($siMatches[1] as $block) {
+            $text = '';
+            if (preg_match_all('/<(?:[a-zA-Z0-9_]+:)?t\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?t>/si', $block, $textMatches)) {
+                foreach ($textMatches[1] as $part) $text .= html_entity_decode(strip_tags($part), ENT_QUOTES | ENT_XML1, 'UTF-8');
+            }
+            $shared[] = $text;
         }
     }
-    $xml=$get('xl/worksheets/sheet1.xml');
-    if(!$xml) return [];
-    $sx=@simplexml_load_string($xml); if(!$sx) return [];
-    $grid=[];
-    foreach($sx->sheetData->row as $row){
-        $line=[];
-        foreach($row->c as $c){
-            $r=(string)$c['r']; preg_match('/([A-Z]+)/',$r,$m); $col=0; foreach(str_split($m[1] ?? 'A') as $ch){$col=$col*26+ord($ch)-64;} $col--;
-            $type=(string)$c['t'];
-            $v='';
-            if($type==='s') { $idx=(int)($c->v ?? 0); $v=$shared[$idx] ?? ''; }
-            elseif($type==='inlineStr') { $v=(string)($c->is->t ?? ''); if($v==='' && isset($c->is->r)) foreach($c->is->r as $rr){$v.=(string)($rr->t ?? '');} }
-            else { $v=(string)($c->v ?? ''); }
-            $line[$col]=$v;
+
+    $xml = $get('xl/worksheets/sheet1.xml');
+    if (!$xml) return [];
+    if (!preg_match_all('/<(?:[a-zA-Z0-9_]+:)?row\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?row>/si', $xml, $rowMatches)) return [];
+
+    $grid = [];
+    foreach ($rowMatches[1] as $rowXml) {
+        $line = [];
+        if (!preg_match_all('/<(?:[a-zA-Z0-9_]+:)?c\b([^>]*)>(.*?)<\/(?:[a-zA-Z0-9_]+:)?c>/si', $rowXml, $cellMatches, PREG_SET_ORDER)) continue;
+        foreach ($cellMatches as $cell) {
+            $attrs = (string)($cell[1] ?? '');
+            $body = (string)($cell[2] ?? '');
+            if (!preg_match('/\br="([^"]+)"/i', $attrs, $refMatch)) continue;
+            $ref = strtoupper((string)$refMatch[1]);
+            if (!preg_match('/^([A-Z]+)/', $ref, $m)) continue;
+            $col = 0;
+            foreach (str_split($m[1]) as $ch) $col = ($col * 26) + ord($ch) - 64;
+            $col--;
+
+            $type = '';
+            if (preg_match('/\bt="([^"]+)"/i', $attrs, $typeMatch)) $type = (string)$typeMatch[1];
+            $value = '';
+            if ($type === 's') {
+                if (preg_match('/<(?:[a-zA-Z0-9_]+:)?v\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?v>/si', $body, $vMatch)) {
+                    $idx = (int)trim(strip_tags((string)$vMatch[1]));
+                    $value = (string)($shared[$idx] ?? '');
+                }
+            } elseif ($type === 'inlineStr') {
+                if (preg_match_all('/<(?:[a-zA-Z0-9_]+:)?t\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?t>/si', $body, $textMatches)) {
+                    foreach ($textMatches[1] as $part) $value .= html_entity_decode(strip_tags($part), ENT_QUOTES | ENT_XML1, 'UTF-8');
+                }
+            } elseif (preg_match('/<(?:[a-zA-Z0-9_]+:)?v\b[^>]*>(.*?)<\/(?:[a-zA-Z0-9_]+:)?v>/si', $body, $vMatch)) {
+                $value = html_entity_decode(strip_tags((string)$vMatch[1]), ENT_QUOTES | ENT_XML1, 'UTF-8');
+            }
+            $line[$col] = $value;
         }
-        if(count(array_filter($line, fn($v)=>trim((string)$v)!==''))>0) { ksort($line); $grid[]=array_values($line); }
+        if ($line && count(array_filter($line, static fn($v) => trim((string)$v) !== '')) > 0) $grid[] = $line;
     }
-    if(!$grid) return [];
-    $header=array_map(function($h){
-        $h = strtolower(trim((string)$h));
+    if (!$grid) return [];
+
+    $headerLine = array_shift($grid);
+    $maxHeaderCol = max(array_keys($headerLine));
+    $header = [];
+    for ($i = 0; $i <= $maxHeaderCol; $i++) {
+        $h = strtolower(trim((string)($headerLine[$i] ?? '')));
         $h = preg_replace('/[^a-z0-9_]+/', '_', $h);
-        return trim($h, '_');
-    }, array_shift($grid));
-    $rows=[]; foreach($grid as $data){ $row=[]; foreach($header as $i=>$h){ if($h==='') continue; $row[$h]=$data[$i]??'';} if($row) $rows[]=$row; }
+        $header[$i] = trim((string)$h, '_');
+    }
+
+    $rows = [];
+    foreach ($grid as $data) {
+        $row = [];
+        foreach ($header as $i => $h) {
+            if ($h === '') continue;
+            $row[$h] = (string)($data[$i] ?? '');
+        }
+        if (count(array_filter($row, static fn($v) => trim((string)$v) !== '')) > 0) $rows[] = $row;
+    }
     return $rows;
 }
 

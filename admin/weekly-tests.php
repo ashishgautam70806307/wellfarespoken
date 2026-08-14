@@ -1,5 +1,5 @@
 <?php
-$admin_page_final_styles = ['assets/css/phase159-admin-weekly-papers.css'];
+$admin_page_final_styles = ['assets/css/phase159-admin-weekly-papers.css','assets/css/phase168-weekly-admin-easy.css','assets/css/phase169-admin-usability.css'];
 require_once __DIR__ . '/_header.php';
 weekly_test_ensure_schema();
 
@@ -81,7 +81,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
         if ($action === 'upload_questions') {
             $testId=(int)($_POST['test_id']??0);
             if($testId<=0) weekly_admin_post_reply(false, 'Select test first');
-            if(empty($_FILES['file']['tmp_name'])) weekly_admin_post_reply(false, 'Upload CSV or XLSX file');
+            $uploadError=(int)($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);
+            if($uploadError!==UPLOAD_ERR_OK || empty($_FILES['file']['tmp_name'])){
+                $uploadMessage=$uploadError===UPLOAD_ERR_NO_FILE?'Choose an Excel (.xlsx) or CSV file first.':(($uploadError===UPLOAD_ERR_INI_SIZE || $uploadError===UPLOAD_ERR_FORM_SIZE)?'Question file is too large for this server. Try a smaller Excel/CSV file.':'Question file upload could not complete. Please select the file again.');
+                weekly_admin_post_reply(false, $uploadMessage);
+            }
+            if((int)($_FILES['file']['size'] ?? 0) > 10*1024*1024) weekly_admin_post_reply(false, 'Question file is too large. Maximum allowed here is 10 MB.');
             $fileName=(string)($_FILES['file']['name'] ?? '');
             $ext=strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             if(!in_array($ext, ['csv','txt','xlsx'], true)) weekly_admin_post_reply(false, 'Please upload CSV or XLSX only. If your file is XLS, Save As CSV or XLSX.');
@@ -95,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
             $testId=(int)($_POST['test_id']??0);
             if($testId<=0) weekly_admin_post_reply(false, 'Select test first');
             db()->prepare("UPDATE weekly_test_questions SET status_deleted=1, deleted_at=NOW() WHERE test_id=?")->execute([$testId]);
+            weekly_test_sync_question_totals($testId);
             weekly_admin_post_reply(true, 'Questions cleared', ['test_id'=>$testId]);
         }
         if ($action === 'save_question') {
@@ -117,11 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
                 db()->prepare("INSERT INTO weekly_test_questions (test_id,question_type,topic_name,level,question_text,expected_answer,option_a,option_b,option_c,option_d,marks,sort_order,published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
                   ->execute([$testId,$type,$topic,$level,$question,$expected,$opts[0],$opts[1],$opts[2],$opts[3],$marks,$order,$published]);
             }
+            weekly_test_sync_question_totals($testId);
             weekly_admin_post_reply(true, 'Question saved', ['test_id'=>$testId]);
         }
         if ($action === 'delete_question') {
             $id=(int)($_POST['id']??0); $testId=(int)($_POST['test_id']??0);
+            if($testId<=0){ $qs=db()->prepare("SELECT test_id FROM weekly_test_questions WHERE id=? LIMIT 1"); $qs->execute([$id]); $testId=(int)($qs->fetchColumn()?:0); }
             db()->prepare("UPDATE weekly_test_questions SET status_deleted=1, deleted_at=NOW() WHERE id=?")->execute([$id]);
+            if($testId>0) weekly_test_sync_question_totals($testId);
             weekly_admin_post_reply(true, 'Question deleted', ['test_id'=>$testId]);
         }
         if ($action === 'grade_attempt') {
@@ -190,6 +199,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             flash('success', count($ids) . ' question(s) deactivated.');
         } else {
             flash('error', 'Choose a valid bulk action.');
+        }
+        if ($testIdReturn > 0 && in_array($bulkAction, ['delete', 'activate', 'deactivate'], true)) {
+            weekly_test_sync_question_totals($testIdReturn);
         }
         weekly_admin_redirect_with_selected($testIdReturn);
     }
@@ -499,34 +511,6 @@ function weekly_admin_sample_link(string $type): string {
   </div>
 </div>
 
-<details class="admin-card weekly-guide" open>
-  <summary>How to manage weekly tests in 3 simple steps</summary>
-  <div class="weekly-guide-grid">
-    <div><b>1. Create Test</b><span>Create/select Basic, Previous or Upcoming paper and set its schedule/status.</span></div>
-    <div><b>2. Add Questions</b><span>Upload CSV/XLSX in the exact importer format, or add questions manually if you do not have Excel.</span></div>
-    <div><b>3. Review & Release</b><span>Check student copies. Upcoming master answers stay locked until the window ends/finalizes, or Admin safely releases the answer key after entry closes.</span></div>
-  </div>
-  <div class="excel-format-box weekly-format wf166-format-guide">
-    <div class="wf166-format-title"><div><b>Exact CSV / Excel importer format</b><span>First sheet / first row must use these column names.</span></div><a class="btn btn-primary btn-sm" href="../assets/downloads/weekly_test_upload_template.xlsx" download><i class="fa-solid fa-file-excel"></i> Blank Excel Template</a></div>
-    <code>question_text, expected_answer, question_type, topic_name, level, marks, option_a, option_b, option_c, option_d</code>
-    <div class="wf166-format-rules">
-      <span><b>question_text</b> — required</span>
-      <span><b>expected_answer</b> — fill for auto-check + result answer key</span>
-      <span><b>question_type</b> — hindi_to_english / english_to_hindi / correction / short_answer / mcq</span>
-      <span><b>topic_name + level</b> — Admin metadata only; student paper/result does not reveal these hints</span>
-      <span><b>marks</b> — default 1</span>
-      <span><b>option_a...option_d</b> — only needed for MCQ</span>
-    </div>
-    <p>Multiple accepted answers: separate valid answers with <b>||</b>. Example: <code>I cannot go || I can't go</code>.</p>
-    <div class="sample-links wf166-template-actions">
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Basic CSV Example</a>
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Previous CSV Example</a>
-      <a class="btn btn-soft btn-sm" href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Upcoming CSV Example</a>
-      <a class="btn btn-gold btn-sm" href="#manual-question-editor"><i class="fa-solid fa-keyboard"></i> No Excel? Add Manually</a>
-    </div>
-  </div>
-</details>
-
 <div id="setup" class="admin-grid two-cols weekly-admin-grid weekly-compact-grid">
   <div class="admin-card">
     <h2>Test Setup</h2>
@@ -539,7 +523,7 @@ function weekly_admin_sample_link(string $type): string {
     ?>
     <div class="paper-publish-panel <?= $selectedReadyReason === 'ready' ? 'ready' : 'pending' ?>">
       <div><span>Selected Paper</span><b><?= e($selectedTest['title'] ?? 'No paper selected') ?></b><small><?= e($typeLabel[$selectedType] ?? 'Test') ?> • <?= e((string)$selectedQuestionCount) ?> active question(s)</small></div>
-      <div><span>Student Status</span><b><?= e($selectedReadyLabel) ?></b><small>Paper + questions dono Published hone chahiye. Publish Now se schedule block clear hota hai.</small></div>
+      <div><span>Student Status</span><b><?= e($selectedReadyLabel) ?></b><small>Questions add karne ke baad Publish Now dabayen. Manual mode me bas Close Entry se test band hoga.</small></div>
       <form class="ajax-admin-form inline-paper-action" action="weekly-test-ajax.php" method="post">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>">
         <button class="btn btn-primary" type="submit">Publish Now</button><span class="ajax-msg"></span>
@@ -549,57 +533,106 @@ function weekly_admin_sample_link(string $type): string {
         <button class="btn btn-soft" type="submit"><?= $selectedType==='upcoming' ? 'Close Entry' : 'Set Pending' ?></button><span class="ajax-msg"></span>
       </form>
     </div>
-    <div class="weekly-test-active-helper">Delete button paper ko 15 din ke liye hide/archive karega, direct permanent delete nahi karega.<br>Frontend start ke liye <b>Paper Published / Active</b>, <b>Active Questions</b> aur <b>schedule open</b> required hai. Upcoming Test ka batch reporting/offline paper ke liye use hota hai; strict student-to-batch access sirf optional strict mode me enforce hota hai. <b>Publish Now</b> selected paper ko turant open karta hai. Upcoming me <b>Close Entry</b> new starts rokta hai; checked copies complete hone ke baad <b>Finalize Top 3</b> karein.</div>
-    <form class="ajax-admin-form form-grid compact-admin-form" action="weekly-test-ajax.php" method="post">
+    <div class="weekly-test-active-helper"><b>Easy Upcoming flow:</b> Save Test → Upload Questions → Publish Now → students take the test → Close Entry → check copies → Finalize Top 3. Use automatic schedule only when you really need a fixed opening time.</div>
+    <form class="ajax-admin-form wf168-test-setup-form" action="weekly-test-ajax.php" method="post" data-weekly-test-setup="1">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="save_test">
-      <label>Existing Test
-        <select name="id" id="weeklyEditSelect">
-          <option value="0">Create new test</option>
-          <?php foreach(($testsByType[$selectedType] ?? []) as $t): ?>
-            <option value="<?= e((string)$t['id']) ?>" <?= (int)$t['id']===$selectedTestId?'selected':'' ?> data-title="<?= e($t['title']) ?>" data-type="<?= e($t['test_type']) ?>" data-status="<?= e($t['status']) ?>" data-login="<?= e($t['requires_login']) ?>" data-duration="<?= e((string)$t['duration_minutes']) ?>" data-questions="<?= e((string)$t['total_questions']) ?>" data-marks="<?= e((string)$t['total_marks']) ?>" data-shuffle-q="<?= e($t['shuffle_questions'] ?? 'Yes') ?>" data-shuffle-o="<?= e($t['shuffle_options'] ?? 'Yes') ?>" data-warning-limit="<?= e((string)($t['warning_limit'] ?? 3)) ?>" data-penalty-after="<?= e($t['penalty_after_warnings'] ?? 'Yes') ?>" data-penalty-per="<?= e((string)($t['penalty_per_warning'] ?? 1)) ?>" data-strict-mode="<?= e($t['strict_exam_mode'] ?? 'Yes') ?>" data-auto-submit-warn="<?= e($t['auto_submit_on_warning_limit'] ?? 'Yes') ?>" data-allow-jump="<?= e($t['allow_question_jump'] ?? 'Yes') ?>" data-starts-at="<?= e(!empty($t['starts_at']) ? date('Y-m-d\TH:i', strtotime($t['starts_at'])) : '') ?>" data-ends-at="<?= e(!empty($t['ends_at']) ? date('Y-m-d\TH:i', strtotime($t['ends_at'])) : '') ?>" data-batch-id="<?= e((string)($t['batch_id'] ?? 0)) ?>" data-batch-label="<?= e($t['batch_label'] ?? '') ?>" data-instructions="<?= e($t['instructions'] ?? '') ?>"><?= e($t['title']) ?></option>
-          <?php endforeach; ?>
-        </select>
-      </label>
-      <label>Title <input name="title" id="testTitle" value="<?= e($selectedTest['title'] ?? '') ?>" placeholder="Example: Week 5 - Can Could Practice" required></label>
-      <label>Type <select name="test_type" id="testType"><option value="basic" <?= $selectedType==='basic'?'selected':'' ?>>Basic Test</option><option value="previous" <?= $selectedType==='previous'?'selected':'' ?>>Previous Test</option><option value="upcoming" <?= $selectedType==='upcoming'?'selected':'' ?>>Upcoming Test</option></select></label>
-      <label>Batch / Group <select name="batch_id" id="testBatchId"><option value="0">All batches / common test</option><?php foreach($weeklyBatches as $b): ?><option value="<?= e((string)$b['id']) ?>"><?= e($b['batch_name']) ?><?= !empty($b['timing']) ? ' • '.e($b['timing']) : '' ?></option><?php endforeach; ?></select></label>
-      <label>Batch Label <input name="batch_label" id="testBatchLabel" placeholder="Example: Morning Batch / Batch A"></label>
-      <label>Paper Status <select name="status" id="testStatus"><option value="draft">Pending / Draft</option><option value="active">Published / Active</option><option value="archived">Archived</option></select></label>
-      <label>Available From <input name="starts_at" id="testStartsAt" type="datetime-local"></label>
-      <label>Available Until <input name="ends_at" id="testEndsAt" type="datetime-local"></label>
-      <label>Login Required <select name="requires_login" id="testLogin"><option>No</option><option>Yes</option></select></label>
-      <label>Duration <input name="duration_minutes" id="testDuration" type="number" value="10" min="1" max="240"></label>
-      <label>Total Questions <input name="total_questions" id="testQuestions" type="number" value="10" min="1" max="200"></label>
-      <label>Total Marks <input name="total_marks" id="testMarks" type="number" value="10" min="1"></label>
-      <label>Shuffle Questions <select name="shuffle_questions" id="testShuffleQ"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label>Shuffle Options <select name="shuffle_options" id="testShuffleO"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label>Warning Limit <input name="warning_limit" id="testWarningLimit" type="number" value="3" min="1" max="20"></label>
-      <label>Penalty After Warnings <select name="penalty_after_warnings" id="testPenaltyAfter"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label>Penalty Per Warning <input name="penalty_per_warning" id="testPenaltyPer" type="number" step="0.25" value="1" min="0" max="20"></label>
-      <label>Strict Browser Mode <select name="strict_exam_mode" id="testStrictMode"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label>Auto Submit At Warning Limit <select name="auto_submit_on_warning_limit" id="testAutoSubmitWarn"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label>Allow Question Jump <select name="allow_question_jump" id="testAllowJump"><option value="Yes">Yes</option><option value="No">No</option></select></label>
-      <label class="full">Instructions <textarea name="instructions" id="testInstructions" rows="2" placeholder="Write short rules for students..."><?= e($selectedTest['instructions'] ?? '') ?></textarea></label>
-      <button class="btn btn-primary" type="submit">Save Test</button><span class="ajax-msg"></span>
+      <input type="hidden" name="starts_at" id="testStartsAt" value="<?= e(!empty($selectedTest['starts_at']) ? date('Y-m-d\TH:i', strtotime($selectedTest['starts_at'])) : '') ?>">
+      <input type="hidden" name="ends_at" id="testEndsAt" value="<?= e(!empty($selectedTest['ends_at']) ? date('Y-m-d\TH:i', strtotime($selectedTest['ends_at'])) : '') ?>">
+
+      <div class="wf168-section-head">
+        <div><span class="wf168-step-no">1</span><div><h3>Basic Test Details</h3><p>Normal setup ke liye sirf ye fields enough hain.</p></div></div>
+      </div>
+      <div class="wf168-simple-grid">
+        <label class="full">Existing Test
+          <select name="id" id="weeklyEditSelect">
+            <option value="0">Create new test</option>
+            <?php foreach(($testsByType[$selectedType] ?? []) as $t): ?>
+              <option value="<?= e((string)$t['id']) ?>" <?= (int)$t['id']===$selectedTestId?'selected':'' ?> data-title="<?= e($t['title']) ?>" data-type="<?= e($t['test_type']) ?>" data-status="<?= e($t['status']) ?>" data-login="<?= e($t['requires_login']) ?>" data-duration="<?= e((string)$t['duration_minutes']) ?>" data-questions="<?= e((string)$t['total_questions']) ?>" data-marks="<?= e((string)$t['total_marks']) ?>" data-shuffle-q="<?= e($t['shuffle_questions'] ?? 'Yes') ?>" data-shuffle-o="<?= e($t['shuffle_options'] ?? 'Yes') ?>" data-warning-limit="<?= e((string)($t['warning_limit'] ?? 3)) ?>" data-penalty-after="<?= e($t['penalty_after_warnings'] ?? 'Yes') ?>" data-penalty-per="<?= e((string)($t['penalty_per_warning'] ?? 1)) ?>" data-strict-mode="<?= e($t['strict_exam_mode'] ?? 'Yes') ?>" data-auto-submit-warn="<?= e($t['auto_submit_on_warning_limit'] ?? 'Yes') ?>" data-allow-jump="<?= e($t['allow_question_jump'] ?? 'Yes') ?>" data-starts-at="<?= e(!empty($t['starts_at']) ? date('Y-m-d\TH:i', strtotime($t['starts_at'])) : '') ?>" data-ends-at="<?= e(!empty($t['ends_at']) ? date('Y-m-d\TH:i', strtotime($t['ends_at'])) : '') ?>" data-batch-id="<?= e((string)($t['batch_id'] ?? 0)) ?>" data-batch-label="<?= e($t['batch_label'] ?? '') ?>" data-instructions="<?= e($t['instructions'] ?? '') ?>"><?= e($t['title']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label class="full">Test Title <input name="title" id="testTitle" value="<?= e($selectedTest['title'] ?? '') ?>" placeholder="Example: Week 5 - Present Simple Test" required></label>
+        <label>Batch / Group
+          <select name="batch_id" id="testBatchId"><option value="0">All batches / common test</option><?php foreach($weeklyBatches as $b): ?><option value="<?= e((string)$b['id']) ?>"><?= e($b['batch_name']) ?><?= !empty($b['timing']) ? ' • '.e($b['timing']) : '' ?></option><?php endforeach; ?></select>
+          <small class="wf168-field-help">Batch missing? <a href="batches.php" target="_blank">Create Batch</a></small>
+        </label>
+        <label>Exam Time (minutes) <input name="duration_minutes" id="testDuration" type="number" value="<?= e((string)($selectedTest['duration_minutes'] ?? 30)) ?>" min="1" max="240" inputmode="numeric"></label>
+      </div>
+
+      <div class="wf168-schedule-card">
+        <div class="wf168-schedule-head"><div><span class="wf168-step-no">2</span><div><h3>When can students start?</h3><p>Manual mode recommended hai — end time calculate karne ki zarurat nahi.</p></div></div></div>
+        <div class="wf168-access-choice" role="radiogroup" aria-label="Test opening method">
+          <label><input type="radio" name="easy_schedule_mode" value="manual" id="testScheduleManual" checked><span><i class="fa-solid fa-hand-pointer"></i><b>Manual Open / Close</b><small>Save → Upload → Publish Now → Close Entry</small></span></label>
+          <label><input type="radio" name="easy_schedule_mode" value="scheduled" id="testScheduleAuto"><span><i class="fa-regular fa-calendar-days"></i><b>Schedule Automatically</b><small>Choose date, start time and entry window</small></span></label>
+        </div>
+        <div class="wf168-schedule-fields" id="testScheduleFields" hidden>
+          <label>Test Date <input type="date" id="testEasyDate"></label>
+          <label>Start Time
+            <div class="wf168-time-parts">
+              <select id="testEasyHour" aria-label="Start hour"><option value="">Hour</option><?php for($h=1;$h<=12;$h++): ?><option value="<?= e((string)$h) ?>"><?= e((string)$h) ?></option><?php endfor; ?></select>
+              <select id="testEasyMinute" aria-label="Start minute"><option value="">Min</option><?php foreach(['00','15','30','45'] as $m): ?><option value="<?= e($m) ?>"><?= e($m) ?></option><?php endforeach; ?></select>
+              <select id="testEasyAmPm" aria-label="AM or PM"><option value="AM">AM</option><option value="PM">PM</option></select>
+            </div>
+            <small class="wf168-field-help">Simple 12-hour time. Example: 7 : 30 PM</small>
+          </label>
+          <label>Students can start for
+            <select id="testEasyWindow">
+              <option value="30">30 minutes</option>
+              <option value="60" selected>1 hour</option>
+              <option value="120">2 hours</option>
+              <option value="240">4 hours</option>
+              <option value="480">8 hours</option>
+              <option value="eod">Until 11:59 PM</option>
+              <option value="none">Until Admin closes entry</option>
+            </select>
+          </label>
+        </div>
+        <div class="wf168-schedule-summary" id="testScheduleSummary"><i class="fa-solid fa-circle-check"></i><span><b>Manual mode:</b> Save the paper, upload questions, then press Publish Now whenever students should start.</span></div>
+      </div>
+
+      <label class="wf168-full-label">Instructions <textarea name="instructions" id="testInstructions" rows="2" placeholder="Optional: Write short rules for students..."><?= e($selectedTest['instructions'] ?? '') ?></textarea></label>
+
+      <details class="wf168-advanced-box">
+        <summary><i class="fa-solid fa-sliders"></i> Advanced Test Settings <span>optional</span></summary>
+        <div class="wf168-simple-grid">
+          <label>Test Type <select name="test_type" id="testType"><option value="basic" <?= $selectedType==='basic'?'selected':'' ?>>Basic Test</option><option value="previous" <?= $selectedType==='previous'?'selected':'' ?>>Previous Test</option><option value="upcoming" <?= $selectedType==='upcoming'?'selected':'' ?>>Upcoming Test</option></select></label>
+          <label>Current Status <select name="status" id="testStatus"><option value="draft">Pending / Draft</option><option value="active">Published / Active</option><option value="archived">Archived</option></select></label>
+          <label>Login Required <select name="requires_login" id="testLogin"><option>No</option><option>Yes</option></select></label>
+          <label>Batch Label <input name="batch_label" id="testBatchLabel" placeholder="Optional custom batch label"></label>
+          <label>Total Questions <input name="total_questions" id="testQuestions" type="number" value="<?= e((string)($selectedTest['total_questions'] ?? 10)) ?>" min="1" max="200"><small class="wf168-field-help">Auto-updated after question upload.</small></label>
+          <label>Total Marks <input name="total_marks" id="testMarks" type="number" value="<?= e((string)($selectedTest['total_marks'] ?? 10)) ?>" min="1"><small class="wf168-field-help">Auto-updated after question upload.</small></label>
+          <label>Shuffle Questions <select name="shuffle_questions" id="testShuffleQ"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+          <label>Shuffle Options <select name="shuffle_options" id="testShuffleO"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+          <label>Warning Limit <input name="warning_limit" id="testWarningLimit" type="number" value="3" min="1" max="20"></label>
+          <label>Penalty After Warnings <select name="penalty_after_warnings" id="testPenaltyAfter"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+          <label>Penalty Per Warning <input name="penalty_per_warning" id="testPenaltyPer" type="number" step="0.25" value="1" min="0" max="20"></label>
+          <label>Strict Browser Mode <select name="strict_exam_mode" id="testStrictMode"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+          <label>Auto Submit At Warning Limit <select name="auto_submit_on_warning_limit" id="testAutoSubmitWarn"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+          <label>Allow Question Jump <select name="allow_question_jump" id="testAllowJump"><option value="Yes">Yes</option><option value="No">No</option></select></label>
+        </div>
+      </details>
+
+      <div class="wf168-form-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Test</button><span class="ajax-msg"></span></div>
     </form>
   </div>
 
   <div class="admin-card" id="answer-sheet">
-    <h2>Upload Questions / Answer Sheet</h2>
-    <p class="muted small">Choose the exact paper and upload the universal template. If you do not have Excel, use <b>Add Question Manually</b> below—both methods save into the same Question Bank.</p>
+    <div class="wf168-section-head"><div><span class="wf168-step-no">3</span><div><h2>Upload Questions</h2><p>Download the sample, replace the 3 example rows with your own questions, then upload it.</p></div></div></div>
     <div class="wf166-upload-help">
-      <a class="btn btn-primary btn-sm" href="../assets/downloads/weekly_test_upload_template.xlsx" download><i class="fa-solid fa-file-excel"></i> Download Blank Excel Template</a>
+      <a class="btn btn-primary btn-sm" href="../assets/downloads/weekly_test_upload_template.xlsx" download><i class="fa-solid fa-file-excel"></i> Download Sample Excel (3 Examples)</a>
+      <a class="btn btn-soft btn-sm" href="../assets/downloads/weekly_test_upload_blank.xlsx" download><i class="fa-regular fa-file-excel"></i> Blank Excel</a>
       <a class="btn btn-soft btn-sm" href="#manual-question-editor"><i class="fa-solid fa-keyboard"></i> Add Question Manually</a>
-      <small>For automatic marking and post-test answers, fill <b>expected_answer</b>. Use <b>||</b> for multiple accepted answers.</small>
+      <small><b>Easy rule:</b> Do not change the header row. question_text is required. expected_answer is recommended. Fill option_a–option_d only for MCQ.</small>
     </div>
     <form class="ajax-admin-form form-stack compact-upload-form" action="weekly-test-ajax.php" method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="action" value="upload_questions">
       <label>Select Test <select name="test_id" required><?php foreach(($testsByType[$selectedType] ?? []) as $t): ?><option value="<?= e((string)$t['id']) ?>" <?= (int)$t['id']===$selectedTestId?'selected':'' ?>><?= e($t['title']) ?></option><?php endforeach; ?></select></label>
-      <label>CSV / XLSX File <input type="file" name="file" accept=".csv,.xlsx,.txt" required></label>
+      <label>Choose your Question File <input type="file" name="file" accept=".csv,.xlsx,.txt" required><small class="wf168-field-help">Supported: Excel .xlsx or CSV. The importer reads the first sheet.</small></label>
       <div class="sample-links">
-        <a href="../assets/downloads/weekly_test_upload_template.xlsx" download>Blank Excel template</a>
+        <a href="../assets/downloads/weekly_test_upload_template.xlsx" download>Excel sample (3 examples)</a>
+        <a href="../assets/downloads/weekly_test_upload_blank.xlsx" download>Blank Excel</a>
         <a href="<?= e(weekly_admin_sample_link('basic')) ?>" download>Basic CSV example</a>
         <a href="<?= e(weekly_admin_sample_link('previous')) ?>" download>Previous CSV example</a>
         <a href="<?= e(weekly_admin_sample_link('upcoming')) ?>" download>Upcoming CSV example</a>
@@ -688,22 +721,25 @@ function weekly_admin_sample_link(string $type): string {
   <div class="student-copy-grid">
     <?php if(!$studentCards): ?><p class="muted">No student submissions yet.</p><?php endif; ?>
     <?php foreach($studentCards as $s): $phone=(string)($s['phone_display'] ?? ''); $key=(string)($s['phone_key'] ?? ''); ?>
-      <a class="student-copy-card" href="weekly-student-record.php?<?= $phone!=='' ? 'phone='.urlencode($phone) : 'key='.urlencode($key) ?>&type=<?= e(urlencode($aType === 'all' ? '' : $aType)) ?>">
-        <div class="student-copy-head"><span><?= e(strtoupper(mb_substr($s['display_name'] ?? 'G',0,1))) ?></span><div><b><?= e($s['display_name']) ?></b><small><?= e($phone ?: $key) ?></small></div></div>
+      <a class="student-copy-card wf169-copy-card" href="weekly-student-record.php?<?= $phone!=='' ? 'phone='.urlencode($phone) : 'key='.urlencode($key) ?>&type=<?= e(urlencode($aType === 'all' ? '' : $aType)) ?>">
+        <div class="wf169-copy-top">
+          <div class="student-copy-head"><span><?= e(strtoupper(mb_substr($s['display_name'] ?? 'G',0,1))) ?></span><div><b><?= e($s['display_name']) ?></b><small><?= e($phone ?: $key) ?></small></div></div>
+          <span class="wf169-copy-scope"><?= e($aType !== 'all' ? ($typeLabel[$aType] ?? 'Selected') : 'All Tests') ?></span>
+        </div>
         <div class="student-copy-stats <?= $aType !== 'all' ? 'single-scope' : '' ?>">
           <?php if($aType !== 'all'): ?>
-            <em><?= e($typeLabel[$aType] ?? 'Selected') ?> <?= e((string)$s['total_attempts']) ?></em>
-            <em>Pending <?= e((string)$s['pending_count']) ?></em>
-            <em>Checked <?= e((string)$s['checked_count']) ?></em>
-            <em>Warnings <?= e((string)$s['warning_total']) ?></em>
+            <em><b><?= e((string)$s['total_attempts']) ?></b><span>Copies</span></em>
+            <em><b><?= e((string)$s['pending_count']) ?></b><span>Pending</span></em>
+            <em><b><?= e((string)$s['checked_count']) ?></b><span>Checked</span></em>
+            <em><b><?= e((string)$s['warning_total']) ?></b><span>Warnings</span></em>
           <?php else: ?>
-            <em>Total <?= e((string)$s['total_attempts']) ?></em>
-            <em>Basic <?= e((string)$s['basic_count']) ?></em>
-            <em>Previous <?= e((string)$s['previous_count']) ?></em>
-            <em>Upcoming <?= e((string)$s['upcoming_count']) ?></em>
+            <em><b><?= e((string)$s['total_attempts']) ?></b><span>Total</span></em>
+            <em><b><?= e((string)$s['basic_count']) ?></b><span>Basic</span></em>
+            <em><b><?= e((string)$s['previous_count']) ?></b><span>Previous</span></em>
+            <em><b><?= e((string)$s['upcoming_count']) ?></b><span>Upcoming</span></em>
           <?php endif; ?>
         </div>
-        <p>Last activity: <?= e((string)$s['last_activity']) ?></p>
+        <div class="wf169-copy-footer"><span><i class="fa-regular fa-clock"></i> <?= e((string)$s['last_activity']) ?></span><strong>Open Copies <i class="fa-solid fa-arrow-right"></i></strong></div>
       </a>
     <?php endforeach; ?>
   </div>
@@ -747,16 +783,94 @@ function weekly_admin_sample_link(string $type): string {
 <script>
 (function(){
  const sel=document.getElementById('weeklyEditSelect');
+ const pageType=<?= json_encode($selectedType, JSON_UNESCAPED_SLASHES) ?>;
+ const scheduleFields=document.getElementById('testScheduleFields');
+ const scheduleSummary=document.getElementById('testScheduleSummary');
+ const scheduleManual=document.getElementById('testScheduleManual');
+ const scheduleAuto=document.getElementById('testScheduleAuto');
+ const easyDate=document.getElementById('testEasyDate');
+ const easyHour=document.getElementById('testEasyHour');
+ const easyMinute=document.getElementById('testEasyMinute');
+ const easyAmPm=document.getElementById('testEasyAmPm');
+ const easyWindow=document.getElementById('testEasyWindow');
+ const startsInput=document.getElementById('testStartsAt');
+ const endsInput=document.getElementById('testEndsAt');
+
+ function setTimeParts(time){
+   if(!easyHour || !easyMinute || !easyAmPm) return;
+   if(!time){ easyHour.value=''; easyMinute.value=''; easyAmPm.value='AM'; return; }
+   const h24=parseInt(time.slice(0,2),10), minute=time.slice(3,5);
+   const hour12=((h24+11)%12)+1;
+   if(!Array.from(easyMinute.options).some(o=>o.value===minute)) easyMinute.add(new Option(minute+' (saved)',minute));
+   easyHour.value=String(hour12); easyMinute.value=minute; easyAmPm.value=h24>=12?'PM':'AM';
+ }
+
+ function timeFromParts(){
+   if(!easyHour || !easyMinute || !easyAmPm || !easyHour.value || !easyMinute.value) return '';
+   let h=parseInt(easyHour.value,10)%12;
+   if(easyAmPm.value==='PM') h+=12;
+   return String(h).padStart(2,'0')+':'+easyMinute.value;
+ }
+
+ function formatSavedSchedule(starts, ends){
+   if(!starts){
+     scheduleManual.checked=true; scheduleAuto.checked=false; scheduleFields.hidden=true;
+     if(easyDate) easyDate.value=''; setTimeParts(''); if(easyWindow) easyWindow.value='60';
+     scheduleSummary.innerHTML='<i class="fa-solid fa-circle-check"></i><span><b>Manual mode:</b> Save the paper, upload questions, then press Publish Now whenever students should start.</span>';
+     return;
+   }
+   scheduleAuto.checked=true; scheduleManual.checked=false; scheduleFields.hidden=false;
+   const date=starts.slice(0,10), time=starts.slice(11,16);
+   easyDate.value=date;
+   setTimeParts(time);
+   let windowValue='none';
+   if(ends){
+     if(ends.slice(0,10)===date && ends.slice(11,16)==='23:59') windowValue='eod';
+     else {
+       const diff=Math.round((new Date(ends+':00').getTime()-new Date(starts+':00').getTime())/60000);
+       if(diff>0){
+         windowValue=String(diff);
+         if(!Array.from(easyWindow.options).some(o=>o.value===windowValue)) easyWindow.add(new Option(diff+' minutes (saved)',windowValue));
+       }
+     }
+   }
+   easyWindow.value=windowValue;
+   scheduleSummary.innerHTML='<i class="fa-regular fa-calendar-check"></i><span><b>Scheduled:</b> Students can start from the selected date/time. Entry closes automatically from the window below.</span>';
+ }
+
+ function syncSchedule(){
+   if(!startsInput || !endsInput) return true;
+   if(scheduleManual.checked){ startsInput.value=''; endsInput.value=''; return true; }
+   const easyTime=timeFromParts();
+   if(!easyDate.value || !easyTime){
+     const target=!easyDate.value?easyDate:(!easyHour.value?easyHour:easyMinute);
+     if(target) target.focus();
+     if(window.AppUI) window.AppUI.toast('error','Choose Test Date and Start Time.'); else alert('Choose Test Date and Start Time.');
+     return false;
+   }
+   const starts=easyDate.value+'T'+easyTime;
+   startsInput.value=starts;
+   if(easyWindow.value==='none') endsInput.value='';
+   else if(easyWindow.value==='eod') endsInput.value=easyDate.value+'T23:59';
+   else {
+     const d=new Date(starts+':00'); d.setMinutes(d.getMinutes()+parseInt(easyWindow.value||'60',10));
+     const pad=n=>String(n).padStart(2,'0');
+     endsInput.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+   }
+   const status=document.getElementById('testStatus');
+   if(status && status.value==='draft') status.value='active';
+   return true;
+ }
+
  function fill(o){
    if(!o) return;
    document.getElementById('testTitle').value=o.dataset.title||'';
-   document.getElementById('testType').value=o.dataset.type||'basic';
+   document.getElementById('testType').value=o.dataset.type||pageType||'basic';
    document.getElementById('testStatus').value=o.dataset.status||'draft';
-   document.getElementById('testLogin').value=o.dataset.login||'No';
-   document.getElementById('testDuration').value=o.dataset.duration||10;
+   document.getElementById('testLogin').value=o.dataset.login||((o.dataset.type||pageType)==='upcoming'?'Yes':'No');
+   document.getElementById('testDuration').value=o.dataset.duration||30;
    document.getElementById('testQuestions').value=o.dataset.questions||10;
    document.getElementById('testMarks').value=o.dataset.marks||10;
-   ['testShuffleQ','testShuffleO','testPenaltyAfter','testStrictMode','testAutoSubmitWarn','testAllowJump'].forEach(id=>{const el=document.getElementById(id); if(el){ const key=id.replace('test','').replace(/[A-Z]/g,m=>'-'+m.toLowerCase()).replace(/^-/, ''); }});
    if(document.getElementById('testShuffleQ')) document.getElementById('testShuffleQ').value=o.dataset.shuffleQ||'Yes';
    if(document.getElementById('testShuffleO')) document.getElementById('testShuffleO').value=o.dataset.shuffleO||'Yes';
    if(document.getElementById('testWarningLimit')) document.getElementById('testWarningLimit').value=o.dataset.warningLimit||3;
@@ -765,21 +879,51 @@ function weekly_admin_sample_link(string $type): string {
    if(document.getElementById('testStrictMode')) document.getElementById('testStrictMode').value=o.dataset.strictMode||'Yes';
    if(document.getElementById('testAutoSubmitWarn')) document.getElementById('testAutoSubmitWarn').value=o.dataset.autoSubmitWarn||'Yes';
    if(document.getElementById('testAllowJump')) document.getElementById('testAllowJump').value=o.dataset.allowJump||'Yes';
-   if(document.getElementById('testStartsAt')){ const el=document.getElementById('testStartsAt'); el.value=o.dataset.startsAt||''; el.dispatchEvent(new Event('wf-native-value-changed')); }
-   if(document.getElementById('testEndsAt')){ const el=document.getElementById('testEndsAt'); el.value=o.dataset.endsAt||''; el.dispatchEvent(new Event('wf-native-value-changed')); }
+   if(startsInput) startsInput.value=o.dataset.startsAt||'';
+   if(endsInput) endsInput.value=o.dataset.endsAt||'';
    if(document.getElementById('testBatchId')) document.getElementById('testBatchId').value=o.dataset.batchId||'0';
    if(document.getElementById('testBatchLabel')) document.getElementById('testBatchLabel').value=o.dataset.batchLabel||'';
    document.getElementById('testInstructions').value=o.dataset.instructions||'';
+   formatSavedSchedule(o.dataset.startsAt||'',o.dataset.endsAt||'');
  }
- if(sel){ sel.addEventListener('change',()=>{const o=sel.selectedOptions[0]; if(o&&o.value!=='0') fill(o);}); if(sel.selectedOptions[0] && sel.selectedOptions[0].value!=='0') fill(sel.selectedOptions[0]); }
+
+ function resetNew(){
+   document.getElementById('testTitle').value='';
+   document.getElementById('testType').value=pageType||'basic';
+   document.getElementById('testStatus').value='draft';
+   document.getElementById('testLogin').value=pageType==='upcoming'?'Yes':'No';
+   document.getElementById('testDuration').value=30;
+   document.getElementById('testQuestions').value=10;
+   document.getElementById('testMarks').value=10;
+   if(document.getElementById('testBatchId')) document.getElementById('testBatchId').value='0';
+   if(document.getElementById('testBatchLabel')) document.getElementById('testBatchLabel').value='';
+   document.getElementById('testInstructions').value='';
+   formatSavedSchedule('','');
+ }
+
+ if(sel){
+   sel.addEventListener('change',()=>{const o=sel.selectedOptions[0]; if(o&&o.value!=='0') fill(o); else resetNew();});
+   if(sel.selectedOptions[0] && sel.selectedOptions[0].value!=='0') fill(sel.selectedOptions[0]); else resetNew();
+ }
+ [scheduleManual,scheduleAuto].forEach(el=>el&&el.addEventListener('change',()=>{
+   scheduleFields.hidden=scheduleManual.checked;
+   if(scheduleManual.checked) scheduleSummary.innerHTML='<i class="fa-solid fa-circle-check"></i><span><b>Manual mode:</b> Save → Upload Questions → Publish Now → Close Entry.</span>';
+   else scheduleSummary.innerHTML='<i class="fa-regular fa-calendar-check"></i><span><b>Scheduled mode:</b> Choose the date, start time and how long entry stays open.</span>';
+ }));
+
  document.querySelectorAll('.ajax-admin-form').forEach(form=>{
    form.addEventListener('submit',e=>{
      e.preventDefault();
-     const msg=form.querySelector('.ajax-msg'); if(msg){msg.textContent='Saving...'; msg.className='ajax-msg';}
+     const confirmText=form.dataset.confirm||'';
+     if(confirmText && !window.confirm(confirmText)) return;
+     if(form.dataset.weeklyTestSetup==='1' && !syncSchedule()) return;
+     const msg=form.querySelector('.ajax-msg');
+     const action=form.querySelector('input[name="action"]')?.value||'';
+     if(msg){msg.textContent=action==='upload_questions'?'Uploading...':'Saving...'; msg.className='ajax-msg';}
      fetch((form.getAttribute('action')||'weekly-test-ajax.php'),{method:'POST',body:new FormData(form),cache:'no-store',headers:{'X-Requested-With':'XMLHttpRequest'}})
-       .then(async r=>{const t=await r.text(); try{return JSON.parse(t)}catch(e){throw new Error((t.indexOf('<!DOCTYPE')>=0 || t.indexOf('<html')>=0) ? 'Admin save endpoint returned HTML. Please use the new ZIP files together; ajax endpoint should be admin/weekly-test-ajax.php.' : (t.slice(0,180)||'Server returned invalid response'));}})
-       .then(d=>{if(msg){msg.textContent=d.message||''; msg.classList.toggle('ok',!!d.success); msg.classList.toggle('bad',!d.success);} if(window.AppUI){window.AppUI.toast(d.success?'success':'error', d.message||'Done');} if(d.success){setTimeout(()=>location.reload(),800)}})
-       .catch(err=>{if(msg){msg.textContent='Server error: '+err.message; msg.classList.add('bad');} if(window.AppUI){window.AppUI.toast('error', 'Server error: '+err.message);} });
+       .then(async r=>{const t=await r.text(); try{return JSON.parse(t)}catch(e){throw new Error((t.indexOf('<!DOCTYPE')>=0 || t.indexOf('<html')>=0) ? 'Admin endpoint returned HTML. Upload all files from this ZIP together.' : (t.slice(0,180)||'Server returned invalid response'));}})
+       .then(d=>{if(msg){msg.textContent=d.message||''; msg.classList.toggle('ok',!!d.success); msg.classList.toggle('bad',!d.success);} if(window.AppUI){window.AppUI.toast(d.success?'success':'error', d.message||'Done');} if(d.success){setTimeout(()=>location.reload(),700)}})
+       .catch(err=>{if(msg){msg.textContent='Server error: '+err.message; msg.classList.add('bad');} if(window.AppUI){window.AppUI.toast('error','Server error: '+err.message);} });
    });
  });
 })();
