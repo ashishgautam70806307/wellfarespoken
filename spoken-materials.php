@@ -12,7 +12,7 @@ $skip_phase142_interaction_css = true;
 $skip_phase139_mobile_learning_script = true;
 $page_late_styles = ['assets/css/phase143-practice-stability.css'];
 $page_final_styles = ['assets/css/phase169-spoken-materials.css'];
-$page_scripts = ['assets/js/phase143-spoken-practice.js'];
+$page_scripts = ['assets/js/phase170-spoken-practice.js'];
 
 $allowedGoals = ['speak', 'hindi_to_english', 'english_to_hindi', 'revision'];
 $requestedGoal = strtolower(trim((string)($_GET['goal'] ?? 'speak')));
@@ -47,7 +47,7 @@ wf_page_hero([
             <div>
                 <span>Practice Room</span>
                 <h2>Choose how you want to practise.</h2>
-                <p>No filter form and no repeated background loading. Voice output and voice input stay available in one stable flow.</p>
+                <p>Choose a mode once. Practice keeps moving sentence by sentence until you pause or change mode.</p>
             </div>
         </header>
 
@@ -115,16 +115,16 @@ wf_page_hero([
                     <label class="wf144-voice-toggle" for="practiceHandsfree">
                         <input type="checkbox" id="practiceHandsfree" checked>
                         <span class="wf144-voice-switch" aria-hidden="true"><i></i></span>
-                        <span class="wf144-voice-copy"><b>Voice coach</b><small>Correct answer moves to the next sentence automatically. Wrong answer repeats until you get it right.</small></span>
+                        <span class="wf144-voice-copy"><b>Continuous Voice Coach</b><small>Correct → next. Wrong → retry. Mic interruption → auto resume.</small></span>
                     </label>
-                    <p><i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Correct → next automatically. Wrong → listen to the correct sentence, then speak again.</span></p>
+                    <p><i class="fa-solid fa-rotate-right" aria-hidden="true"></i><span>Practice does not stop after 20 sentences. It continues until you pause it.</span></p>
                 </div>
                 <div class="wf143-audio-actions">
                     <button type="button" id="practiceListen"><i class="fa-solid fa-volume-high" aria-hidden="true"></i><span>Listen</span></button>
                     <button type="button" id="practiceSpeak"><i class="fa-solid fa-microphone" aria-hidden="true"></i><span>Speak answer</span></button>
                     <button type="button" id="practiceStop" hidden><i class="fa-solid fa-stop" aria-hidden="true"></i><span>Stop</span></button>
                 </div>
-                <p class="wf143-voice-status" id="practiceVoiceStatus" aria-live="polite">Voice coach is ready. Correct answers move forward; wrong answers stay on the same sentence for another try.</p>
+                <p class="wf143-voice-status" id="practiceVoiceStatus" aria-live="polite">Continuous voice coach is ready. Speak normally; temporary mic or network pauses recover automatically.</p>
                 <label for="practiceAnswer"><span>Your answer</span><small>Type or use the microphone.</small></label>
                 <textarea id="practiceAnswer" rows="3" spellcheck="false" autocomplete="off" placeholder="Write your answer here..."></textarea>
                 <div class="wf143-answer-actions">

@@ -16,7 +16,8 @@ try {
     if (!in_array($goal, $allowedGoals, true)) $goal = 'speak';
     $direction = strtolower(trim((string)($_GET['direction'] ?? ($goal === 'english_to_hindi' ? 'english_to_hindi' : 'hindi_to_english'))));
     if (!in_array($direction, ['hindi_to_english','english_to_hindi'], true)) $direction = 'hindi_to_english';
-    $limit = min(80, max(5, (int)($_GET['limit'] ?? 30)));
+    $limit = min(80, max(5, (int)($_GET['limit'] ?? 20)));
+    $offset = min(100000, max(0, (int)($_GET['offset'] ?? 0)));
     $collections = fetch_material_practice_collections(300);
     $units = fetch_material_units($collectionId, 300);
     $pairs = [];
@@ -39,19 +40,22 @@ try {
                 JOIN translation_pairs p ON p.id=recent.pair_id
                 WHERE latest.is_correct=0 AND p.published='Yes' AND p.status_deleted=0
                 ORDER BY latest.id DESC
-                LIMIT " . (int)$limit;
+                LIMIT " . (int)$offset . ", " . (int)($limit + 1);
             $revisionStmt = db()->prepare($revisionSql);
             $revisionStmt->execute([$studentId]);
             $pairs = $revisionStmt->fetchAll();
         }
     } else {
-        $pairs = fetch_translation_pairs($collectionId, $unitId, $q, $limit);
-        if (!$pairs && $collectionId !== $default && $default > 0) {
+        $pairs = fetch_translation_pairs($collectionId, $unitId, $q, $limit + 1, $offset);
+        if (!$pairs && $offset === 0 && $collectionId !== $default && $default > 0) {
             $collectionId = $default;
             $units = fetch_material_units($collectionId, 300);
-            $pairs = fetch_translation_pairs($collectionId, 0, $q, $limit);
+            $pairs = fetch_translation_pairs($collectionId, 0, $q, $limit + 1, 0);
         }
     }
+
+    $hasMore = count($pairs) > $limit;
+    if ($hasMore) array_pop($pairs);
 
     $items = [];
     foreach ($pairs as $p) {
@@ -69,7 +73,7 @@ try {
             'direction'=>(string)($p['practice_direction'] ?? $direction),
         ];
     }
-    mpl_out(['success'=>true,'csrf'=>csrf_token(),'collection_id'=>$collectionId,'unit_id'=>$unitId,'goal'=>$goal,'direction'=>$direction,'requires_login'=>$requiresLogin,'collections'=>$collections,'units'=>$units,'items'=>$items,'count'=>count($items)]);
+    mpl_out(['success'=>true,'csrf'=>csrf_token(),'collection_id'=>$collectionId,'unit_id'=>$unitId,'goal'=>$goal,'direction'=>$direction,'requires_login'=>$requiresLogin,'collections'=>$collections,'units'=>$units,'items'=>$items,'count'=>count($items),'offset'=>$offset,'next_offset'=>$offset + count($items),'has_more'=>$hasMore]);
 } catch (Throwable $e) {
     error_log('[material-practice-list-api] ' . $e->__toString());
     mpl_out(['success'=>false,'message'=>'Could not load practice records. Run Admin > System Check once.'],500);

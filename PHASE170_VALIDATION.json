@@ -1,0 +1,22 @@
+{
+  "phase": 170,
+  "scope": "spoken-materials continuous voice practice reliability",
+  "status": "static-validation-passed",
+  "php_files_linted": 130,
+  "javascript_files_syntax_checked": 35,
+  "css_files_brace_checked": 141,
+  "service_worker_assets_checked": 56,
+  "phase170_static_checks": 13,
+  "phase170_static_checks_passed": 13,
+  "database_schema_changed": false,
+  "key_repairs": [
+    "continuous pagination beyond the original 20 sentence set",
+    "automatic microphone recovery for no-speech/network/aborted recognition events",
+    "automatic voice resume after mobile app/tab visibility return",
+    "12 second answer-check watchdog with same-sentence recovery",
+    "CSRF/session refresh retry for long voice sessions",
+    "practice rate-limit capacity increased while keeping abuse protection",
+    "wrong retries remain in material_practice_attempts while dashboard activity writes are reduced"
+  ],
+  "live_device_verification": "pending on real authenticated Android/iPhone browser with live MySQL"
+}

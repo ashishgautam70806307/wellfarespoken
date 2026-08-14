@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wellfare-spoken-static-v169';
+const CACHE_NAME = 'wellfare-spoken-static-v170';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './assets/css/phase123-shell.min.css',
@@ -45,7 +45,7 @@ const STATIC_ASSETS = [
   './assets/js/phase133-controlled-ui.js',
   './assets/js/phase138-mobile-ux.js',
   './assets/js/phase139-mobile-learning.js',
-  './assets/js/phase143-spoken-practice.js',
+  './assets/js/phase170-spoken-practice.js',
   './assets/js/phase143-roadmap-practice.js',
   './assets/js/phase146-weekly-test.js',
   './assets/js/phase149-admin-resilience.js',

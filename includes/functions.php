@@ -2747,9 +2747,11 @@ function fetch_material_units(int $collectionId = 0, int $limit = 100): array
     return $stmt->fetchAll();
 }
 
-function fetch_translation_pairs(int $collectionId = 0, int $unitId = 0, string $search = '', int $limit = 60): array
+function fetch_translation_pairs(int $collectionId = 0, int $unitId = 0, string $search = '', int $limit = 60, int $offset = 0): array
 {
     material_ensure_schema();
+    $limit = max(1, min(200, $limit));
+    $offset = max(0, $offset);
     $where = ["published='Yes'", 'status_deleted=0'];
     $params = [];
     if ($collectionId > 0) { $where[] = 'collection_id=?'; $params[] = $collectionId; }
@@ -2760,7 +2762,7 @@ function fetch_translation_pairs(int $collectionId = 0, int $unitId = 0, string 
         array_push($params, $like, $like, $like, $like, $like);
     }
     $order = material_order_clause('translation_pairs');
-    $sql = 'SELECT * FROM translation_pairs WHERE ' . implode(' AND ', $where) . " ORDER BY {$order} LIMIT {$limit}";
+    $sql = 'SELECT * FROM translation_pairs WHERE ' . implode(' AND ', $where) . " ORDER BY {$order} LIMIT {$offset}, {$limit}";
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll();
@@ -3083,8 +3085,11 @@ function save_material_attempt(int $pairId, string $direction, string $answer, a
             $stmt = db()->prepare('INSERT INTO material_practice_attempts (session_id, pair_id, practice_direction, user_answer, correct_answer, score, feedback) VALUES (?,?,?,?,?,?,?)');
             $stmt->execute([session_id(), $pairId, $direction, $answer, $result['correct_answer'] ?? '', (int)($result['score'] ?? 0), $result['feedback'] ?? '']);
         }
-        if ($studentId > 0 && function_exists('student_progress_touch')) {
-            student_progress_touch($studentId, 'practice', (int)($result['score'] ?? 0), !empty($result['is_correct']));
+        // Every retry remains in material_practice_attempts for revision/tracking.
+        // The dashboard activity stream only needs successful milestones; avoiding one
+        // extra activity row for every wrong voice retry keeps long sessions lightweight.
+        if ($studentId > 0 && !empty($result['is_correct']) && function_exists('student_progress_touch')) {
+            student_progress_touch($studentId, 'practice', (int)($result['score'] ?? 0), true);
         }
     } catch (Throwable $e) {}
 }

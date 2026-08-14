@@ -18,9 +18,13 @@ try {
     $pairId = max(0, (int)($_POST['pair_id'] ?? 0));
     $direction = ($_POST['direction'] ?? 'hindi_to_english') === 'english_to_hindi' ? 'english_to_hindi' : 'hindi_to_english';
     $answer = trim((string)($_POST['answer'] ?? ''));
-    $rateIdentity = current_student_id() > 0 ? ('student-' . current_student_id()) : ('session-' . session_id());
-    if (!security_rate_limit('material-practice:' . $rateIdentity, 180, 600)) {
-        material_api_out(['success' => false, 'message' => 'Too many practice requests. Please pause for a minute and continue.'], 429);
+    $studentId = current_student_id();
+    $rateIdentity = $studentId > 0 ? ('student-' . $studentId) : ('session-' . session_id());
+    // Hands-free practice can legitimately create many short answer checks. Keep abuse
+    // protection, but do not interrupt a normal continuous learning session.
+    $practiceLimit = $studentId > 0 ? 600 : 300;
+    if (!security_rate_limit('material-practice:' . $rateIdentity, $practiceLimit, 600)) {
+        material_api_out(['success' => false, 'message' => 'Practice is moving very fast. Wait a few seconds and it will continue.'], 429);
     }
     if ($pairId <= 0) {
         material_api_out(['success' => false, 'message' => 'Practice sentence is missing.'], 422);
