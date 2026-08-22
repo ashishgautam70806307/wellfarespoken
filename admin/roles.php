@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success','Role permissions saved. Existing sessions for this role were signed out for security.');
         redirect('roles.php');
     } catch (Throwable $e) {
-        flash('error',$e->getMessage());
+        error_log('[admin-roles] '.$e->__toString());
+        flash('error', ($e instanceof RuntimeException && !($e instanceof PDOException)) ? $e->getMessage() : 'Role settings could not be saved. Check System Check and try again.');
         redirect('roles.php'.($id>0?'?edit='.$id:''));
     }
 }

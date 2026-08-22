@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && csrf_validate($_POST['csrf_token']??'
         }
     } catch(Throwable $e) {
         error_log('[enquiry-convert] '.$e->__toString());
-        flash('error',$e->getMessage());
+        flash('error', ($e instanceof RuntimeException && !($e instanceof PDOException)) ? $e->getMessage() : 'Enquiry could not be converted right now. Please check System Check and try again.');
         redirect('enquiry-view.php?id='.$id);
     }
 }

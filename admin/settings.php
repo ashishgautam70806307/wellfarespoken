@@ -99,51 +99,86 @@ foreach ($groups as $fields) { foreach ($fields as $key => $meta) { $flatKeys[$k
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
     $uploadError = '';
     $settingErrors = [];
-    $socialKeys = ['facebook_url','instagram_url','youtube_url','twitter_url','linkedin_url'];
-    $stmt = db()->prepare('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)');
-    foreach ($flatKeys as $key => $meta) {
-        $value = trim((string)($_POST[$key] ?? ''));
-        if (in_array($key, $socialKeys, true) && $value !== '') {
-            if (!preg_match('#^https?://#i', $value)) $value = 'https://' . ltrim($value, '/');
-            if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                $settingErrors[] = ($meta[0] ?? $key) . ' is not a valid URL.';
-                continue;
+    $newUploadedFiles = [];
+    $mediaKeys = ['site_logo','site_favicon','director_photo'];
+    $oldMedia = array_fill_keys($mediaKeys, '');
+    try {
+        $oldStmt = db()->prepare("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ('site_logo','site_favicon','director_photo')");
+        $oldStmt->execute();
+        foreach ($oldStmt->fetchAll() as $row) {
+            $key = (string)($row['setting_key'] ?? '');
+            if (array_key_exists($key, $oldMedia)) $oldMedia[$key] = (string)($row['setting_value'] ?? '');
+        }
+
+        $socialKeys = ['facebook_url','instagram_url','youtube_url','twitter_url','linkedin_url'];
+        $stmt = db()->prepare('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)');
+        foreach ($flatKeys as $key => $meta) {
+            $value = trim((string)($_POST[$key] ?? ''));
+            if ($key === 'site_logo' && ($_POST['remove_site_logo'] ?? 'No') === 'Yes') $value = '';
+            if ($key === 'site_favicon' && ($_POST['remove_site_favicon'] ?? 'No') === 'Yes') $value = '';
+            if ($key === 'director_photo' && ($_POST['remove_director_photo'] ?? 'No') === 'Yes') $value = '';
+            if (in_array($key, $socialKeys, true) && $value !== '') {
+                if (!preg_match('#^https://#i', $value)) $value = 'https://' . preg_replace('#^http://#i', '', ltrim($value, '/'));
+                if (app_safe_https_url($value, '') === '') {
+                    $settingErrors[] = ($meta[0] ?? $key) . ' is not a valid URL.';
+                    continue;
+                }
+            }
+            $stmt->execute([$key, $value]);
+        }
+
+        if (!empty($_FILES['site_logo_file']['name'])) {
+            $logoPath = upload_brand_asset($_FILES['site_logo_file'], 'logo');
+            if ($logoPath) {
+                $newUploadedFiles[] = $logoPath;
+                $stmt->execute(['site_logo', $logoPath]);
+            } else {
+                $uploadError = 'Logo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
             }
         }
-        $stmt->execute([$key, $value]);
-    }
-    if (!empty($_FILES['site_logo_file']['name'])) {
-        $logoPath = upload_brand_asset($_FILES['site_logo_file'], 'logo');
-        if ($logoPath) {
-            $stmt->execute(['site_logo', $logoPath]);
-        } else {
-            $uploadError = 'Logo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
-        }
-    }
-    if (!empty($_FILES['site_favicon_file']['name'])) {
-        $faviconPath = upload_brand_asset($_FILES['site_favicon_file'], 'favicon');
-        if ($faviconPath) {
-            $stmt->execute(['site_favicon', $faviconPath]);
-        } else {
-            $uploadError = 'Favicon upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
-        }
-    }
-    if (!empty($_FILES['director_photo_file']['name'])) {
-        try {
-            $directorPhotoPath = upload_gallery_image($_FILES['director_photo_file']);
-            if ($directorPhotoPath) {
-                $stmt->execute(['director_photo', $directorPhotoPath]);
+        if (!empty($_FILES['site_favicon_file']['name'])) {
+            $faviconPath = upload_brand_asset($_FILES['site_favicon_file'], 'favicon');
+            if ($faviconPath) {
+                $newUploadedFiles[] = $faviconPath;
+                $stmt->execute(['site_favicon', $faviconPath]);
+            } else {
+                $uploadError = 'Favicon upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
             }
-        } catch (Throwable $e) {
-            error_log('[admin-settings-upload] ' . $e->__toString());
-            $uploadError = 'Director photo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
         }
+        if (!empty($_FILES['director_photo_file']['name'])) {
+            try {
+                $directorPhotoPath = upload_gallery_image($_FILES['director_photo_file']);
+                if ($directorPhotoPath) {
+                    $newUploadedFiles[] = $directorPhotoPath;
+                    $stmt->execute(['director_photo', $directorPhotoPath]);
+                }
+            } catch (Throwable $e) {
+                error_log('[admin-settings-upload] ' . $e->__toString());
+                $uploadError = 'Director photo upload failed. Use JPG, JPEG, PNG or WEBP under 2 MB.';
+            }
+        }
+
+        $finalMedia = array_fill_keys($mediaKeys, '');
+        $finalStmt = db()->prepare("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ('site_logo','site_favicon','director_photo')");
+        $finalStmt->execute();
+        foreach ($finalStmt->fetchAll() as $row) {
+            $key = (string)($row['setting_key'] ?? '');
+            if (array_key_exists($key, $finalMedia)) $finalMedia[$key] = (string)($row['setting_value'] ?? '');
+        }
+        foreach ($mediaKeys as $key) {
+            if ($oldMedia[$key] !== '' && $oldMedia[$key] !== $finalMedia[$key]) managed_upload_cleanup($oldMedia[$key]);
+        }
+    } catch (Throwable $e) {
+        foreach ($newUploadedFiles as $path) managed_upload_cleanup($path);
+        error_log('[admin-settings] ' . $e->__toString());
+        $uploadError = 'Settings could not be saved completely. Please try again.';
     }
+
     if ($uploadError !== '' || $settingErrors) {
         $messages = array_values(array_filter(array_merge([$uploadError], $settingErrors)));
         flash('error', implode(' ', $messages));
     } else {
-        flash('success', 'Dynamic site settings updated. Social icons appear automatically in the footer when their URLs are saved.');
+        flash('success', 'Dynamic site settings updated. Replaced managed images are cleaned up automatically.');
     }
     redirect('settings.php');
 }
@@ -165,8 +200,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                         <div><?php if ($currentFavicon): ?><img src="../<?= e($currentFavicon) ?>" alt="Favicon preview"><?php else: ?><span class="brand-mark">★</span><?php endif; ?><small>Favicon</small></div>
                     </div>
                 </div>
-                <div class="field"><label>Upload Logo</label><input type="file" name="site_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP, max 2 MB.</span></div>
-                <div class="field"><label>Upload Favicon</label><input type="file" name="site_favicon_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: square PNG, JPG, JPEG or WEBP, max 2 MB.</span></div>
+                <div class="field"><label>Upload Logo</label><input type="file" name="site_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP, max 2 MB.</span><?php if (app_setting('site_logo','') !== ''): ?><label class="help"><input type="checkbox" name="remove_site_logo" value="Yes"> Remove current logo</label><?php endif; ?></div>
+                <div class="field"><label>Upload Favicon</label><input type="file" name="site_favicon_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: square PNG, JPG, JPEG or WEBP, max 2 MB.</span><?php if (app_setting('site_favicon','') !== ''): ?><label class="help"><input type="checkbox" name="remove_site_favicon" value="Yes"> Remove current favicon</label><?php endif; ?></div>
                 <div class="field full"><label>Logo Path</label><input name="site_logo" value="<?= e(app_setting('site_logo', '')) ?>" placeholder="assets/uploads/brand/logo.png"><span class="help">Upload a logo above or paste an existing path.</span></div>
                 <div class="field full"><label>Favicon Path</label><input name="site_favicon" value="<?= e(app_setting('site_favicon', '')) ?>" placeholder="assets/uploads/brand/favicon.png"><span class="help">Upload a favicon above or paste an existing path.</span></div>
             <?php endif; ?>
@@ -197,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                         <div><?php if ($currentDirectorPhoto): ?><img src="../<?= e($currentDirectorPhoto) ?>" alt="Director photo preview"><?php else: ?><span class="brand-mark"><?= e(mb_substr(app_setting('director_name','D') ?: 'D',0,1)) ?></span><?php endif; ?><small>Director Photo</small></div>
                     </div>
                 </div>
-                <div class="field"><label>Choose Director Image</label><input type="file" name="director_photo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP. Best size: square or portrait image under 2 MB.</span></div>
+                <div class="field"><label>Choose Director Image</label><input type="file" name="director_photo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><span class="help">Allowed: PNG, JPG, JPEG or WEBP. Best size: square or portrait image under 2 MB.</span><?php if (app_setting('director_photo','') !== ''): ?><label class="help"><input type="checkbox" name="remove_director_photo" value="Yes"> Remove current director photo</label><?php endif; ?></div>
                 <div class="field"><label>Director Photo Path</label><input name="director_photo" value="<?= e(app_setting('director_photo', '')) ?>" placeholder="assets/uploads/gallery/director.png"><span class="help">Upload image above or paste existing image path.</span></div>
             <?php endif; ?>
             <?php foreach ($fields as $key => $meta): $label = $meta[0]; $type = $meta[1]; $placeholder = $meta[2] ?? ''; ?>

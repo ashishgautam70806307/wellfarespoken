@@ -683,6 +683,13 @@ CREATE TABLE IF NOT EXISTS `weekly_test_attempts` (
   `last_saved_at` DATETIME NULL,
   `status` VARCHAR(30) NOT NULL DEFAULT 'started',
   `submission_reason` VARCHAR(40) NULL,
+  `reopen_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `reopened_at` DATETIME NULL,
+  `reopened_by_admin_id` INT UNSIGNED NULL,
+  `reopen_reason` VARCHAR(255) NULL,
+  `reopen_time_mode` VARCHAR(30) NULL,
+  `reopen_seconds_granted` INT UNSIGNED NULL,
+  `first_submitted_at` DATETIME NULL,
   `auto_score` DECIMAL(8,2) NULL,
   `admin_score` DECIMAL(8,2) NULL,
   `penalty_marks` DECIMAL(8,2) NOT NULL DEFAULT 0,
@@ -892,6 +899,13 @@ ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `result_token` VARCH
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `question_snapshot` LONGTEXT NULL;
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `submission_reason` VARCHAR(40) NULL;
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `last_saved_at` DATETIME NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopen_count` INT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopened_at` DATETIME NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopened_by_admin_id` INT UNSIGNED NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopen_reason` VARCHAR(255) NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopen_time_mode` VARCHAR(30) NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `reopen_seconds_granted` INT UNSIGNED NULL;
+ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `first_submitted_at` DATETIME NULL;
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `question_order` TEXT NULL;
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `timing_log` MEDIUMTEXT NULL;
 ALTER TABLE `weekly_test_attempts` ADD COLUMN IF NOT EXISTS `suspicious_flag` ENUM('No','Yes') NOT NULL DEFAULT 'No';
@@ -1160,7 +1174,7 @@ INSERT IGNORE INTO `practice_settings` (`id`, `setting_key`, `setting_value`, `u
 (3, 'ai_provider', 'openai', '2026-06-20 06:23:11'),
 (4, 'openai_api_key', '', '2026-06-20 06:23:11'),
 (5, 'openai_model', 'gpt-4o-mini', '2026-06-20 06:23:11'),
-(6, 'openai_endpoint', 'https://api.openai.com/v1/chat/completions', '2026-06-20 06:23:11'),
+(6, 'openai_endpoint', '', '2026-06-20 06:23:11'),
 (7, 'ai_daily_limit', '10', '2026-06-20 06:23:11'),
 (8, 'ai_timeout_seconds', '18', '2026-06-20 06:23:11'),
 (9, 'ai_temperature', '0.2', '2026-06-20 06:23:11'),

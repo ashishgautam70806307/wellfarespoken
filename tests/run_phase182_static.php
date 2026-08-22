@@ -1,0 +1,64 @@
+<?php
+$root = dirname(__DIR__);
+$checks = [];
+function c182(string $label, bool $ok): void { global $checks; $checks[] = [$label,$ok]; echo ($ok?'PASS':'FAIL')." - $label\n"; }
+function src182(string $path): string { global $root; return (string)@file_get_contents($root.'/'.$path); }
+$f = src182('includes/functions.php');
+$live = src182('admin/weekly-live-students.php');
+$api = src182('weekly-test-api.php');
+$result = src182('weekly-result.php');
+$studentCenter = src182('weekly-test.php');
+$perm = src182('includes/phase148_backend.php');
+$sys = src182('admin/system-check.php');
+$sw = src182('sw.js');
+
+c182('Phase 182 live admin page exists', is_file($root.'/admin/weekly-live-students.php'));
+c182('Live page is permission protected through tests.manage map', str_contains($perm, "'weekly-live-students.php'=>'tests.manage'"));
+c182('Live page finalizes only genuinely expired started attempts before display', str_contains($live, 'weekly_test_finalize_started_attempts(0, false)'));
+c182('Live page filters only started attempts in Live section', str_contains($live, "a.status='started'"));
+c182('Finished result section excludes live attempts', str_contains($live, "a.status IN ('submitted','checked')"));
+c182('Batch filter exists', str_contains($live, 'name="batch"'));
+c182('Batch filter uses effective student batch for Common papers', str_contains($live, '$batchIdExpr') && str_contains($live, 'student_batch_memberships'));
+c182('Live Now has batch-wise counts', str_contains($live, 'Live Now by Batch') && str_contains($live, '$liveBatchCounts'));
+c182('Default Live scope is All Batches', str_contains($live, "\$_GET['batch'] ?? 'all'"));
+c182('Test paper filter exists', str_contains($live, 'name="test_id"'));
+c182('Result status filter exists', str_contains($live, 'name="result_status"'));
+c182('Student search exists', str_contains($live, 'name="q"'));
+c182('Reopen Access action is exposed to Admin', str_contains($live, 'Reopen Test Access'));
+c182('Reopen action requires CSRF', str_contains($live, 'csrf_token'));
+c182('Reopen requires a reason', str_contains($live, 'name="reason"'));
+c182('Reopen defaults to remaining time', str_contains($live, 'Restore remaining time (recommended)'));
+c182('Explicit full-duration override is available', str_contains($live, 'Give full test duration (Admin override)'));
+c182('Central reopen service exists', str_contains($f, 'function weekly_test_reopen_attempt_for_admin'));
+c182('Reopen is Upcoming-only', str_contains($f, "Reopen Access is only available for Upcoming Tests"));
+c182('Reopen is same-login only', str_contains($f, 'Only logged-in student attempts can be reopened on the same account'));
+c182('Only pending submitted attempts can reopen', str_contains($f, "!== 'submitted'"));
+c182('Only manual Final Submit can reopen', str_contains($f, "submission_reason") && str_contains($f, 'Only a student Final Submit can be reopened'));
+c182('One reopen maximum is enforced', str_contains($f, "reopen_count") && str_contains($f, 'second reopen is blocked'));
+c182('Answer release/final stage blocks reopen', str_contains($f, 'weekly_test_answers_manually_released($testId)') && str_contains($f, 'answer/review window or final result stage'));
+c182('Top-3 finalization blocks reopen', str_contains($f, 'Top-3 ranking is already finalized'));
+c182('Another running Upcoming Test blocks reopen', str_contains($f, 'Student already has another Upcoming Test in progress'));
+c182('Question snapshot is preserved (no snapshot reset in reopen update)', !preg_match('/weekly_test_reopen_attempt_for_admin[\s\S]{0,7000}question_snapshot\s*=/', $f));
+c182('Saved answer text is preserved while grading metadata resets', str_contains($f, "UPDATE weekly_test_answers SET is_correct='Review', marks_awarded=NULL, admin_note=NULL") && !str_contains($f, 'DELETE FROM weekly_test_answers WHERE attempt_id=?'));
+c182('Access token rotates on reopen', str_contains($f, '$accessToken = bin2hex(random_bytes(32))'));
+c182('Reopen restores status to started', str_contains($f, "status='started'"));
+c182('Reopen timer is capped by test window', str_contains($f, '$grantSeconds = min($grantSeconds, $windowSeconds)'));
+c182('Reopen audit event is written', str_contains($f, "weekly_test.attempt_reopened"));
+c182('Schema includes reopen_count', str_contains($f, 'ADD COLUMN reopen_count'));
+c182('Schema includes reopen audit columns', str_contains($f, 'reopened_by_admin_id') && str_contains($f, 'reopen_reason') && str_contains($f, 'reopen_seconds_granted'));
+c182('Canonical SQL includes reopen fields', str_contains(src182('sql/wellfare_english_complete.sql'), '`reopen_count`'));
+c182('Dedicated Phase 182 SQL migration exists', is_file($root.'/sql/phase182_upcoming_test_reopen_access.sql'));
+c182('System Check validates reopen schema', str_contains($sys, "'reopen_count'") && str_contains($sys, "'first_submitted_at'"));
+c182('Student Test Center shows same-login reopened resume banner', str_contains($studentCenter, 'Admin reopened your submitted test') && str_contains($studentCenter, 'Resume Reopened Test'));
+c182('Student result URL resumes reopened attempt', str_contains($result, 'weekly-exam-room.php?attempt_id=') && str_contains($result, "status'] ?? ''))) === 'started'"));
+c182('Existing start API resumes same started attempt', str_contains($api, "=== 'started'"));
+c182('Existing start API blocks duplicate submitted/checked attempt', str_contains($api, "['submitted','checked']"));
+c182('Admin grading blocks in-progress attempt', str_contains(src182('admin/weekly-test-ajax.php'), 'This attempt is still in progress. Wait for Final Submit before checking marks.'));
+c182('Weekly Test page links to Live Students', str_contains(src182('admin/weekly-tests.php'), 'Live Students'));
+c182('Performance page links to Live Students', str_contains(src182('admin/upcoming-test-performance.php'), 'Live Students'));
+c182('Sidebar exposes Live Test Students under tests permission', str_contains(src182('admin/_header.php'), 'Live Test Students'));
+c182('Phase 182 stylesheet exists', is_file($root.'/assets/css/phase182-live-test-control.css'));
+
+$failed = array_values(array_filter($checks, fn($r)=>!$r[1]));
+echo "\n".(count($checks)-count($failed))."/".count($checks)." checks passed.\n";
+exit($failed ? 1 : 0);

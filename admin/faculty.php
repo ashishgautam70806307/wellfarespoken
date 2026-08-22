@@ -14,12 +14,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('faculty.php');
     }
     $action = $_POST['action'] ?? '';
+    $newUploadedImage = '';
     try {
         if ($action === 'save') {
             $id = (int)($_POST['id'] ?? 0);
-            $currentImage = trim($_POST['current_image_url'] ?? '');
+            $currentImage = '';
+            if ($id > 0) {
+                $oldStmt = db()->prepare('SELECT image_url FROM faculty_members WHERE id=? LIMIT 1');
+                $oldStmt->execute([$id]);
+                $currentImage = (string)($oldStmt->fetchColumn() ?: '');
+            }
             $uploadedImage = faculty_upload_image($_FILES['faculty_photo'] ?? []);
-            $imageUrl = $uploadedImage !== '' ? $uploadedImage : $currentImage;
+            if ($uploadedImage !== '') $newUploadedImage = $uploadedImage;
+            $imageUrl = $uploadedImage !== '' ? $uploadedImage : ((($_POST['remove_faculty_photo'] ?? 'No') === 'Yes') ? '' : $currentImage);
 
             $data = [
                 trim($_POST['faculty_name'] ?? ''),
@@ -42,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = db()->prepare("UPDATE faculty_members SET faculty_name=?, designation=?, experience=?, qualification=?, short_bio=?, full_bio=?, expertise=?, image_url=?, phone=?, email=?, sort_order=?, published=? WHERE id=?");
                 $data[] = $id;
                 $stmt->execute($data);
+                if ($currentImage !== '' && $currentImage !== $imageUrl) managed_upload_cleanup($currentImage);
                 flash('success', 'Faculty profile updated.');
             } else {
                 $stmt = db()->prepare("INSERT INTO faculty_members (faculty_name, designation, experience, qualification, short_bio, full_bio, expertise, image_url, phone, email, sort_order, published) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -52,8 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($action === 'delete') {
+            $id = (int)($_POST['id'] ?? 0);
+            $oldStmt = db()->prepare('SELECT image_url FROM faculty_members WHERE id=? LIMIT 1');
+            $oldStmt->execute([$id]);
+            $oldImage = (string)($oldStmt->fetchColumn() ?: '');
             $stmt = db()->prepare("DELETE FROM faculty_members WHERE id=?");
-            $stmt->execute([(int)($_POST['id'] ?? 0)]);
+            $stmt->execute([$id]);
+            managed_upload_cleanup($oldImage);
             flash('success', 'Faculty profile deleted.');
             redirect('faculty.php');
         }
@@ -64,12 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Please select at least one faculty profile.');
             }
             $in = implode(',', array_fill(0, count($ids), '?'));
+            $imgStmt = db()->prepare("SELECT image_url FROM faculty_members WHERE id IN ($in)");
+            $imgStmt->execute($ids);
+            $oldImages = $imgStmt->fetchAll(PDO::FETCH_COLUMN);
             $stmt = db()->prepare("DELETE FROM faculty_members WHERE id IN ($in)");
             $stmt->execute($ids);
+            managed_upload_cleanup_many($oldImages ?: []);
             flash('success', count($ids) . ' faculty profiles deleted.');
             redirect('faculty.php');
         }
     } catch (Throwable $e) {
+        if ($newUploadedImage !== '') managed_upload_cleanup($newUploadedImage);
         error_log('[admin-faculty] ' . $e->__toString());
         flash('error', 'Faculty record could not be saved. Check the fields and upload permissions.');
         redirect('faculty.php');
@@ -139,7 +157,7 @@ $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
             <label class="wide">Faculty Photo
                 <input type="file" name="faculty_photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
-                <?php if (!empty($edit['image_url'])): ?><small>Current: <?= e($edit['image_url']) ?></small><?php endif; ?>
+                <?php if (!empty($edit['image_url'])): ?><small>Current: <?= e($edit['image_url']) ?></small><label class="help"><input type="checkbox" name="remove_faculty_photo" value="Yes"> Remove current photo</label><?php endif; ?>
             </label>
 
             <label>Phone<input name="phone" value="<?= e($edit['phone'] ?? '') ?>" placeholder="Optional"></label>

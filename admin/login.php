@@ -39,7 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare("SELECT * FROM admins WHERE id=? AND published='Yes' LIMIT 1");
             $stmt->execute([$mfaPendingId]);
             $admin = $stmt->fetch();
-            if ($admin && ($admin['mfa_enabled'] ?? 'No') === 'Yes' && !empty($admin['mfa_secret']) && admin_mfa_verify((string)$admin['mfa_secret'], $code)) {
+            if ($admin && ($admin['mfa_enabled'] ?? 'No') === 'Yes' && !empty($admin['mfa_secret']) && admin_mfa_verify(admin_mfa_secret_plain((string)$admin['mfa_secret']), $code)) {
+                if (!str_starts_with((string)$admin['mfa_secret'], 'enc:v1:')) {
+                    try {
+                        $encryptedMfa = app_encrypt_secret(admin_mfa_secret_plain((string)$admin['mfa_secret']));
+                        db()->prepare('UPDATE admins SET mfa_secret=? WHERE id=?')->execute([$encryptedMfa,(int)$admin['id']]);
+                        $admin['mfa_secret'] = $encryptedMfa;
+                        admin_audit_log('admin.mfa_secret_encrypted','admin',(int)$admin['id'],'Migrated legacy plaintext TOTP secret to encrypted storage.');
+                    } catch (Throwable $e) { error_log('[admin-mfa-migrate] ' . $e->getMessage()); }
+                }
                 if (admin_rbac_ready()) {
                     $loginRole = admin_role_key((int)$admin['id']);
                     if (($loginRole === 'super_admin' && !admin_is_primary_owner((int)$admin['id'])) || $loginRole === 'legacy_admin' || $loginRole === '') {
@@ -104,6 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             clear_login_attempts();
             admin_session_login($admin);
+            if (function_exists('admin_mfa_is_required_for_owner') && admin_mfa_is_required_for_owner((int)$admin['id'])) {
+                redirect('password.php?mfa_required=1#mfa');
+            }
             if (column_exists('admins','last_login_at')) db()->prepare('UPDATE admins SET last_login_at=NOW() WHERE id=?')->execute([(int)$admin['id']]);
             admin_audit_log('admin.login','admin',(int)$admin['id'],'Administrator signed in successfully.');
             redirect(admin_password_change_required($admin) ? 'password.php?required=1' : 'dashboard.php');

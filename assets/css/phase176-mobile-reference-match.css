@@ -1,0 +1,274 @@
+/* Phase 176 - measured mobile reference-match correction for the three learning pages. */
+[data-wf176-mobile-only]{display:none}
+
+@media (max-width:760px){
+  [data-wf176-mobile-only]{display:flex}
+
+  /* App shell: match approved mobile mockup instead of layering the desktop shell. */
+  body.page-spoken-materials .wf127-topbar,
+  body.page-spoken-materials .wf127-header,
+  body.page-free-ai-english-practice .wf127-topbar,
+  body.page-free-ai-english-practice .wf127-header,
+  body.page-learning-roadmap .wf127-topbar,
+  body.page-learning-roadmap .wf127-header,
+  body.page-spoken-materials .wf127-contact-dock,
+  body.page-free-ai-english-practice .wf127-contact-dock,
+  body.page-learning-roadmap .wf127-contact-dock,
+  body.page-spoken-materials .wf137-footer,
+  body.page-free-ai-english-practice .wf137-footer,
+  body.page-learning-roadmap .wf137-footer{display:none!important}
+
+  .wf176-learning-appbar{
+    position:sticky;top:0;z-index:1450;
+    height:54px;display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px;
+    align-items:center;padding:0 8px;background:#071d3e;color:#fff;
+    box-shadow:0 1px 0 rgba(255,255,255,.08);
+  }
+  .wf176-learning-appbar :is(button,a){min-width:44px;min-height:44px;border:0;background:transparent;color:#fff}
+  .wf176-appbar-menu,.wf176-appbar-account{display:grid;place-items:center;border-radius:12px;font-size:17px;cursor:pointer}
+  .wf176-appbar-brand{display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none!important}
+  .wf176-appbar-brand b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-size:13px;font-weight:850;letter-spacing:-.01em}
+  .wf176-appbar-account{font-size:14px}
+
+  body.page-spoken-materials #mainContent,
+  body.page-free-ai-english-practice #mainContent,
+  body.page-learning-roadmap #mainContent{padding-bottom:72px!important;background:#f4f7fb!important}
+
+  body.page-spoken-materials .container,
+  body.page-free-ai-english-practice .container,
+  body.page-learning-roadmap .container{width:100%!important;max-width:none!important;padding-inline:10px!important}
+
+  /* Bottom nav: attached app navigation like the approved reference, no floating contact overlap. */
+  .wf127-mobile-bottom.wf175-learning-bottom{
+    left:0!important;right:0!important;bottom:0!important;z-index:1500!important;
+    min-height:64px!important;height:64px!important;padding:4px 5px calc(4px + env(safe-area-inset-bottom))!important;
+    gap:0!important;border:0!important;border-top:1px solid #dce5ef!important;border-radius:0!important;
+    background:#fff!important;box-shadow:0 -7px 22px rgba(7,29,62,.08)!important;backdrop-filter:none!important;
+  }
+  .wf127-mobile-bottom.wf175-learning-bottom a{
+    min-height:54px!important;padding:3px 1px!important;gap:3px!important;border-radius:11px!important;
+    background:transparent!important;color:#66778c!important;font-size:8.5px!important;font-weight:850!important;
+  }
+  .wf127-mobile-bottom.wf175-learning-bottom a i{
+    width:30px!important;height:30px!important;border-radius:10px!important;background:transparent!important;color:#52657b!important;font-size:13px!important;
+  }
+  .wf127-mobile-bottom.wf175-learning-bottom a.is-active{background:transparent!important;color:#1768d7!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a.is-active i{border-radius:50%!important;background:#1768d7!important;color:#fff!important;box-shadow:0 5px 12px rgba(23,104,215,.25)!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a:nth-child(3).is-active{color:#15925a!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a:nth-child(3).is-active i{background:#1aa565!important;transform:none!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a:nth-child(5).is-active{color:#6e4cdb!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a:nth-child(5).is-active i{background:#7757e8!important}
+
+  /* ---------- Spoken Materials: reference-match browse screen ---------- */
+  body.page-spoken-materials .wf143-practice-page{padding:0 0 76px!important;background:#f4f7fb!important}
+  body.page-spoken-materials .wf143-practice-page>.container{padding:0 10px 18px!important}
+  body.page-spoken-materials .wf175-materials-head{
+    margin:0 -10px 8px!important;padding:14px 14px 13px!important;border:0!important;border-radius:0 0 18px 18px!important;
+    background:#071d3e!important;box-shadow:0 8px 18px rgba(7,29,62,.13)!important;
+  }
+  body.page-spoken-materials .wf175-materials-head .wf175-mobile-title-row{grid-template-columns:minmax(0,1fr) 50px!important;gap:10px!important}
+  body.page-spoken-materials .wf175-materials-head .wf175-kicker{display:none!important}
+  body.page-spoken-materials .wf175-materials-head h1{margin:1px 0 4px!important;color:#fff!important;font-size:20px!important;line-height:1.12!important;letter-spacing:-.02em!important}
+  body.page-spoken-materials .wf175-materials-head p{color:#d9e6f6!important;font-size:10px!important;line-height:1.4!important}
+  body.page-spoken-materials .wf175-materials-head .wf175-page-icon{width:48px!important;height:48px!important;border-radius:15px!important;background:linear-gradient(145deg,#2678ed,#1555b6)!important;font-size:20px!important;box-shadow:none!important}
+  body.page-spoken-materials .wf175-mobile-search{min-height:44px!important;height:44px!important;margin-top:12px!important;border:0!important;border-radius:11px!important;box-shadow:none!important}
+  body.page-spoken-materials .wf175-mobile-search input{height:42px!important;min-height:42px!important;font-size:14px!important}
+  body.page-spoken-materials .wf175-mobile-search button{height:32px!important;min-height:32px!important}
+  body.page-spoken-materials .wf175-step-strip{display:none!important}
+
+  .wf176-mode-filter{
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;
+    margin:0 -2px 8px;padding:8px 2px 7px;border-bottom:1px solid #e0e7ef;background:#fff;
+  }
+  .wf176-mode-filter button{
+    min-width:0;min-height:58px;padding:3px 0;border:0;border-radius:12px;background:transparent;color:#5e7086;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:7.5px;font-weight:850;cursor:pointer;
+  }
+  .wf176-mode-filter button i{width:31px;height:31px;display:grid;place-items:center;border-radius:50%;background:#eef4ff;color:#1768d7;font-size:12px}
+  .wf176-mode-filter button:nth-child(3) i{background:#e9f8f0;color:#178b57}
+  .wf176-mode-filter button:nth-child(4) i{background:#f1edff;color:#7252d7}
+  .wf176-mode-filter button:nth-child(5) i{background:#fff2d7;color:#bd7b00}
+  .wf176-mode-filter button.is-active{color:#125db8}
+  .wf176-mode-filter button.is-active i{box-shadow:0 0 0 2px #1768d7 inset;background:#1768d7;color:#fff}
+
+  body.page-spoken-materials .wf143-practice-heading{display:none!important}
+  body.page-spoken-materials .wf143-mode-grid{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;margin-top:0!important}
+  body.page-spoken-materials .wf143-mode-card{
+    position:relative!important;min-height:78px!important;grid-template-columns:52px minmax(0,1fr) 22px!important;grid-template-rows:auto auto!important;
+    column-gap:10px!important;row-gap:2px!important;padding:9px 9px!important;border:1px solid #dbe4ee!important;border-radius:13px!important;
+    background:#fff!important;box-shadow:none!important;transform:none!important;
+  }
+  body.page-spoken-materials .wf143-mode-icon{grid-column:1!important;grid-row:1/3!important;width:52px!important;height:52px!important;border-radius:12px!important;background:#e8f2ff!important;color:#1768d7!important;font-size:18px!important}
+  body.page-spoken-materials .wf143-mode-card:nth-child(2) .wf143-mode-icon{background:#eaf8f1!important;color:#16865a!important}
+  body.page-spoken-materials .wf143-mode-card:nth-child(3) .wf143-mode-icon{background:#f0ecff!important;color:#7453d8!important}
+  body.page-spoken-materials .wf143-mode-card:nth-child(4) .wf143-mode-icon{background:#fff2d8!important;color:#bb7900!important}
+  body.page-spoken-materials .wf143-mode-copy{grid-column:2!important;grid-row:1!important;align-self:end!important;display:block!important;min-width:0!important}
+  body.page-spoken-materials .wf143-mode-copy b{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102444!important;font-size:11px!important;line-height:1.2!important}
+  body.page-spoken-materials .wf143-mode-copy small{display:block!important;margin-top:2px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#6d7d91!important;font-size:8px!important;line-height:1.2!important}
+  body.page-spoken-materials .wf176-mode-progress{grid-column:2!important;grid-row:2!important;align-self:start!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:6px!important;min-width:0!important}
+  body.page-spoken-materials .wf176-mode-progress i{display:block!important;height:4px!important;border-radius:99px!important;background:linear-gradient(90deg,#1768d7 0 34%,#e1e8f0 34% 100%)!important}
+  body.page-spoken-materials .wf176-mode-progress em{color:#65768b!important;font-size:7px!important;font-style:normal!important;font-weight:850!important}
+  body.page-spoken-materials .wf143-mode-arrow{grid-column:3!important;grid-row:1/3!important;position:static!important;align-self:center!important;width:22px!important;height:22px!important;border-radius:8px!important;background:transparent!important;color:#173a68!important;font-size:9px!important}
+  body.page-spoken-materials .wf143-practice-status{min-height:44px!important;margin:8px 0 0!important;padding:7px 9px!important;border-radius:12px!important;box-shadow:none!important}
+  body.page-spoken-materials .wf143-practice-status>span{width:30px!important;height:30px!important;flex-basis:30px!important}
+  body.page-spoken-materials .wf143-practice-status b{font-size:9px!important}
+  body.page-spoken-materials .wf143-practice-status small{font-size:7px!important}
+
+  /* Active practice remains functional, but uses the same compact visual language. */
+  body.page-spoken-materials.wf175-practice-active .wf175-materials-head{display:block!important;padding-bottom:9px!important}
+  body.page-spoken-materials.wf175-practice-active .wf175-materials-head .wf175-mobile-search,
+  body.page-spoken-materials.wf175-practice-active .wf175-materials-head .wf175-page-icon,
+  body.page-spoken-materials.wf175-practice-active .wf175-materials-head p,
+  body.page-spoken-materials.wf175-practice-active .wf176-mode-filter,
+  body.page-spoken-materials.wf175-practice-active .wf143-mode-grid,
+  body.page-spoken-materials.wf175-practice-active #practiceReady{display:none!important}
+  body.page-spoken-materials.wf175-practice-active .wf175-materials-head h1{font-size:16px!important;margin:0!important}
+  body.page-spoken-materials .wf143-practice-workspace{margin:8px 0 0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+  body.page-spoken-materials .wf143-workspace-top{min-height:42px!important;padding:6px 8px!important;border:1px solid #dbe4ee!important;border-radius:11px!important;background:#fff!important;box-shadow:none!important}
+  body.page-spoken-materials .wf143-workspace-top>div{gap:5px!important}
+  body.page-spoken-materials .wf143-workspace-top span{font-size:8px!important;color:#9a6900!important}
+  body.page-spoken-materials .wf143-workspace-top strong{padding:4px 7px!important;font-size:8px!important}
+  body.page-spoken-materials #practiceChangeMode{min-height:32px!important;padding:0 8px!important;border-radius:9px!important;font-size:8px!important}
+  body.page-spoken-materials .wf143-progress-track{height:4px!important;margin:6px 2px 7px!important}
+  body.page-spoken-materials .wf143-question-card{padding:12px 13px!important;border-radius:14px!important;box-shadow:none!important}
+  body.page-spoken-materials .wf143-question-meta{margin-bottom:5px!important}
+  body.page-spoken-materials .wf143-question-meta span{min-height:19px!important;padding:2px 6px!important;font-size:6.8px!important}
+  body.page-spoken-materials .wf143-question-kicker{margin:7px 0 4px!important;font-size:7.5px!important}
+  body.page-spoken-materials #practiceQuestion{font-size:18px!important;line-height:1.22!important}
+  body.page-spoken-materials .wf143-answer-panel{margin-top:7px!important;padding:8px!important;border-radius:13px!important;background:#fff!important;box-shadow:none!important}
+  body.page-spoken-materials .wf144-voice-coach{margin:0 0 6px!important;padding:7px 8px!important;border-radius:10px!important;background:#f3f7fc!important}
+  body.page-spoken-materials .wf144-voice-copy b{font-size:8.5px!important}
+  body.page-spoken-materials .wf144-voice-copy small{font-size:6.8px!important;line-height:1.2!important}
+  body.page-spoken-materials .wf144-voice-switch{width:34px!important;height:20px!important;flex-basis:34px!important}
+  body.page-spoken-materials .wf144-voice-switch i{width:14px!important;height:14px!important}
+  body.page-spoken-materials .wf144-voice-toggle input:checked+.wf144-voice-switch i{transform:translateX(14px)!important}
+  body.page-spoken-materials .wf143-audio-actions{grid-template-columns:1fr 1.3fr!important;gap:6px!important;margin-top:0!important}
+  body.page-spoken-materials .wf143-audio-actions button{min-height:44px!important;border-radius:11px!important;font-size:8.5px!important}
+  body.page-spoken-materials .wf143-voice-status{min-height:0!important;margin:5px 1px!important;padding:0!important;background:transparent!important;font-size:7.3px!important;line-height:1.25!important}
+  body.page-spoken-materials .wf143-answer-panel>label{margin:4px 1px 3px!important}
+  body.page-spoken-materials .wf143-answer-panel>label span{font-size:8.5px!important}
+  body.page-spoken-materials .wf143-answer-panel>label small{font-size:6.8px!important}
+  body.page-spoken-materials #practiceAnswer{min-height:62px!important;height:62px!important;margin:0!important;padding:9px!important;border-radius:11px!important;font-size:14px!important}
+  body.page-spoken-materials .wf143-answer-actions{grid-template-columns:minmax(0,1fr) 42px!important;gap:6px!important;margin-top:6px!important}
+  body.page-spoken-materials .wf143-answer-actions button{min-height:44px!important;border-radius:11px!important;font-size:9px!important}
+  body.page-spoken-materials #practiceClear{width:42px!important}
+  body.page-spoken-materials .wf143-result{margin-top:6px!important;padding:9px!important;border-radius:12px!important;font-size:8px!important}
+  body.page-spoken-materials .wf143-navigation{
+    position:sticky!important;bottom:68px!important;z-index:500!important;grid-template-columns:.75fr 1.25fr!important;gap:6px!important;
+    margin:7px 0 0!important;padding:5px!important;border:1px solid #dbe4ee!important;border-radius:12px!important;background:#fff!important;box-shadow:0 8px 18px rgba(7,29,62,.10)!important;
+  }
+  body.page-spoken-materials .wf143-navigation button{min-height:44px!important;border-radius:10px!important;font-size:9px!important}
+
+  /* ---------- Practice Materials ---------- */
+  body.page-free-ai-english-practice .wf175-mobile-practice-intro{padding:0!important;background:#f4f7fb!important}
+  body.page-free-ai-english-practice .wf175-practice-head{
+    margin:0 -10px 0!important;padding:14px!important;border:0!important;border-radius:0 0 18px 18px!important;background:#071d3e!important;box-shadow:0 8px 18px rgba(7,29,62,.13)!important;
+  }
+  body.page-free-ai-english-practice .wf175-practice-head .wf175-kicker{display:none!important}
+  body.page-free-ai-english-practice .wf175-practice-head h1{margin:1px 0 4px!important;color:#fff!important;font-size:20px!important}
+  body.page-free-ai-english-practice .wf175-practice-head p{color:#d9e6f6!important;font-size:10px!important}
+  body.page-free-ai-english-practice .wf175-practice-head .wf175-page-icon{width:48px!important;height:48px!important;background:#1aa565!important;box-shadow:none!important}
+  .wf176-practice-search{display:grid!important;grid-template-columns:28px minmax(0,1fr) 34px;align-items:center;gap:2px;height:44px;margin-top:11px;padding:0 5px 0 8px;border-radius:11px;background:#fff;color:#718096}
+  .wf176-practice-search input{width:100%;height:40px!important;min-height:40px!important;padding:0 3px!important;border:0!important;outline:0!important;background:transparent!important;font-size:14px!important;box-shadow:none!important}
+  .wf176-practice-search button{width:32px;height:32px;min-height:32px!important;padding:0;border:0;border-radius:9px;background:#eef3f8;color:#67788c}
+  body.page-free-ai-english-practice .wf175-practice-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important;margin-top:8px!important;padding:7px 0 0!important}
+  body.page-free-ai-english-practice .wf175-practice-shortcuts button{min-height:52px!important;padding:3px 0!important;border:0!important;background:transparent!important;color:#d8e5f4!important;font-size:7px!important}
+  body.page-free-ai-english-practice .wf175-practice-shortcuts button i{width:29px!important;height:29px!important;margin-bottom:3px!important;border-radius:50%!important;background:#fff!important;color:#1768d7!important}
+  body.page-free-ai-english-practice .wf175-step-strip{display:none!important}
+  body.page-free-ai-english-practice .wf127-tool-stats-section{padding:8px 10px 0!important}
+  body.page-free-ai-english-practice .wf127-tool-stats{gap:5px!important}
+  body.page-free-ai-english-practice .wf127-tool-stats>div{min-height:52px!important;padding:7px 3px!important;border-radius:11px!important;box-shadow:none!important}
+  body.page-free-ai-english-practice #practice-app{padding:8px 0 74px!important;background:#f4f7fb!important}
+  body.page-free-ai-english-practice .practice-app-shell{gap:7px!important}
+  body.page-free-ai-english-practice .practice-lesson-panel{padding:8px!important;border-radius:13px!important}
+  body.page-free-ai-english-practice .practice-step-title{display:none!important}
+  body.page-free-ai-english-practice .wf175-mobile-lesson-picker{margin:0!important;padding:0!important;border:0!important;background:transparent!important}
+  body.page-free-ai-english-practice .wf175-mobile-lesson-picker>label span{font-size:9px!important}
+  body.page-free-ai-english-practice .wf175-mobile-lesson-picker>label small{display:none!important}
+  body.page-free-ai-english-practice .wf175-lesson-select-row{gap:6px!important}
+  body.page-free-ai-english-practice #wf175LessonSelect{height:44px!important;min-height:44px!important;border-radius:10px!important;font-size:12px!important}
+  body.page-free-ai-english-practice #wf175LessonStart{width:44px!important;height:44px!important;min-height:44px!important;border-radius:10px!important}
+  body.page-free-ai-english-practice .practice-workspace{padding:8px!important;border-radius:14px!important;background:#fff!important}
+  body.page-free-ai-english-practice .practice-work-head{gap:6px!important;margin-bottom:7px!important}
+  body.page-free-ai-english-practice #activeLessonMeta{font-size:7px!important}
+  body.page-free-ai-english-practice #activeLessonTitle{font-size:13px!important}
+  body.page-free-ai-english-practice .practice-progress-card{width:68px!important;min-width:68px!important;padding:6px!important;border-radius:10px!important}
+  body.page-free-ai-english-practice .practice-question-stage{min-height:145px!important;padding:11px!important;border-radius:12px!important}
+  body.page-free-ai-english-practice .practice-controls{bottom:68px!important;margin:7px 0 0!important;padding:5px!important;border-radius:12px!important;box-shadow:0 8px 18px rgba(7,29,62,.10)!important}
+  body.page-free-ai-english-practice .practice-controls .btn{min-height:44px!important;border-radius:10px!important}
+
+  /* ---------- Learning Roadmap ---------- */
+  body.page-learning-roadmap .rm126-page{padding:0 0 132px!important;background:#f4f7fb!important}
+  body.page-learning-roadmap .rm126-shell{padding-inline:10px!important;gap:7px!important}
+  body.page-learning-roadmap .rm126-hero{
+    margin:0 -10px 0!important;padding:14px 14px 12px!important;border-radius:0 0 18px 18px!important;background:#071d3e!important;box-shadow:0 8px 18px rgba(7,29,62,.13)!important;
+  }
+  body.page-learning-roadmap .rm126-eyebrow{display:none!important}
+  body.page-learning-roadmap .rm126-hero h1{margin:1px 0 4px!important;color:#fff!important;font-size:20px!important;line-height:1.12!important}
+  body.page-learning-roadmap .rm126-hero-copy>p{margin:0!important;color:#d9e6f6!important;font-size:10px!important}
+  body.page-learning-roadmap .rm126-progress-card{margin-top:4px!important;grid-template-columns:58px minmax(0,1fr)!important;gap:9px!important;padding:8px!important;border-radius:12px!important;background:#fff!important}
+  body.page-learning-roadmap .rm126-progress-ring{width:56px!important;height:56px!important;padding:4px!important}
+  body.page-learning-roadmap .rm126-progress-ring strong{font-size:14px!important}
+  body.page-learning-roadmap .rm126-progress-copy small{font-size:6.5px!important}
+  body.page-learning-roadmap .rm126-progress-copy b{font-size:10px!important}
+  body.page-learning-roadmap .rm126-progress-copy a{min-height:34px!important;margin-top:5px!important;border-radius:9px!important;font-size:8px!important}
+  body.page-learning-roadmap .wf175-roadmap-tabs{margin:8px 0 0!important;border-radius:11px!important;box-shadow:none!important}
+  body.page-learning-roadmap .wf175-roadmap-tabs button{min-height:38px!important;border-radius:8px!important;font-size:9px!important}
+  body.page-learning-roadmap .rm126-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;margin-top:1px!important}
+  body.page-learning-roadmap .rm126-summary article:nth-child(4){display:none!important}
+  body.page-learning-roadmap .rm126-summary article{min-height:54px!important;padding:6px 2px!important;border-radius:10px!important;box-shadow:none!important}
+  body.page-learning-roadmap .rm126-summary article>i{width:23px!important;height:23px!important;margin-bottom:3px!important;border-radius:8px!important;font-size:8px!important}
+  body.page-learning-roadmap .rm126-summary b{font-size:11px!important}
+  body.page-learning-roadmap .rm126-summary small{font-size:6.5px!important}
+  body.page-learning-roadmap .rm126-stage{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+  body.page-learning-roadmap .rm126-stage-head{padding:7px 3px!important;background:transparent!important}
+  body.page-learning-roadmap .rm126-stage-icon{width:31px!important;height:31px!important;border-radius:10px!important}
+  body.page-learning-roadmap .rm126-stage-head h2{font-size:12px!important}
+  body.page-learning-roadmap .rm126-path{padding:4px 0 5px 38px!important}
+  body.page-learning-roadmap .rm126-path:before{left:19px!important}
+  body.page-learning-roadmap .rm126-step{padding:4px 0!important}
+  body.page-learning-roadmap .rm126-node{left:-31px!important;top:17px!important;width:27px!important;height:27px!important}
+  body.page-learning-roadmap .rm126-level-card{padding:9px!important;border:1px solid #dbe4ee!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important}
+  body.page-learning-roadmap .rm126-level-card h3{margin:5px 0 2px!important;font-size:11px!important}
+  body.page-learning-roadmap .rm126-level-card p{font-size:7.5px!important}
+  body.page-learning-roadmap .rm126-meta{margin-top:5px!important}
+  body.page-learning-roadmap .rm126-level-action{margin-top:6px!important}
+  body.page-learning-roadmap .rm126-open,body.page-learning-roadmap .rm126-locked{min-height:34px!important;border-radius:9px!important;font-size:8px!important}
+  body.page-learning-roadmap .wf175-roadmap-sticky-continue{left:10px!important;right:10px!important;bottom:68px!important;min-height:46px!important;border-radius:12px!important}
+}
+
+@media (max-width:340px){
+  .wf176-learning-appbar{height:50px;grid-template-columns:40px minmax(0,1fr) 40px}
+  .wf176-learning-appbar :is(button,a){min-width:40px;min-height:40px}
+  body.page-spoken-materials .wf175-materials-head,
+  body.page-free-ai-english-practice .wf175-practice-head,
+  body.page-learning-roadmap .rm126-hero{padding-inline:11px!important}
+  .wf176-mode-filter button{font-size:6.7px}
+  .wf176-mode-filter button i{width:28px;height:28px;font-size:10px}
+  body.page-spoken-materials .wf143-mode-card{min-height:72px!important;grid-template-columns:47px minmax(0,1fr) 18px!important;padding:8px!important}
+  body.page-spoken-materials .wf143-mode-icon{width:47px!important;height:47px!important}
+  body.page-spoken-materials #practiceQuestion{font-size:16px!important}
+  body.page-spoken-materials #practiceAnswer{height:56px!important;min-height:56px!important}
+}
+
+@media (max-width:760px) and (max-height:600px){
+  /* DevTools/short-screen safety: never cover the answer/actions with a fixed nav. */
+  body.page-spoken-materials #mainContent,
+  body.page-free-ai-english-practice #mainContent,
+  body.page-learning-roadmap #mainContent{padding-bottom:0!important}
+  body.page-spoken-materials .wf127-mobile-bottom.wf175-learning-bottom,
+  body.page-free-ai-english-practice .wf127-mobile-bottom.wf175-learning-bottom,
+  body.page-learning-roadmap .wf127-mobile-bottom.wf175-learning-bottom{
+    position:static!important;left:auto!important;right:auto!important;bottom:auto!important;
+    width:100%!important;height:58px!important;min-height:58px!important;
+    margin:0!important;box-shadow:0 -1px 0 #dce5ef!important;
+  }
+  .wf127-mobile-bottom.wf175-learning-bottom a{min-height:48px!important}
+  .wf127-mobile-bottom.wf175-learning-bottom a i{width:27px!important;height:27px!important}
+  body.page-spoken-materials .wf143-practice-page,
+  body.page-free-ai-english-practice #practice-app,
+  body.page-learning-roadmap .rm126-page{padding-bottom:8px!important}
+  body.page-spoken-materials .wf143-navigation,
+  body.page-free-ai-english-practice .practice-controls,
+  body.page-learning-roadmap .wf175-roadmap-sticky-continue{position:static!important;left:auto!important;right:auto!important;bottom:auto!important}
+}

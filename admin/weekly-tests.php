@@ -2,6 +2,7 @@
 $admin_page_final_styles = ['assets/css/phase159-admin-weekly-papers.css','assets/css/phase168-weekly-admin-easy.css','assets/css/phase169-admin-usability.css','assets/css/phase171-weekly-admin-polish.css','assets/css/phase172-weekly-admin-compact.css'];
 require_once __DIR__ . '/_header.php';
 weekly_test_ensure_schema();
+weekly_test_finalize_started_attempts(0, false);
 
 
 function weekly_admin_is_ajax_request(): bool {
@@ -20,7 +21,7 @@ function weekly_admin_post_reply(bool $success, string $message, array $extra = 
     redirect('weekly-tests.php'.($q?'?'.implode('&',$q):'').'#setup');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), ['save_test','publish_test_now','set_test_pending','upload_questions','clear_questions','save_question','delete_question','grade_attempt','reset_attempt'], true)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), ['save_test','publish_test_now','set_test_pending','force_close_test','upload_questions','clear_questions','save_question','delete_question','grade_attempt','reset_attempt'], true)) {
     try {
         if (!csrf_validate($_POST['csrf_token'] ?? '')) weekly_admin_post_reply(false, 'Security check failed. Refresh page once.');
         $action = $_POST['action'] ?? '';
@@ -77,6 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
             $tstmt->execute([$testId]);
             $tt=(string)($tstmt->fetchColumn() ?: 'basic');
             weekly_admin_post_reply(true, $tt==='upcoming' ? 'Upcoming Test entry closed. New starts are blocked; students already inside keep their exam timer. Review copies, then Finalize Top 3.' : 'Set to Pending/Draft. Students cannot start this paper now.', ['test_id'=>$testId, 'type'=>$tt]);
+        }
+        if ($action === 'force_close_test') {
+            $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
+            if($testId<=0) weekly_admin_post_reply(false, 'Select an Upcoming Test paper first.');
+            $res=weekly_test_force_close_entry($testId);
+            weekly_admin_post_reply(!empty($res['success']), (string)($res['message'] ?? 'Force Close finished.'), ['test_id'=>$testId, 'type'=>'upcoming']);
         }
         if ($action === 'upload_questions') {
             $testId=(int)($_POST['test_id']??0);
@@ -136,6 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), 
         if ($action === 'grade_attempt') {
             $attemptId=(int)($_POST['attempt_id']??0);
             if($attemptId<=0) weekly_admin_post_reply(false, 'Invalid attempt');
+            $gradeState=db()->prepare("SELECT status FROM weekly_test_attempts WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1"); $gradeState->execute([$attemptId]);
+            if(!in_array((string)($gradeState->fetchColumn()?:''),['submitted','checked'],true)) weekly_admin_post_reply(false, 'This attempt is still in progress. Wait for Final Submit before checking marks.', ['attempt_id'=>$attemptId]);
             $scores=is_array($_POST['marks']??null)?$_POST['marks']:[];
             $notes=is_array($_POST['notes']??null)?$_POST['notes']:[];
             $total=0.0;
@@ -441,7 +450,7 @@ function weekly_admin_sample_link(string $type): string {
   </div>
   <div class="head-actions">
     <a class="btn btn-soft" href="students.php">Students</a>
-    <?php if($selectedType==='upcoming'): ?><a class="btn btn-soft" href="upcoming-test-performance.php<?= $selectedTestId>0 ? '?test_id='.e((string)$selectedTestId) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Performance</a><?php endif; ?>
+    <?php if($selectedType==='upcoming'): ?><a class="btn btn-soft" href="weekly-live-students.php<?= $selectedTestId>0 ? '?test_id='.e((string)$selectedTestId) : '' ?>"><i class="fa-solid fa-user-clock"></i> Live Students</a><a class="btn btn-soft" href="upcoming-test-performance.php<?= $selectedTestId>0 ? '?test_id='.e((string)$selectedTestId) : '' ?>"><i class="fa-solid fa-ranking-star"></i> Performance</a><?php endif; ?>
     <a class="btn btn-primary" href="../weekly-test.php" target="_blank">Open Test Page</a>
   </div>
 </div>
@@ -523,6 +532,7 @@ function weekly_admin_sample_link(string $type): string {
         <?php endif; ?>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-primary btn-sm" type="submit">Publish</button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-soft btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Close Entry' : 'Pending' ?></button><span class="ajax-msg"></span></form>
+        <?php if(($pt['test_type'] ?? '')==='upcoming'): ?><form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Force close this exam now? New entry will stop and every active student's LAST SAVED answers will be submitted immediately. Their remaining timer will not continue."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="force_close_test"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-red btn-sm" type="submit"><i class="fa-solid fa-stop"></i><span>Force Close</span></button><span class="ajax-msg"></span></form><?php endif; ?>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="<?= e((($pt['test_type'] ?? '')==='upcoming') ? 'Close new entry and finalize 1st, 2nd and 3rd when all active attempts are finished and all submitted copies are checked?' : 'Complete this batch test and publish top 3 winners for 2 days?') ?>"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="complete_batch_test"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-green btn-sm" type="submit"><?= (($pt['test_type'] ?? '')==='upcoming') ? 'Finalize Top 3' : 'Complete' ?></button><span class="ajax-msg"></span></form>
         <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Hide/archive this batch paper? Records will remain in database for 15 days."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="archive_test_paper"><input type="hidden" name="test_id" value="<?= e((string)$pid) ?>"><button class="btn btn-red btn-sm" type="submit">Delete</button><span class="ajax-msg"></span></form>
       </div>
@@ -547,7 +557,8 @@ function weekly_admin_sample_link(string $type): string {
         <div><b><?= e($selectedTest['title']) ?></b><span><?= e((string)$selectedQuestionCount) ?> Q • <?= e((string)($selectedTest['duration_minutes'] ?? 30)) ?> min • <?= e($selectedReadyLabel) ?></span></div>
         <div class="wf172-paper-actions">
           <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="publish_test_now"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>"><button class="btn btn-primary btn-sm" type="submit">Publish</button><span class="ajax-msg"></span></form>
-          <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>"><button class="btn btn-soft btn-sm" type="submit"><?= $selectedType==='upcoming' ? 'Close' : 'Pending' ?></button><span class="ajax-msg"></span></form>
+          <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="set_test_pending"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>"><button class="btn btn-soft btn-sm" type="submit"><?= $selectedType==='upcoming' ? 'Close Entry' : 'Pending' ?></button><span class="ajax-msg"></span></form>
+          <?php if($selectedType==='upcoming'): ?><form class="ajax-admin-form" action="weekly-test-ajax.php" method="post" data-confirm="Force close now? Active students will be submitted immediately using their last saved answers."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="force_close_test"><input type="hidden" name="test_id" value="<?= e((string)$selectedTestId) ?>"><button class="btn btn-red btn-sm" type="submit" title="Submit active attempts now"><i class="fa-solid fa-stop"></i> Force</button><span class="ajax-msg"></span></form><?php endif; ?>
         </div>
       </div>
     <?php endif; ?>
@@ -776,6 +787,9 @@ function weekly_admin_sample_link(string $type): string {
   </div>
   <?php if(!empty($review['activity_log'])): ?><details class="cheat-log"><summary>Activity warnings</summary><pre><?= e($review['activity_log']) ?></pre></details><?php endif; ?>
   <?php if(!empty($review['timing_log'])): ?><details class="cheat-log"><summary>Question time log</summary><pre><?= e($review['timing_log']) ?></pre></details><?php endif; ?>
+  <?php if (($review['status'] ?? '') === 'started'): ?>
+    <div class="alert alert-info"><b>Student is still taking this test.</b> Saved answers can be viewed for support, but marks stay locked until Final Submit. <a href="weekly-live-students.php?test_id=<?= e((string)$review['test_id']) ?>">Open Live Students</a>.</div>
+  <?php else: ?>
   <form class="ajax-admin-form" action="weekly-test-ajax.php" method="post">
     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="grade_attempt"><input type="hidden" name="attempt_id" value="<?= e((string)$review['id']) ?>">
     <div class="review-accordion">
@@ -795,6 +809,7 @@ function weekly_admin_sample_link(string $type): string {
     <label>Overall Note <textarea name="admin_note" rows="2" placeholder="Final feedback for student"><?= e($review['admin_note'] ?? '') ?></textarea></label>
     <button class="btn btn-primary">Save Marks & Publish Result</button><span class="ajax-msg"></span>
   </form>
+  <?php endif; ?>
 </div>
 <?php endif; ?>
 

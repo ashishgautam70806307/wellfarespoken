@@ -1,0 +1,28 @@
+{
+  "phase": 178,
+  "base": "Phase 177 cumulative project",
+  "scope": "mobile brand/UI/UX repair for Spoken Materials, Practice Materials and Learning Roadmap",
+  "php_lint": {"files": 135, "passed": true},
+  "javascript_syntax": {"standalone_js_and_service_worker": 35, "inline_page_scripts": 2, "passed": true},
+  "css_brace_integrity": {"files": 146, "passed": true},
+  "service_worker": {"cache": "v178", "precache_assets": 60, "missing_assets": 0},
+  "regressions": {
+    "phase170_continuous_voice": "13/13 passed",
+    "phase174_security": "19/19 passed",
+    "phase163_weekly_flow": "28/28 passed",
+    "phase164_upcoming_visibility": "20/20 passed",
+    "phase178_feature_and_brand": "60/60 passed"
+  },
+  "duplicate_literal_ids": {
+    "spoken-materials.php": 0,
+    "free-ai-english-practice.php": 0,
+    "learning-roadmap.php": 0
+  },
+  "preserved_hash_checks": {
+    "includes/header.php": true,
+    "includes/footer.php": true,
+    "assets/js/phase170-spoken-practice.js": true
+  },
+  "database_schema_change": false,
+  "browser_visual_qa": "Physical/authenticated Android and iPhone verification remains required. Chromium headless in the build environment could not start reliably, so no Phase 178 browser screenshot is claimed."
+}

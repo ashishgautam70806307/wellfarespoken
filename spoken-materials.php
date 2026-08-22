@@ -11,7 +11,7 @@ $skip_phase141_learning_css = true;
 $skip_phase142_interaction_css = true;
 $skip_phase139_mobile_learning_script = true;
 $page_late_styles = ['assets/css/phase143-practice-stability.css'];
-$page_final_styles = ['assets/css/phase169-spoken-materials.css'];
+$page_final_styles = ['assets/css/phase169-spoken-materials.css', 'assets/css/phase180-old-design-mobile-fix.css'];
 $page_scripts = ['assets/js/phase170-spoken-practice.js'];
 
 $allowedGoals = ['speak', 'hindi_to_english', 'english_to_hindi', 'revision'];

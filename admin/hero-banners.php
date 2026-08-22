@@ -30,14 +30,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $showContent = ($_POST['show_content'] ?? 'Yes') === 'No' ? 'No' : 'Yes';
     $title = trim($_POST['title'] ?? '');
 
-    $fallbackImage = trim($_POST['existing_image_url'] ?? '');
-    $desktopImage = trim($_POST['existing_desktop_image_url'] ?? '');
-    $mobileImage = trim($_POST['existing_mobile_image_url'] ?? '');
+    $oldImages = ['image_url'=>'', 'desktop_image_url'=>'', 'mobile_image_url'=>''];
+    if ($id > 0) {
+        $oldStmt = db()->prepare('SELECT * FROM hero_banners WHERE id=? LIMIT 1');
+        $oldStmt->execute([$id]);
+        $oldRow = $oldStmt->fetch() ?: [];
+        foreach (array_keys($oldImages) as $key) $oldImages[$key] = (string)($oldRow[$key] ?? '');
+    }
+    $fallbackImage = (($_POST['remove_fallback_image'] ?? 'No') === 'Yes') ? '' : $oldImages['image_url'];
+    $desktopImage = (($_POST['remove_desktop_image'] ?? 'No') === 'Yes') ? '' : $oldImages['desktop_image_url'];
+    $mobileImage = (($_POST['remove_mobile_image'] ?? 'No') === 'Yes') ? '' : $oldImages['mobile_image_url'];
+    $newUploadedImages = [];
 
     try {
         $uploadedFallback = upload_hero_banner_image($_FILES['banner_image'] ?? [], 'general');
+        if ($uploadedFallback) $newUploadedImages[] = $uploadedFallback;
         $uploadedDesktop = upload_hero_banner_image($_FILES['desktop_banner_image'] ?? [], 'desktop');
+        if ($uploadedDesktop) $newUploadedImages[] = $uploadedDesktop;
         $uploadedMobile = upload_hero_banner_image($_FILES['mobile_banner_image'] ?? [], 'mobile');
+        if ($uploadedMobile) $newUploadedImages[] = $uploadedMobile;
         if ($uploadedFallback) $fallbackImage = $uploadedFallback;
         if ($uploadedDesktop) $desktopImage = $uploadedDesktop;
         if ($uploadedMobile) $mobileImage = $uploadedMobile;
@@ -134,10 +145,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            flash('success', 'Responsive hero banner saved successfully.');
+            managed_upload_cleanup_many(array_values($oldImages));
+            managed_upload_cleanup_many($newUploadedImages); // removes any uploaded variant that the current schema did not persist
+            flash('success', 'Responsive hero banner saved successfully. Replaced managed images were cleaned up.');
             redirect('hero-banners.php');
         }
     } catch (Throwable $e) {
+        managed_upload_cleanup_many($newUploadedImages);
         error_log('[hero-banners] ' . $e->__toString());
         flash('error', 'Banner could not be saved. Check Admin > System Check and the upload permissions.');
     }
@@ -203,6 +217,7 @@ $pageOptions = [
 
             <label class="full">Desktop / Laptop Image
                 <input type="file" name="desktop_banner_image" accept="image/jpeg,image/png,image/webp" data-preview-target="desktopBannerPreview">
+                <?php if (!empty($edit['desktop_image_url'])): ?><small class="help"><input type="checkbox" name="remove_desktop_image" value="Yes"> Remove desktop-specific image (fallback image will still be used when available)</small><?php endif; ?>
             </label>
             <div class="full image-preview hero-preview-v126 hero-preview-desktop-v126" id="desktopBannerPreview">
                 <?php $desktopPreview = $edit['desktop_image_url'] ?? $edit['image_url'] ?? ''; ?>
@@ -211,6 +226,7 @@ $pageOptions = [
 
             <label class="full">Mobile Image
                 <input type="file" name="mobile_banner_image" accept="image/jpeg,image/png,image/webp" data-preview-target="mobileBannerPreview">
+                <?php if (!empty($edit['mobile_image_url'])): ?><small class="help"><input type="checkbox" name="remove_mobile_image" value="Yes"> Remove mobile-specific image (desktop/fallback will be used)</small><?php endif; ?>
             </label>
             <div class="full image-preview hero-preview-v126 hero-preview-mobile-v126" id="mobileBannerPreview">
                 <?php $mobilePreview = $edit['mobile_image_url'] ?? ''; ?>
@@ -219,7 +235,7 @@ $pageOptions = [
 
             <details class="full hero-fallback-v126">
                 <summary><i class="fa-solid fa-image"></i> Legacy fallback image</summary>
-                <label>Fallback Image<input type="file" name="banner_image" accept="image/jpeg,image/png,image/webp" data-preview-target="fallbackBannerPreview"></label>
+                <label>Fallback Image<input type="file" name="banner_image" accept="image/jpeg,image/png,image/webp" data-preview-target="fallbackBannerPreview"><?php if (!empty($edit['image_url'])): ?><small class="help"><input type="checkbox" name="remove_fallback_image" value="Yes"> Remove current fallback image</small><?php endif; ?></label>
                 <div class="image-preview" id="fallbackBannerPreview"><?php if (!empty($edit['image_url'])): ?><img src="../<?= e($edit['image_url']) ?>" alt="Fallback preview"><?php else: ?>Optional fallback preview<?php endif; ?></div>
             </details>
 

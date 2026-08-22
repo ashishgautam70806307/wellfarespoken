@@ -62,6 +62,16 @@ function app_safe_href(?string $url, string $default = '#', bool $webOnly = fals
     return $url;
 }
 
+function app_safe_https_url(?string $url, string $default = ''): string
+{
+    $url = app_safe_href($url, $default, true);
+    if ($url === $default || $url === '') return $url;
+    $parts = parse_url($url);
+    if ($parts === false || strtolower((string)($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) return $default;
+    if (isset($parts['user']) || isset($parts['pass'])) return $default;
+    return $url;
+}
+
 function app_icon_class(?string $value, string $fallback = 'fa-solid fa-circle-check'): string
 {
     $value = trim((string)$value);
@@ -229,6 +239,11 @@ function require_admin(): void
         $page = basename((string)($_SERVER['PHP_SELF'] ?? ''));
         if ($passwordGate && !in_array($page,['password.php','logout.php'],true)) {
             redirect('password.php?required=1');
+        }
+        $mfaGate = function_exists('admin_mfa_gate_active') ? admin_mfa_gate_active() : false;
+        $_SESSION['admin_mfa_setup_required'] = $mfaGate;
+        if ($mfaGate && !in_array($page,['password.php','logout.php'],true)) {
+            redirect('password.php?mfa_required=1#mfa');
         }
         if (function_exists('admin_page_permission')) {
             $permission = admin_page_permission($page);
@@ -924,7 +939,7 @@ function ensure_schema_updates(): void
             'ai_provider' => 'openai',
             'openai_api_key' => '',
             'openai_model' => 'gpt-4o-mini',
-            'openai_endpoint' => 'https://api.openai.com/v1/chat/completions',
+            'openai_endpoint' => '',
             'ai_daily_limit' => '10',
             'ai_timeout_seconds' => '18',
             'ai_temperature' => '0.2',
@@ -1654,11 +1669,292 @@ function secure_image_upload(array $file, string $folder, string $prefix, int $m
     // When GD is available, decoding and re-encoding strips trailing/polyglot
     // payload data instead of preserving attacker-controlled file bytes.
     $sanitized = secure_image_reencode($tmp, $target, $mime);
-    if (!$sanitized && !move_uploaded_file($tmp, $target)) {
-        throw new RuntimeException('Could not save uploaded image.');
+    if (!$sanitized) {
+        // A failed encoder may leave a partial target behind. Remove it before
+        // falling back to the original verified upload so failed uploads never
+        // accumulate damaged orphan files.
+        if (is_file($target)) @unlink($target);
+        if (!move_uploaded_file($tmp, $target)) {
+            if (is_file($target)) @unlink($target);
+            throw new RuntimeException('Could not save uploaded image.');
+        }
     }
     @chmod($target, 0644);
     return 'assets/uploads/' . trim($folder, '/') . '/' . $name;
+}
+
+/**
+ * Normalize a file path that is owned by the application upload lifecycle.
+ *
+ * Only files inside assets/uploads or private/materials are candidates. Remote
+ * URLs, traversal paths and other application/static assets are never unlinked.
+ */
+function managed_upload_normalize_path(string $path): string
+{
+    $path = trim(str_replace(["\0", "\r", "\n"], '', html_entity_decode($path, ENT_QUOTES, 'UTF-8')));
+    if ($path === '' || str_contains($path, '\\') || str_starts_with($path, '//')) return '';
+    if ((string)(parse_url($path, PHP_URL_SCHEME) ?? '') !== '') return '';
+
+    $pathOnly = (string)(parse_url($path, PHP_URL_PATH) ?? '');
+    $pathOnly = ltrim($pathOnly, '/');
+    if ($pathOnly === '' || preg_match('#(^|/)\.\.(/|$)#', $pathOnly)) return '';
+
+    if (str_starts_with($pathOnly, 'assets/uploads/')) return $pathOnly;
+    if (str_starts_with($pathOnly, 'private/materials/')) return $pathOnly;
+    return '';
+}
+
+/**
+ * Automatic cleanup is intentionally limited to server-generated upload names.
+ * This prevents an admin-entered/static path (for example a bundled fallback
+ * banner) from being physically deleted just because a DB reference changed.
+ */
+function managed_upload_filename_is_generated(string $path): bool
+{
+    $normalized = managed_upload_normalize_path($path);
+    if ($normalized === '') return false;
+    $name = basename($normalized);
+    return (bool)preg_match('/^[a-z0-9][a-z0-9_-]*[-_]\d{8}[-_]\d{6}[-_][a-f0-9]{8,32}\.(?:jpe?g|png|webp|pdf|txt|csv)$/i', $name);
+}
+
+function managed_upload_absolute_path(string $path): string
+{
+    $normalized = managed_upload_normalize_path($path);
+    if ($normalized === '') return '';
+    if (str_starts_with($normalized, 'assets/uploads/')) {
+        return dirname(__DIR__) . '/' . $normalized;
+    }
+    if (str_starts_with($normalized, 'private/materials/')) {
+        $relative = substr($normalized, strlen('private/'));
+        return rtrim(material_private_root(), '/\\') . '/' . $relative;
+    }
+    return '';
+}
+
+/**
+ * Runtime/static project references are protected too. This covers bundled
+ * fallback/error-page assets and canonical seed paths that may intentionally
+ * live under assets/uploads even when no current DB row points at them.
+ */
+function managed_upload_static_reference_set(): array
+{
+    static $set = null;
+    if (is_array($set)) return $set;
+    $set = [];
+    $root = dirname(__DIR__);
+    $allowedExtensions = ['php'=>true, 'css'=>true, 'js'=>true, 'json'=>true, 'webmanifest'=>true, 'sql'=>true];
+    $skipTop = ['assets/uploads', 'storage', 'tests', 'tools'];
+
+    try {
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            if (!$file instanceof SplFileInfo || !$file->isFile() || $file->isLink()) continue;
+            $relative = str_replace('\\', '/', substr($file->getPathname(), strlen(rtrim($root, '/\\')) + 1));
+            $skip = false;
+            foreach ($skipTop as $prefix) {
+                if ($relative === $prefix || str_starts_with($relative, $prefix . '/')) { $skip = true; break; }
+            }
+            if ($skip) continue;
+            $ext = strtolower((string)pathinfo($relative, PATHINFO_EXTENSION));
+            if (!isset($allowedExtensions[$ext]) || $file->getSize() > 4 * 1024 * 1024) continue;
+            $text = @file_get_contents($file->getPathname());
+            if (!is_string($text) || $text === '') continue;
+            if (!preg_match_all('#(?:assets/uploads|private/materials)/[A-Za-z0-9_./-]+#', $text, $matches)) continue;
+            foreach ($matches[0] as $candidate) {
+                $candidate = rtrim((string)$candidate, "'\"),;]}>");
+                $normalized = managed_upload_normalize_path($candidate);
+                if ($normalized !== '') $set[$normalized] = true;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('[managed-upload-static-reference-scan] ' . $e->getMessage());
+    }
+    return $set;
+}
+
+/**
+ * Count live DB references to a managed file across every current file/image
+ * column. A DB/read error returns a conservative positive count so cleanup
+ * fails closed instead of risking deletion of a still-used file.
+ */
+function managed_upload_reference_count(string $path): int
+{
+    $normalized = managed_upload_normalize_path($path);
+    if ($normalized === '') return 0;
+    if (isset(managed_upload_static_reference_set()[$normalized])) return 1;
+    $variants = array_values(array_unique([$normalized, '/' . $normalized]));
+    $total = 0;
+
+    $refs = [
+        ['courses', 'course_image'],
+        ['testimonials', 'student_image'],
+        ['faculty_members', 'image_url'],
+        ['gallery_images', 'image_url'],
+        ['hero_banners', 'image_url'],
+        ['hero_banners', 'desktop_image_url'],
+        ['hero_banners', 'mobile_image_url'],
+        ['admissions', 'student_photo'],
+        ['material_collections', 'cover_image'],
+        ['material_assets', 'file_path'],
+    ];
+
+    try {
+        foreach ($refs as [$table, $column]) {
+            if (!table_exists($table) || !column_exists($table, $column)) continue;
+            $stmt = db()->prepare("SELECT COUNT(*) FROM `{$table}` WHERE `{$column}` IN (?, ?)");
+            $stmt->execute([$variants[0], $variants[1] ?? $variants[0]]);
+            $total += (int)$stmt->fetchColumn();
+            if ($total > 0) return $total;
+        }
+        if (table_exists('site_settings') && column_exists('site_settings', 'setting_value')) {
+            $stmt = db()->prepare('SELECT COUNT(*) FROM site_settings WHERE setting_value IN (?, ?)');
+            $stmt->execute([$variants[0], $variants[1] ?? $variants[0]]);
+            $total += (int)$stmt->fetchColumn();
+        }
+    } catch (Throwable $e) {
+        error_log('[managed-upload-reference-check] ' . $e->getMessage());
+        return 1;
+    }
+    return $total;
+}
+
+/**
+ * Delete an application-generated upload only after its DB reference has gone.
+ * Returns true only when a physical file was actually removed.
+ */
+function managed_upload_cleanup(string $path): bool
+{
+    $normalized = managed_upload_normalize_path($path);
+    if ($normalized === '' || !managed_upload_filename_is_generated($normalized)) return false;
+    if (managed_upload_reference_count($normalized) > 0) return false;
+
+    $absolute = managed_upload_absolute_path($normalized);
+    if ($absolute === '' || !is_file($absolute)) return false;
+
+    $realFile = realpath($absolute);
+    if ($realFile === false) return false;
+    $allowedRoots = [];
+    $publicRoot = realpath(dirname(__DIR__) . '/assets/uploads');
+    if ($publicRoot !== false) $allowedRoots[] = rtrim($publicRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    $privateRoot = realpath(material_private_root());
+    if ($privateRoot !== false) $allowedRoots[] = rtrim($privateRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+    $insideAllowedRoot = false;
+    foreach ($allowedRoots as $root) {
+        if (str_starts_with($realFile, $root)) { $insideAllowedRoot = true; break; }
+    }
+    if (!$insideAllowedRoot) return false;
+
+    if (!@unlink($realFile)) {
+        error_log('[managed-upload-cleanup] Could not unlink ' . $normalized);
+        return false;
+    }
+    return true;
+}
+
+function managed_upload_cleanup_many(array $paths): int
+{
+    $count = 0;
+    $seen = [];
+    foreach ($paths as $path) {
+        $normalized = managed_upload_normalize_path((string)$path);
+        if ($normalized === '' || isset($seen[$normalized])) continue;
+        $seen[$normalized] = true;
+        if (managed_upload_cleanup($normalized)) $count++;
+    }
+    return $count;
+}
+
+function managed_upload_reference_set(): ?array
+{
+    $set = managed_upload_static_reference_set();
+    $refs = [
+        ['courses', 'course_image'],
+        ['testimonials', 'student_image'],
+        ['faculty_members', 'image_url'],
+        ['gallery_images', 'image_url'],
+        ['hero_banners', 'image_url'],
+        ['hero_banners', 'desktop_image_url'],
+        ['hero_banners', 'mobile_image_url'],
+        ['admissions', 'student_photo'],
+        ['material_collections', 'cover_image'],
+        ['material_assets', 'file_path'],
+    ];
+    try {
+        foreach ($refs as [$table, $column]) {
+            if (!table_exists($table) || !column_exists($table, $column)) continue;
+            $stmt = db()->query("SELECT `{$column}` FROM `{$table}` WHERE `{$column}` IS NOT NULL AND `{$column}`<>''");
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
+                $normalized = managed_upload_normalize_path((string)$value);
+                if ($normalized !== '') $set[$normalized] = true;
+            }
+        }
+        if (table_exists('site_settings') && column_exists('site_settings', 'setting_value')) {
+            $stmt = db()->query("SELECT setting_value FROM site_settings WHERE setting_value IS NOT NULL AND setting_value<>''");
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
+                $normalized = managed_upload_normalize_path((string)$value);
+                if ($normalized !== '') $set[$normalized] = true;
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('[managed-upload-reference-set] ' . $e->getMessage());
+        return null;
+    }
+    return $set;
+}
+
+/**
+ * Scan old generated uploads that are no longer referenced by the database.
+ * A grace period protects recently uploaded/draft files from premature cleanup.
+ */
+function managed_upload_scan_orphans(int $minimumAgeSeconds = 172800, int $limit = 500): array
+{
+    $minimumAgeSeconds = max(3600, $minimumAgeSeconds);
+    $limit = max(1, min(5000, $limit));
+    $references = managed_upload_reference_set();
+    if ($references === null) return ['safe'=>false, 'count'=>0, 'bytes'=>0, 'paths'=>[]];
+
+    $roots = [
+        [dirname(__DIR__) . '/assets/uploads', 'assets/uploads/'],
+        [rtrim(material_private_root(), '/\\') . '/materials', 'private/materials/'],
+    ];
+    $paths = [];
+    $bytes = 0;
+    $cutoff = time() - $minimumAgeSeconds;
+
+    foreach ($roots as [$root, $prefix]) {
+        if (!is_dir($root)) continue;
+        try {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $file) {
+                if (!$file instanceof SplFileInfo || !$file->isFile() || $file->isLink()) continue;
+                if ($file->getMTime() > $cutoff) continue;
+                $relative = str_replace('\\', '/', substr($file->getPathname(), strlen(rtrim($root, '/\\')) + 1));
+                $path = $prefix . ltrim($relative, '/');
+                $normalized = managed_upload_normalize_path($path);
+                if ($normalized === '' || !managed_upload_filename_is_generated($normalized)) continue;
+                if (isset($references[$normalized])) continue;
+                $paths[] = $normalized;
+                $bytes += max(0, (int)$file->getSize());
+                if (count($paths) >= $limit) break 2;
+            }
+        } catch (Throwable $e) {
+            error_log('[managed-upload-orphan-scan] ' . $e->getMessage());
+            return ['safe'=>false, 'count'=>count($paths), 'bytes'=>$bytes, 'paths'=>$paths];
+        }
+    }
+    return ['safe'=>true, 'count'=>count($paths), 'bytes'=>$bytes, 'paths'=>$paths];
+}
+
+function managed_upload_cleanup_orphans(int $minimumAgeSeconds = 172800, int $limit = 500): array
+{
+    $report = managed_upload_scan_orphans($minimumAgeSeconds, $limit);
+    if (!($report['safe'] ?? false)) return ['safe'=>false, 'found'=>(int)($report['count'] ?? 0), 'deleted'=>0, 'bytes'=>(int)($report['bytes'] ?? 0)];
+    $deleted = 0;
+    foreach ((array)($report['paths'] ?? []) as $path) {
+        if (managed_upload_cleanup((string)$path)) $deleted++;
+    }
+    return ['safe'=>true, 'found'=>(int)($report['count'] ?? 0), 'deleted'=>$deleted, 'bytes'=>(int)($report['bytes'] ?? 0)];
 }
 
 function upload_course_image(array $file): ?string
@@ -1887,10 +2183,40 @@ function upload_hero_banner_image(array $file, string $variant = 'general'): ?st
     return secure_image_upload($file, 'banners', 'banner-' . $safeVariant, 3 * 1024 * 1024);
 }
 
+function practice_ai_api_key(): string
+{
+    return defined('OPENAI_API_KEY') ? trim((string)OPENAI_API_KEY) : '';
+}
+
+function practice_ai_endpoint(): string
+{
+    $endpoint = defined('OPENAI_API_ENDPOINT') ? trim((string)OPENAI_API_ENDPOINT) : 'https://api.openai.com/v1/chat/completions';
+    $parts = parse_url($endpoint);
+    if ($parts === false || strtolower((string)($parts['scheme'] ?? '')) !== 'https' || empty($parts['host']) || isset($parts['user']) || isset($parts['pass'])) return '';
+    $host = strtolower((string)$parts['host']);
+    $allowedRaw = defined('OPENAI_ALLOWED_HOSTS') ? (string)OPENAI_ALLOWED_HOSTS : 'api.openai.com';
+    $allowed = array_values(array_filter(array_map(static fn($v) => strtolower(trim($v)), explode(',', $allowedRaw))));
+    return in_array($host, $allowed, true) ? $endpoint : '';
+}
+
+function practice_purge_legacy_ai_secret(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        if (table_exists('practice_settings')) {
+            db()->prepare("UPDATE practice_settings SET setting_value='' WHERE setting_key='openai_api_key' AND setting_value<>''")->execute();
+        }
+    } catch (Throwable $e) { error_log('[practice-ai-secret-purge] ' . $e->getMessage()); }
+}
+
 function practice_ai_status_label(): string
 {
     if (practice_setting('ai_enabled', 'No') !== 'Yes') return 'AI Off - Local practice is active';
-    if (trim(practice_setting('openai_api_key', '')) === '') return 'AI On but API key missing - local fallback active';
+    practice_purge_legacy_ai_secret();
+    if (practice_ai_api_key() === '') return 'AI On but API key missing in server .env - local fallback active';
+    if (practice_ai_endpoint() === '') return 'AI endpoint blocked by security allowlist - local fallback active';
     if (!function_exists('curl_init')) return 'AI On but PHP cURL missing - local fallback active';
     $limit = max(0, (int)practice_setting('ai_daily_limit', '10'));
     if ($limit > 0 && practice_today_ai_used() >= $limit) return 'Daily AI limit reached - local fallback active';
@@ -2193,7 +2519,8 @@ function practice_can_use_ai(): bool
 {
     if (practice_setting('ai_enabled', 'No') !== 'Yes') return false;
     if (practice_setting('ai_correction_enabled', 'Yes') !== 'Yes') return false;
-    if (trim(practice_setting('openai_api_key', '')) === '') return false;
+    practice_purge_legacy_ai_secret();
+    if (practice_ai_api_key() === '' || practice_ai_endpoint() === '') return false;
     $limit = max(0, (int)practice_setting('ai_daily_limit', '10'));
     return $limit === 0 || practice_today_ai_used() < $limit;
 }
@@ -2236,8 +2563,8 @@ function practice_ai_feedback(array $question, string $answer, array $localResul
         log_practice_ai((int)($question['id'] ?? 0), 'skipped', 'AI disabled, API key missing, or daily limit reached.');
         return null;
     }
-    $apiKey = trim(practice_setting('openai_api_key', ''));
-    $endpoint = trim(practice_setting('openai_endpoint', 'https://api.openai.com/v1/chat/completions'));
+    $apiKey = practice_ai_api_key();
+    $endpoint = practice_ai_endpoint();
     $model = trim(practice_setting('openai_model', 'gpt-4o-mini')) ?: 'gpt-4o-mini';
     $timeout = max(8, min(45, (int)practice_setting('ai_timeout_seconds', '18')));
     $temperature = (float)practice_setting('ai_temperature', '0.2');
@@ -2271,7 +2598,9 @@ function practice_ai_feedback(array $question, string $answer, array $localResul
                 'Authorization: Bearer ' . $apiKey
             ],
             CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_TIMEOUT => $timeout
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_PROTOCOLS => defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2,
+            CURLOPT_REDIR_PROTOCOLS => defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2
         ]);
         $response = curl_exec($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -3550,15 +3879,16 @@ function practice_auto_correct_local(string $input): array
 function practice_ai_is_ready(): bool
 {
     return practice_setting('ai_enabled', 'No') === 'Yes'
-        && trim(practice_setting('openai_api_key', '')) !== ''
+        && practice_ai_api_key() !== ''
+        && practice_ai_endpoint() !== ''
         && function_exists('curl_init');
 }
 
 function practice_ai_chat_text(string $systemPrompt, string $userPrompt, float $temperature = 0.15): ?string
 {
     if (!practice_ai_is_ready()) return null;
-    $apiKey = trim(practice_setting('openai_api_key', ''));
-    $endpoint = trim(practice_setting('openai_endpoint', 'https://api.openai.com/v1/chat/completions'));
+    $apiKey = practice_ai_api_key();
+    $endpoint = practice_ai_endpoint();
     $model = trim(practice_setting('openai_model', 'gpt-4o-mini')) ?: 'gpt-4o-mini';
     $timeout = max(8, min(45, (int)practice_setting('ai_timeout_seconds', '18')));
     $payload = [
@@ -3576,7 +3906,9 @@ function practice_ai_chat_text(string $systemPrompt, string $userPrompt, float $
             CURLOPT_POST => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json','Authorization: Bearer ' . $apiKey],
             CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_TIMEOUT => $timeout
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_PROTOCOLS => defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2,
+            CURLOPT_REDIR_PROTOCOLS => defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2
         ]);
         $response = curl_exec($ch);
         $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -3702,7 +4034,7 @@ function weekly_test_schema_status(): array
             'id','test_id','student_id','guest_name','guest_phone','canonical_phone','started_at','submitted_at','expires_at',
             'status','auto_score','admin_score','total_marks','penalty_marks','admin_note','warning_count','activity_log',
             'timing_log','suspicious_flag','access_token','result_token','question_snapshot','question_order',
-            'submission_reason','last_saved_at','status_deleted','deleted_at'
+            'submission_reason','last_saved_at','reopen_count','reopened_at','reopened_by_admin_id','reopen_reason','reopen_time_mode','reopen_seconds_granted','first_submitted_at','status_deleted','deleted_at'
         ],
         'weekly_test_answers' => ['id','attempt_id','question_id','answer_text','is_correct','marks_awarded','admin_note'],
     ];
@@ -3733,7 +4065,7 @@ function weekly_test_ensure_schema(): void
     static $done = false;
     if ($done) return;
     $done = true;
-    $weeklySchemaMarker = 'phase168_weekly_schema_v2';
+    $weeklySchemaMarker = 'phase182_weekly_reopen_v1';
     try {
         $markerStmt = db()->prepare('SELECT setting_value FROM site_settings WHERE setting_key=? LIMIT 1');
         $markerStmt->execute(['weekly_schema_marker']);
@@ -3804,6 +4136,13 @@ function weekly_test_ensure_schema(): void
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN question_snapshot LONGTEXT NULL");
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN submission_reason VARCHAR(40) NULL");
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN last_saved_at DATETIME NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopen_count INT UNSIGNED NOT NULL DEFAULT 0");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopened_at DATETIME NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopened_by_admin_id INT UNSIGNED NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopen_reason VARCHAR(255) NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopen_time_mode VARCHAR(30) NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN reopen_seconds_granted INT UNSIGNED NULL");
+        db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN first_submitted_at DATETIME NULL");
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN question_order TEXT NULL");
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN timing_log MEDIUMTEXT NULL");
         db_exec_safe("ALTER TABLE weekly_test_attempts ADD COLUMN suspicious_flag ENUM('No','Yes') NOT NULL DEFAULT 'No'");
@@ -4728,6 +5067,9 @@ function weekly_test_release_answers_to_students(int $testId): array
         return ['success'=>true,'message'=>'Answer key is already released to students.'];
     }
 
+    // Resolve abandoned attempts whose own server timer has already ended before applying the safety lock.
+    weekly_test_finalize_started_attempts($testId, false);
+
     $running = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='started'");
     $running->execute([$testId]);
     $runningCount = (int)$running->fetchColumn();
@@ -4904,7 +5246,7 @@ function weekly_test_saved_answer_map(int $attemptId): array
  */
 function weekly_test_finalize_attempt(int $attemptId, string $accessToken, array $submittedAnswers = [], string $reason = 'manual_submit'): array
 {
-    $allowedReasons = ['manual_submit', 'timer_expired', 'warning_limit', 'admin_recovery'];
+    $allowedReasons = ['manual_submit', 'timer_expired', 'warning_limit', 'admin_recovery', 'admin_force_close'];
     if (!in_array($reason, $allowedReasons, true)) $reason = 'manual_submit';
     if ($attemptId <= 0 || strlen($accessToken) < 32) {
         return ['success'=>false, 'message'=>'Invalid test attempt.'];
@@ -4977,6 +5319,7 @@ function weekly_test_finalize_attempt(int $attemptId, string $accessToken, array
         $finalScore = max(0, round($autoScore - $penalty, 2));
         $resultToken = trim((string)($attempt['result_token'] ?? '')) ?: bin2hex(random_bytes(32));
         $note = $penalty > 0 ? (' Security penalty applied: -' . $penalty . ' mark(s).') : '';
+        if ($reason === 'admin_force_close') $note .= ' Admin force-closed the exam; the last server-saved answers were submitted as final.';
 
         $update = $pdo->prepare("UPDATE weekly_test_attempts
                                  SET submitted_at=NOW(), status='submitted', auto_score=?, penalty_marks=?,
@@ -4998,7 +5341,9 @@ function weekly_test_finalize_attempt(int $attemptId, string $accessToken, array
             'already_closed'=>false,
             'message'=>$reason === 'timer_expired'
                 ? 'Time ended. Your saved answers were submitted automatically.'
-                : 'Test submitted successfully. Teacher/admin will review marks.',
+                : ($reason === 'admin_force_close'
+                    ? 'Admin closed the exam. Your last saved answers were submitted as final.'
+                    : 'Test submitted successfully. Teacher/admin will review marks.'),
             'auto_score'=>$finalScore,
             'penalty_marks'=>$penalty,
             'saved'=>$savedCount,
@@ -5009,6 +5354,224 @@ function weekly_test_finalize_attempt(int $attemptId, string $accessToken, array
         if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
         error_log('[weekly-finalize] ' . $e->__toString());
         return ['success'=>false, 'message'=>'The test could not be finalized safely. Please try again.'];
+    }
+}
+
+
+/**
+ * Finalize started attempts that have genuinely run out of server time.
+ * With $force=true, finalize every currently started attempt using its last
+ * server-saved answers. This is used only by the explicit Admin Force Close action.
+ */
+function weekly_test_finalize_started_attempts(int $testId = 0, bool $force = false): array
+{
+    weekly_test_ensure_schema();
+    $sql = "SELECT a.id,a.test_id,a.access_token,a.started_at,a.expires_at,t.duration_minutes
+            FROM weekly_test_attempts a
+            JOIN weekly_tests t ON t.id=a.test_id
+            WHERE COALESCE(a.status_deleted,0)=0 AND a.status='started'";
+    $params = [];
+    if ($testId > 0) {
+        $sql .= " AND a.test_id=?";
+        $params[] = $testId;
+    }
+    $sql .= " ORDER BY a.id ASC LIMIT 500";
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+
+    $finalized = 0;
+    $failed = 0;
+    $stillRunning = 0;
+    foreach ($rows as $row) {
+        if (!$force && weekly_attempt_remaining_seconds($row) > 0) {
+            $stillRunning++;
+            continue;
+        }
+        $attemptId = (int)($row['id'] ?? 0);
+        if ($attemptId <= 0) continue;
+        $token = trim((string)($row['access_token'] ?? ''));
+        if (strlen($token) < 32) {
+            $token = bin2hex(random_bytes(32));
+            db()->prepare("UPDATE weekly_test_attempts SET access_token=? WHERE id=? AND status='started'")
+                ->execute([$token, $attemptId]);
+        }
+        $result = weekly_test_finalize_attempt($attemptId, $token, [], $force ? 'admin_force_close' : 'timer_expired');
+        if (!empty($result['success'])) $finalized++;
+        else $failed++;
+    }
+    return ['finalized'=>$finalized,'failed'=>$failed,'still_running'=>$stillRunning];
+}
+
+/** Close new entry and immediately submit every active attempt at its last saved state. */
+function weekly_test_force_close_entry(int $testId): array
+{
+    weekly_test_ensure_schema();
+    $testId = max(0, $testId);
+    if ($testId <= 0) return ['success'=>false,'message'=>'Invalid test paper.','finalized'=>0];
+
+    $stmt = db()->prepare("SELECT id,test_type,title FROM weekly_tests WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1");
+    $stmt->execute([$testId]);
+    $test = $stmt->fetch();
+    if (!$test) return ['success'=>false,'message'=>'Test paper not found.','finalized'=>0];
+    if (strtolower((string)($test['test_type'] ?? '')) !== 'upcoming') {
+        return ['success'=>false,'message'=>'Force Close is only available for Upcoming Tests.','finalized'=>0];
+    }
+
+    weekly_test_close_entry($testId);
+    $result = weekly_test_finalize_started_attempts($testId, true);
+    $count = (int)($result['finalized'] ?? 0);
+    $failed = (int)($result['failed'] ?? 0);
+    if ($failed > 0) {
+        return ['success'=>false,'message'=>'Entry was closed, but '.$failed.' active attempt(s) could not be force-submitted safely. Retry once or review the attempt before releasing answers.','finalized'=>$count,'failed'=>$failed];
+    }
+    if (function_exists('admin_audit_log')) {
+        admin_audit_log('weekly_test.force_closed','weekly_test',$testId,'Upcoming Test force-closed. '.$count.' active attempt(s) submitted using last saved answers.');
+    }
+    return [
+        'success'=>true,
+        'message'=>'Entry force-closed. '.$count.' active attempt'.($count===1?' was':'s were').' submitted using the last saved answers. New students cannot start this paper.',
+        'finalized'=>$count,
+        'failed'=>0,
+    ];
+}
+
+/**
+ * Reopen one accidentally final-submitted Upcoming Test attempt for the same student login.
+ * The immutable question snapshot and saved answer text are preserved. Only a pending
+ * manual submission can be reopened, only once, and never after answer release/window end/final ranking.
+ */
+function weekly_test_reopen_attempt_for_admin(int $attemptId, string $reason, string $timeMode = 'remaining'): array
+{
+    weekly_test_ensure_schema();
+    $attemptId = max(0, $attemptId);
+    $reason = trim(preg_replace('/\s+/u', ' ', $reason) ?? $reason);
+    if ($attemptId <= 0) return ['success'=>false,'message'=>'Invalid student attempt.'];
+    if (mb_strlen($reason) < 3) return ['success'=>false,'message'=>'Enter a short reason before reopening the test.'];
+    if (mb_strlen($reason) > 240) $reason = mb_substr($reason, 0, 240);
+    if (!in_array($timeMode, ['remaining','full'], true)) $timeMode = 'remaining';
+
+    $pdo = db();
+    $startedTransaction = !$pdo->inTransaction();
+    try {
+        if ($startedTransaction) $pdo->beginTransaction();
+        $stmt = $pdo->prepare("SELECT a.*, t.title test_title, t.test_type, t.status test_status, t.duration_minutes,
+                                      t.starts_at test_starts_at, t.ends_at test_ends_at, t.batch_id, t.batch_label
+                               FROM weekly_test_attempts a
+                               JOIN weekly_tests t ON t.id=a.test_id
+                               WHERE a.id=? AND COALESCE(a.status_deleted,0)=0 AND COALESCE(t.status_deleted,0)=0
+                               LIMIT 1 FOR UPDATE");
+        $stmt->execute([$attemptId]);
+        $attempt = $stmt->fetch();
+        if (!$attempt) throw new RuntimeException('Attempt not found.');
+
+        $testId = (int)($attempt['test_id'] ?? 0);
+        if (strtolower((string)($attempt['test_type'] ?? '')) !== 'upcoming') {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Reopen Access is only available for Upcoming Tests.'];
+        }
+        if (empty($attempt['student_id'])) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Only logged-in student attempts can be reopened on the same account.'];
+        }
+        if (($attempt['status'] ?? '') !== 'submitted') {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Only a submitted copy waiting for checking can be reopened. Checked/running copies are protected.'];
+        }
+        if (trim((string)($attempt['submission_reason'] ?? 'manual_submit')) !== 'manual_submit') {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Only a student Final Submit can be reopened. Timer expiry, warning auto-submit and Admin Force Close stay final.'];
+        }
+        if ((int)($attempt['reopen_count'] ?? 0) >= 1) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'This attempt has already been reopened once. A second reopen is blocked for exam integrity.'];
+        }
+
+        $testStatus = strtolower(trim((string)($attempt['test_status'] ?? '')));
+        $endTs = !empty($attempt['test_ends_at']) ? strtotime((string)$attempt['test_ends_at']) : false;
+        if (weekly_test_answers_manually_released($testId) || in_array($testStatus, ['archived','closed','completed'], true) || ($endTs !== false && $endTs <= time())) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'This paper can no longer be reopened because the answer/review window or final result stage has already started.'];
+        }
+
+        $winnerStmt = $pdo->prepare("SELECT COUNT(*) FROM weekly_test_winners WHERE test_id=?");
+        $winnerStmt->execute([$testId]);
+        if ((int)$winnerStmt->fetchColumn() > 0) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Top-3 ranking is already finalized for this paper, so Reopen Access is locked.'];
+        }
+
+        $other = $pdo->prepare("SELECT a.id, t.title FROM weekly_test_attempts a JOIN weekly_tests t ON t.id=a.test_id
+                                WHERE COALESCE(a.status_deleted,0)=0 AND a.student_id=? AND a.id<>? AND a.status='started'
+                                  AND t.test_type='upcoming' AND (a.expires_at IS NULL OR a.expires_at>NOW())
+                                ORDER BY a.id DESC LIMIT 1 FOR UPDATE");
+        $other->execute([(int)$attempt['student_id'], $attemptId]);
+        if ($otherAttempt = $other->fetch()) {
+            if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+            return ['success'=>false,'message'=>'Student already has another Upcoming Test in progress: '.trim((string)($otherAttempt['title'] ?? 'Upcoming Test')).'.'];
+        }
+
+        $durationSeconds = max(60, min(240 * 60, (int)($attempt['duration_minutes'] ?? 30) * 60));
+        $grantSeconds = $durationSeconds;
+        if ($timeMode === 'remaining') {
+            $submittedTs = !empty($attempt['submitted_at']) ? strtotime((string)$attempt['submitted_at']) : false;
+            $expiresTs = !empty($attempt['expires_at']) ? strtotime((string)$attempt['expires_at']) : false;
+            if ($submittedTs !== false && $expiresTs !== false) {
+                $grantSeconds = $expiresTs - $submittedTs;
+            } else {
+                $startedTs = !empty($attempt['started_at']) ? strtotime((string)$attempt['started_at']) : false;
+                if ($startedTs !== false && $submittedTs !== false) $grantSeconds = $durationSeconds - max(0, $submittedTs - $startedTs);
+            }
+            $grantSeconds = max(60, min($durationSeconds, (int)$grantSeconds));
+        }
+
+        if ($endTs !== false) {
+            $windowSeconds = max(0, $endTs - time());
+            if ($windowSeconds < 30) {
+                if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+                return ['success'=>false,'message'=>'The test window is about to close, so a safe reopen is no longer possible.'];
+            }
+            $grantSeconds = min($grantSeconds, $windowSeconds);
+        }
+
+        $adminId = !empty($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null;
+        $accessToken = bin2hex(random_bytes(32));
+        $resultToken = bin2hex(random_bytes(32));
+        $newExpiry = date('Y-m-d H:i:s', time() + $grantSeconds);
+        $activityLine = date('Y-m-d H:i:s') . ' - Admin reopened accidental Final Submit. Time mode: ' . $timeMode . '; granted: ' . $grantSeconds . ' second(s); reason: ' . $reason . "\n";
+
+        $update = $pdo->prepare("UPDATE weekly_test_attempts
+                                 SET first_submitted_at=COALESCE(first_submitted_at,submitted_at),
+                                     submitted_at=NULL, expires_at=?, status='started', auto_score=NULL, admin_score=NULL,
+                                     penalty_marks=0, admin_note=NULL, submission_reason='admin_reopened',
+                                     access_token=?, result_token=?, last_saved_at=NOW(),
+                                     reopen_count=COALESCE(reopen_count,0)+1, reopened_at=NOW(), reopened_by_admin_id=?,
+                                     reopen_reason=?, reopen_time_mode=?, reopen_seconds_granted=?,
+                                     activity_log=RIGHT(CONCAT(COALESCE(activity_log,''), ?),60000)
+                                 WHERE id=? AND status='submitted'");
+        $update->execute([$newExpiry,$accessToken,$resultToken,$adminId,$reason,$timeMode,$grantSeconds,$activityLine,$attemptId]);
+        if ($update->rowCount() !== 1) throw new RuntimeException('Attempt changed before reopen could be applied.');
+
+        $pdo->prepare("UPDATE weekly_test_answers SET is_correct='Review', marks_awarded=NULL, admin_note=NULL WHERE attempt_id=?")
+            ->execute([$attemptId]);
+
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->commit();
+        if (function_exists('admin_audit_log')) {
+            admin_audit_log('weekly_test.attempt_reopened','weekly_test_attempt',$attemptId,
+                'Reopened Upcoming Test attempt for same student login. Test #'.$testId.'; time='.$timeMode.'; granted='.$grantSeconds.'s; reason='.$reason);
+        }
+        return [
+            'success'=>true,
+            'message'=>'Test access reopened for the same student login with '.($timeMode==='full'?'full test time':'the time that was remaining at Final Submit').'. Saved answers are preserved and editable until the new timer ends.',
+            'attempt_id'=>$attemptId,
+            'test_id'=>$testId,
+            'remaining_seconds'=>$grantSeconds,
+            'expires_at'=>$newExpiry,
+        ];
+    } catch (Throwable $e) {
+        if ($startedTransaction && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('[weekly-reopen] ' . $e->__toString());
+        return ['success'=>false,'message'=>'Reopen Access could not be applied safely. Refresh and try again.'];
     }
 }
 
@@ -5040,6 +5603,8 @@ function weekly_test_complete_batch(int $testId): array
                 ->execute([$testId]);
             $entryClosedNow = true;
         }
+        // Timer-expired/abandoned attempts must not block ranking forever.
+        weekly_test_finalize_started_attempts($testId, false);
         $running = db()->prepare("SELECT COUNT(*) FROM weekly_test_attempts WHERE COALESCE(status_deleted,0)=0 AND test_id=? AND status='started'");
         $running->execute([$testId]);
         $runningCount = (int)$running->fetchColumn();

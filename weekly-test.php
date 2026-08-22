@@ -6,7 +6,7 @@ weekly_test_ensure_schema();
 $page_title = 'Student Test Center | ' . app_setting('site_name', APP_NAME);
 $meta_description = 'Basic practice, previous paper practice, scheduled weekly exams and student results in one clear test center.';
 $page_styles = ['assets/css/phase130-weekly-test.css'];
-$page_final_styles = ['assets/css/phase146-weekly-test.css'];
+$page_final_styles = ['assets/css/phase146-weekly-test.css', 'assets/css/phase182-student-reopen.css'];
 $page_scripts = ['assets/js/phase146-weekly-test.js'];
 $skip_phase139_learning_css = true;
 $skip_phase141_learning_css = true;
@@ -115,6 +115,16 @@ if ($student && $testSystemError === '') {
         error_log('[weekly-test-attempts] ' . $e->__toString());
     }
 }
+$activeReopenedAttempt = null;
+foreach ($studentAttempts as $studentAttemptRow) {
+    if (($studentAttemptRow['test_type'] ?? '') === 'upcoming'
+        && ($studentAttemptRow['status'] ?? '') === 'started'
+        && (int)($studentAttemptRow['reopen_count'] ?? 0) > 0
+        && weekly_attempt_remaining_seconds($studentAttemptRow) > 0) {
+        $activeReopenedAttempt = $studentAttemptRow;
+        break;
+    }
+}
 
 function wf133_test_preferred(array $tests, int $requestedTestId = 0): ?array
 {
@@ -220,6 +230,13 @@ require_once __DIR__ . '/includes/header.php';
     <div class="container">
         <?php if ($nativeError): ?>
             <div class="wf133-test-alert" role="alert"><i class="fa-solid fa-circle-exclamation"></i><span><?= e($nativeError) ?></span></div>
+        <?php endif; ?>
+        <?php if ($activeReopenedAttempt): $resumeSeconds=weekly_attempt_remaining_seconds($activeReopenedAttempt); ?>
+            <div class="wf182-student-reopen">
+                <span class="wf182-student-reopen-icon"><i class="fa-solid fa-unlock-keyhole"></i></span>
+                <div><small>Admin reopened your submitted test</small><h2><?= e((string)($activeReopenedAttempt['test_title'] ?? 'Upcoming Test')) ?></h2><p>Your saved answers are still there. Continue on the same login before the reopened timer ends.</p></div>
+                <div class="wf182-student-reopen-actions"><b><?= e((string)max(1,(int)ceil($resumeSeconds/60))) ?> min left</b><a class="wf-btn wf-btn-gold" href="weekly-exam-room.php?attempt_id=<?= e((string)$activeReopenedAttempt['id']) ?>&token=<?= e(rawurlencode((string)($activeReopenedAttempt['access_token'] ?? ''))) ?>"><span class="wf-btn-label"><i class="fa-solid fa-play"></i> Resume Reopened Test</span></a></div>
+            </div>
         <?php endif; ?>
 
         <div class="wf129-test-flow" aria-label="Test process">

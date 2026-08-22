@@ -2,3 +2,5 @@
 storage/rate-limits/*.json
 assets/uploads/**/index.html
 *.log
+
+storage/private/.app-secret.key

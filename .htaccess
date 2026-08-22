@@ -34,6 +34,8 @@ RewriteRule ^\.well-known/acme-challenge/ - [L]
 # subdirectory such as /spoken/, where root-based ErrorDocument URLs do not.
 RewriteRule (^|/)\. errors/403.php [L,NC]
 RewriteRule (^|/)(?:config|db|functions)\.php$ errors/403.php [L,NC]
+RewriteRule ^(?:tests|tools)(?:/|$) errors/403.php [L,NC]
+RewriteRule ^(?:index|login|student-[A-Za-z0-9-]+)\.html$ errors/404.php [L,NC]
 RewriteRule \.(?:sql|bak|log|ini|env|zip|tar|gz|7z)$ errors/403.php [L,NC]
 RewriteRule (^|/)(?:README|PHASE|DELETE_).*\.(?:md|txt|json|bat)$ errors/403.php [L,NC]
 

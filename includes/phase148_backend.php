@@ -73,9 +73,10 @@ function admin_page_permission(?string $page = null): ?string
         'admissions.php'=>'admissions.manage','admission-view.php'=>'admissions.manage',
         'students.php'=>'students.manage','student-view.php'=>'students.manage',
         'courses.php'=>'courses.manage','batches.php'=>'batches.manage',
-        'materials.php'=>'materials.manage','materials-ajax.php'=>'materials.manage',
+        'materials.php'=>'materials.manage','materials-ajax.php'=>'materials.manage','practice-lab.php'=>'materials.manage',
         'roadmap.php'=>'roadmap.manage',
-        'weekly-tests.php'=>'tests.manage','weekly-test-paper.php'=>'tests.manage','weekly-test-offline-paper.php'=>'tests.manage','weekly-test-ajax.php'=>'tests.manage','weekly-student-record.php'=>'tests.manage','upcoming-test-performance.php'=>'tests.manage',
+        'weekly-tests.php'=>'tests.manage','weekly-test-paper.php'=>'tests.manage','weekly-test-offline-paper.php'=>'tests.manage','weekly-test-ajax.php'=>'tests.manage','weekly-student-record.php'=>'tests.manage','upcoming-test-performance.php'=>'tests.manage','weekly-live-students.php'=>'tests.manage',
+        'online-classes.php'=>'content.manage',
         'testimonials.php'=>'content.manage','faculty.php'=>'content.manage','videos.php'=>'content.manage','gallery.php'=>'content.manage','faqs.php'=>'content.manage','content.php'=>'content.manage','hero-banners.php'=>'content.manage','form-options.php'=>'content.manage','nav-menus.php'=>'content.manage','seo.php'=>'content.manage',
         'settings.php'=>'settings.manage',
         'system-check.php'=>'system.manage','ui-library.php'=>'system.manage',
@@ -240,6 +241,88 @@ function admin_request_audit_bootstrap(): void
         if (http_response_code() >= 400) return;
         admin_audit_log('request.' . $action, pathinfo($page,PATHINFO_FILENAME), $entityId !== '' ? $entityId : null, 'Administrative POST completed.');
     });
+}
+
+function app_secret_key_bytes(): string
+{
+    static $key = null;
+    if (is_string($key)) return $key;
+
+    $configured = defined('APP_SECRET_KEY') ? trim((string)APP_SECRET_KEY) : '';
+    if ($configured !== '') {
+        $raw = preg_match('/^[a-f0-9]{64,}$/i', $configured) ? @hex2bin(substr($configured, 0, 64)) : false;
+        $key = is_string($raw) && strlen($raw) >= 32 ? substr($raw, 0, 32) : hash('sha256', $configured, true);
+        return $key;
+    }
+
+    // Safe compatibility fallback: keep a generated key in private storage, not in the database/source tree.
+    $dir = defined('PRIVATE_STORAGE_PATH') ? PRIVATE_STORAGE_PATH : dirname(__DIR__) . '/storage/private';
+    $file = rtrim($dir, '/\\') . '/.app-secret.key';
+    try {
+        if (!is_dir($dir)) @mkdir($dir, 0750, true);
+        if (is_file($file) && is_readable($file)) {
+            $stored = trim((string)file_get_contents($file));
+            if (preg_match('/^[a-f0-9]{64}$/i', $stored)) {
+                $raw = hex2bin($stored);
+                if (is_string($raw)) { $key = $raw; return $key; }
+            }
+        }
+        $generated = random_bytes(32);
+        $written = @file_put_contents($file, bin2hex($generated), LOCK_EX);
+        if ($written === false) throw new RuntimeException('Security encryption key is not configured. Set APP_SECRET_KEY in .env or make private storage writable.');
+        @chmod($file, 0600);
+        $key = $generated;
+        return $key;
+    } catch (Throwable $e) {
+        if ($e instanceof RuntimeException) throw $e;
+        throw new RuntimeException('Security encryption key could not be initialized. Configure APP_SECRET_KEY in .env.');
+    }
+}
+
+function app_encrypt_secret(string $plain): string
+{
+    if ($plain === '') return '';
+    if (!function_exists('openssl_encrypt')) return $plain; // legacy compatibility on unusual PHP builds
+    $iv = random_bytes(12);
+    $tag = '';
+    $cipher = openssl_encrypt($plain, 'aes-256-gcm', app_secret_key_bytes(), OPENSSL_RAW_DATA, $iv, $tag);
+    if (!is_string($cipher) || $tag === '') throw new RuntimeException('Unable to encrypt the security secret.');
+    return 'enc:v1:' . base64_encode($iv . $tag . $cipher);
+}
+
+function app_decrypt_secret(string $stored): string
+{
+    if ($stored === '' || !str_starts_with($stored, 'enc:v1:')) return $stored; // legacy plaintext remains readable for migration
+    if (!function_exists('openssl_decrypt')) return '';
+    $raw = base64_decode(substr($stored, 7), true);
+    if (!is_string($raw) || strlen($raw) < 29) return '';
+    $iv = substr($raw, 0, 12); $tag = substr($raw, 12, 16); $cipher = substr($raw, 28);
+    try { $key = app_secret_key_bytes(); } catch (Throwable $e) { return ''; }
+    $plain = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+    return is_string($plain) ? $plain : '';
+}
+
+function admin_mfa_secret_plain(string $stored): string
+{
+    return app_decrypt_secret($stored);
+}
+
+function admin_mfa_is_required_for_owner(int $adminId = 0): bool
+{
+    if (!defined('ADMIN_REQUIRE_OWNER_MFA') || !ADMIN_REQUIRE_OWNER_MFA) return false;
+    $adminId = $adminId > 0 ? $adminId : (int)($_SESSION['admin_id'] ?? 0);
+    return $adminId > 0 && admin_is_primary_owner($adminId);
+}
+
+function admin_mfa_gate_active(): bool
+{
+    if (!admin_mfa_is_required_for_owner()) return false;
+    try {
+        $stmt = db()->prepare("SELECT mfa_enabled,mfa_secret FROM admins WHERE id=? AND published='Yes' LIMIT 1");
+        $stmt->execute([(int)($_SESSION['admin_id'] ?? 0)]);
+        $row = $stmt->fetch() ?: [];
+        return ($row['mfa_enabled'] ?? 'No') !== 'Yes' || trim((string)($row['mfa_secret'] ?? '')) === '';
+    } catch (Throwable $e) { return true; }
 }
 
 // RFC 6238 TOTP helpers. Free authenticator apps can be used; no paid SMS/email provider is required.

@@ -1,0 +1,22 @@
+Phase 181 - Image/File Lifecycle Hardening
+
+Runtime files changed:
+- admin/admissions.php
+- admin/courses.php
+- admin/faculty.php
+- admin/gallery.php
+- admin/hero-banners.php
+- admin/settings.php
+- admin/system-check.php
+- admin/testimonials.php
+- includes/functions.php
+
+Tests/docs:
+- tests/run_phase174_static.php
+- tests/run_phase181_static.php
+- README_PHASE181_IMAGE_FILE_LIFECYCLE.md
+- PHASE181_UPLOAD_LIFECYCLE_CHECKLIST.md
+- PHASE181_CHANGED_FILES.txt
+
+Database schema change: none.
+Service Worker change: none (remains v180).

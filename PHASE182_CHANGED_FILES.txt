@@ -1,0 +1,24 @@
+Phase 182 changed/new files
+===========================
+admin/_header.php
+admin/system-check.php
+admin/upcoming-test-performance.php
+admin/weekly-live-students.php (new)
+admin/weekly-test-ajax.php
+admin/weekly-tests.php
+assets/css/phase182-live-test-control.css (new)
+assets/css/phase182-student-reopen.css (new)
+includes/functions.php
+includes/phase148_backend.php
+weekly-result.php
+weekly-test.php
+sql/wellfare_english_complete.sql
+sql/phase182_upcoming_test_reopen_access.sql (new)
+sw.js
+tests/run_phase180_static.php
+tests/run_phase182_static.php (new)
+README_PHASE182_UPCOMING_REOPEN_LIVE_STUDENTS.md (new)
+PHASE182_BROWSER_DB_CHECKLIST.md (new)
+
+Database schema: 7 new weekly_test_attempts reopen/audit columns.
+No existing page/feature is removed.

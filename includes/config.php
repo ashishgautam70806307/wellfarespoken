@@ -41,7 +41,9 @@ if (!function_exists('app_env_bool')) {
 if (!function_exists('app_runtime_host')) {
     function app_runtime_host(): string
     {
-        $host = strtolower(trim((string)($_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? '')));
+        $serverName = trim((string)($_SERVER['SERVER_NAME'] ?? ''));
+        $httpHost = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        $host = strtolower($serverName !== '' ? $serverName : $httpHost);
         if (str_starts_with($host, '[')) {
             $closingBracket = strpos($host, ']');
             return $closingBracket === false ? trim($host, '[]') : substr($host, 1, $closingBracket - 1);
@@ -82,8 +84,13 @@ if (!function_exists('app_runtime_is_local')) {
             return true;
         }
 
-        // CLI has no reliable request host. APP_URL or APP_RUNTIME_MODE=live should be set on live cron/CLI jobs.
-        return PHP_SAPI === 'cli';
+        // CLI has no request host. Respect an explicit environment hint before defaulting to local.
+        if (PHP_SAPI === 'cli') {
+            $envHint = strtolower(trim((string)app_env('APP_ENV', '')));
+            if (in_array($envHint, ['production','prod','live'], true)) return false;
+            return true;
+        }
+        return false;
     }
 }
 
@@ -129,6 +136,11 @@ define('APP_RUNTIME_MODE', $runtimeMode);
 define('APP_RUNTIME_ENV', $appRuntimeIsLocal ? 'local' : 'live');
 define('APP_ENV', (string)app_env('APP_ENV', $appRuntimeIsLocal ? 'local' : 'production'));
 define('APP_DEBUG', app_env_bool('APP_DEBUG', false));
+define('APP_SECRET_KEY', trim((string)app_env('APP_SECRET_KEY', '')));
+define('ADMIN_REQUIRE_OWNER_MFA', app_env_bool('ADMIN_REQUIRE_OWNER_MFA', !$appRuntimeIsLocal));
+define('OPENAI_API_KEY', trim((string)app_env('OPENAI_API_KEY', '')));
+define('OPENAI_API_ENDPOINT', trim((string)app_env('OPENAI_API_ENDPOINT', 'https://api.openai.com/v1/chat/completions')));
+define('OPENAI_ALLOWED_HOSTS', trim((string)app_env('OPENAI_ALLOWED_HOSTS', 'api.openai.com')));
 define('APP_REMOTE_FONTS', app_env_bool('APP_REMOTE_FONTS', true));
 define('APP_ALLOW_SCHEMA_UPDATES', app_env_bool('APP_ALLOW_SCHEMA_UPDATES', false));
 define('APP_AI_TEACHER_ENABLED', app_env_bool('APP_AI_TEACHER_ENABLED', false));
@@ -185,6 +197,20 @@ if ($dbConnectionMode === 'manual') {
     $dbName = (string)app_env('DB_LIVE_NAME', $liveDbDefaults['name']);
     $dbUser = (string)app_env('DB_LIVE_USER', $liveDbDefaults['user']);
     $dbPass = (string)app_env('DB_LIVE_PASS', $liveDbDefaults['pass']);
+}
+
+// Production must never render PHP warnings/notices or filesystem paths to visitors.
+// Keep errors in the server log; APP_DEBUG may be enabled only in a trusted local environment.
+if (!$appRuntimeIsLocal || !APP_DEBUG) {
+    @ini_set('display_errors', '0');
+    @ini_set('display_startup_errors', '0');
+} else {
+    @ini_set('display_errors', '1');
+}
+@ini_set('log_errors', '1');
+error_reporting(E_ALL);
+if (app_request_is_https() && !headers_sent()) {
+    header('Strict-Transport-Security: max-age=31536000');
 }
 
 define('DB_CONNECTION_MODE', $dbConnectionMode);

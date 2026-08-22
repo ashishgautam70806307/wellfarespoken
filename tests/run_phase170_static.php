@@ -27,7 +27,9 @@ p170_check(strpos($js, 'status === 419') !== false && strpos($js, 'Refreshing th
 p170_check(strpos($answerApi, '$practiceLimit = $studentId > 0 ? 600 : 300') !== false, 'Hands-free practice rate limit no longer interrupts normal long sessions');
 p170_check(strpos($functions, "!empty(\$result['is_correct'])") !== false && strpos($functions, 'Every retry remains in material_practice_attempts') !== false, 'Wrong retries remain tracked without bloating the dashboard activity log');
 p170_check(strpos($js, 'voicePausedByUser') !== false && strpos($js, 'Voice paused. Tap Speak answer to resume') !== false, 'Student can explicitly pause continuous voice recovery');
-p170_check(strpos($sw, 'wellfare-spoken-static-v170') !== false && strpos($sw, 'phase170-spoken-practice.js') !== false, 'Service Worker cache is Phase 170 and pre-caches the new controller');
+preg_match('/wellfare-spoken-static-v(\d+)/', $sw, $p170SwMatch);
+$p170SwVersion = isset($p170SwMatch[1]) ? (int)$p170SwMatch[1] : 0;
+p170_check($p170SwVersion >= 170 && strpos($sw, 'phase170-spoken-practice.js') !== false, 'Service Worker cache is Phase 170 or newer and pre-caches the controller');
 
 $failed = array_filter($checks, static fn(array $c): bool => !$c[0]);
 if ($failed) {

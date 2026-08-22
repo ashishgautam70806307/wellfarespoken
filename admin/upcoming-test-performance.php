@@ -131,6 +131,7 @@ $totalMarks = max(0, (float)($stats['total_marks'] ?? ($selected['total_marks'] 
     </div>
     <div class="admin-actions">
         <a class="btn btn-soft" href="dashboard.php"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+        <a class="btn btn-soft" href="weekly-live-students.php<?= $testId > 0 ? '?test_id=' . e((string)$testId) : '' ?>"><i class="fa-solid fa-user-clock"></i> Live Students</a>
         <a class="btn btn-primary" href="weekly-tests.php?type=upcoming<?= $testId > 0 ? '&test_id=' . e((string)$testId) : '' ?>#paper-board"><i class="fa-solid fa-clipboard-check"></i> Manage Test</a>
     </div>
 </div>

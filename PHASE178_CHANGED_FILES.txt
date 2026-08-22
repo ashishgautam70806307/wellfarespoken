@@ -1,0 +1,23 @@
+Phase 178 changed/new files
+
+NEW
+- assets/css/phase178-mobile-learning-premium.css
+- tests/run_phase178_static.php
+- README_PHASE178_MOBILE_BRAND_UX.md
+- PHASE178_BROWSER_DEVICE_CHECKLIST.md
+- PHASE178_CHANGED_FILES.txt
+- PHASE178_VALIDATION.json
+
+CHANGED
+- spoken-materials.php
+- free-ai-english-practice.php
+- learning-roadmap.php
+- sw.js
+
+PRESERVED / NOT CHANGED
+- includes/header.php
+- includes/footer.php
+- assets/js/phase170-spoken-practice.js
+- Weekly Test backend/ranking lifecycle
+- Phase 174 security behavior
+- Database schema

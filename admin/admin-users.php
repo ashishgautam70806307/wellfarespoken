@@ -106,7 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         redirect('admin-users.php');
     } catch (Throwable $e) {
-        flash('error', $e->getMessage());
+        error_log('[admin-users] '.$e->__toString());
+        flash('error', ($e instanceof RuntimeException && !($e instanceof PDOException)) ? $e->getMessage() : 'Administrator account could not be saved. Check System Check and try again.');
         redirect('admin-users.php' . ($id > 0 ? '?edit=' . $id : ''));
     }
 }

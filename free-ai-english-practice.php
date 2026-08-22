@@ -12,6 +12,7 @@ $practiceHero = fetch_hero_banner('practice');
 $initialLessonId = isset($_GET['lesson']) ? (int)$_GET['lesson'] : 0;
 $csrf = csrf_token();
 $lightweight_layout = true;
+$page_final_styles = ['assets/css/phase180-old-design-mobile-fix.css'];
 require_once __DIR__ . '/includes/header.php';
 ?>
 <?php

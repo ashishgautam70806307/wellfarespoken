@@ -1,0 +1,782 @@
+/* Phase 177 - Mobile-only UI polish. Original feature markup, common header/footer and JS remain unchanged. */
+
+@media (max-width: 760px) {
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) {
+    overflow-x: hidden;
+    background: #f3f6fa;
+    -webkit-tap-highlight-color: rgba(23,79,143,.10);
+  }
+
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) #mainContent {
+    overflow: visible !important;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Keep the real shared header; only make it easier to use on small screens. */
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-topbar {
+    height: 32px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-topbar-inner {
+    height: 32px !important;
+    font-size: 10px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-header {
+    height: 62px !important;
+    min-height: 62px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-header-row {
+    min-height: 62px !important;
+    height: 62px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-brand img {
+    max-width: 142px !important;
+    height: 48px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-menu-toggle {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    border-radius: 13px !important;
+    touch-action: manipulation;
+  }
+
+  /* Keep the real shared footer/mobile nav/contact actions; prevent overlap. */
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-mobile-bottom {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    min-height: 64px !important;
+    height: 64px !important;
+    padding: 6px !important;
+    border: 1px solid rgba(7,29,62,.10) !important;
+    border-radius: 20px !important;
+    background: rgba(255,255,255,.98) !important;
+    box-shadow: 0 14px 34px rgba(7,29,62,.18) !important;
+    z-index: 1200 !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-mobile-bottom a {
+    min-width: 0 !important;
+    min-height: 50px !important;
+    padding: 5px 2px !important;
+    border-radius: 14px !important;
+    font-size: 10px !important;
+    touch-action: manipulation;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-mobile-bottom a i {
+    font-size: 17px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-contact-dock {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 20 !important;
+    width: max-content !important;
+    margin: 12px 12px 8px auto !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-contact-toggle {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) button,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) a,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) input,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) textarea,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) select {
+    touch-action: manipulation;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) button:active,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .btn:active,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf-btn:active {
+    transform: scale(.985) !important;
+  }
+
+  /* ---------------- Spoken Materials ---------------- */
+  body.page-spoken-materials .wf143-practice-page {
+    padding: 14px 0 24px !important;
+    background: linear-gradient(180deg,#f4f7fb 0%,#edf3f9 100%) !important;
+  }
+  body.page-spoken-materials .wf143-practice-page > .container {
+    width: min(100% - 18px, 680px) !important;
+    padding-inline: 0 !important;
+  }
+  body.page-spoken-materials .wf143-practice-heading {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    align-items: start !important;
+    gap: 10px !important;
+    margin: 0 0 12px !important;
+    padding: 14px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(135deg,#071d3e,#0f477f) !important;
+    box-shadow: 0 12px 28px rgba(7,29,62,.16) !important;
+  }
+  body.page-spoken-materials .wf143-practice-heading > div > span {
+    margin-bottom: 4px !important;
+    color: #f0c54f !important;
+    font-size: 10px !important;
+  }
+  body.page-spoken-materials .wf143-practice-heading h2 {
+    color: #fff !important;
+    font-size: 21px !important;
+    line-height: 1.12 !important;
+  }
+  body.page-spoken-materials .wf143-practice-heading p {
+    display: block !important;
+    margin-top: 6px !important;
+    color: #d7e4f3 !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-spoken-materials .wf143-practice-history {
+    min-height: 42px !important;
+    padding: 8px 10px !important;
+    border: 1px solid rgba(255,255,255,.2) !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,.10) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+  }
+  body.page-spoken-materials .wf143-mode-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 9px !important;
+  }
+  body.page-spoken-materials .wf143-mode-card {
+    min-height: 100px !important;
+    grid-template-columns: 42px minmax(0,1fr) !important;
+    gap: 9px !important;
+    padding: 12px !important;
+    border-radius: 17px !important;
+    box-shadow: 0 8px 20px rgba(7,29,62,.07) !important;
+    transition: border-color .12s ease, background .12s ease !important;
+  }
+  body.page-spoken-materials .wf143-mode-card:hover { transform: none !important; }
+  body.page-spoken-materials .wf143-mode-card:active { background: #f6f9fd !important; }
+  body.page-spoken-materials .wf143-mode-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 13px !important;
+    font-size: 16px !important;
+  }
+  body.page-spoken-materials .wf143-mode-copy b {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+  }
+  body.page-spoken-materials .wf143-mode-copy small {
+    margin-top: 2px !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+  }
+  body.page-spoken-materials .wf143-mode-arrow { display: none !important; }
+  body.page-spoken-materials .wf143-practice-status {
+    min-height: 58px !important;
+    margin-top: 10px !important;
+    padding: 10px 12px !important;
+    border-radius: 15px !important;
+  }
+  body.page-spoken-materials .wf143-practice-status > span {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+  }
+  body.page-spoken-materials .wf143-practice-status b { font-size: 12px !important; }
+  body.page-spoken-materials .wf143-practice-status small { font-size: 10px !important; }
+  body.page-spoken-materials .wf143-practice-workspace {
+    margin-top: 10px !important;
+    padding: 11px !important;
+    border-radius: 18px !important;
+    box-shadow: 0 10px 26px rgba(7,29,62,.08) !important;
+  }
+  body.page-spoken-materials .wf143-workspace-top {
+    gap: 8px !important;
+  }
+  body.page-spoken-materials .wf143-workspace-top > div {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  body.page-spoken-materials .wf143-workspace-top span { font-size: 9px !important; }
+  body.page-spoken-materials .wf143-workspace-top strong { font-size: 10px !important; }
+  body.page-spoken-materials .wf143-workspace-top button {
+    min-height: 40px !important;
+    padding: 7px 10px !important;
+    font-size: 10px !important;
+  }
+  body.page-spoken-materials .wf143-progress-track {
+    height: 5px !important;
+    margin: 9px 0 10px !important;
+  }
+  body.page-spoken-materials .wf143-question-card {
+    padding: 16px !important;
+    border-radius: 17px !important;
+  }
+  body.page-spoken-materials .wf143-question-meta span {
+    min-height: 24px !important;
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+  }
+  body.page-spoken-materials .wf143-question-kicker {
+    margin: 12px 0 5px !important;
+    font-size: 9px !important;
+  }
+  body.page-spoken-materials .wf143-question-card h3 {
+    font-size: clamp(21px,7vw,29px) !important;
+    line-height: 1.2 !important;
+  }
+  body.page-spoken-materials .wf143-roman {
+    margin-top: 7px !important;
+    font-size: 12px !important;
+  }
+  body.page-spoken-materials .wf143-answer-panel {
+    margin-top: 10px !important;
+    padding: 11px !important;
+    border-radius: 15px !important;
+  }
+  body.page-spoken-materials .wf144-voice-coach {
+    gap: 8px !important;
+    margin-bottom: 9px !important;
+    padding: 10px !important;
+    border-radius: 13px !important;
+  }
+  body.page-spoken-materials .wf144-voice-copy b { font-size: 12px !important; }
+  body.page-spoken-materials .wf144-voice-copy small { font-size: 10px !important; }
+  body.page-spoken-materials .wf144-voice-coach > p {
+    padding-left: 0 !important;
+    font-size: 9.5px !important;
+    line-height: 1.35 !important;
+  }
+  body.page-spoken-materials .wf143-audio-actions {
+    display: grid !important;
+    grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    gap: 7px !important;
+  }
+  body.page-spoken-materials .wf143-audio-actions button,
+  body.page-spoken-materials .wf143-answer-actions button,
+  body.page-spoken-materials .wf143-navigation button,
+  body.page-spoken-materials .wf143-result button {
+    min-height: 46px !important;
+    padding: 8px 9px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+  }
+  body.page-spoken-materials .wf143-voice-status {
+    min-height: 18px !important;
+    margin: 7px 0 !important;
+    font-size: 10px !important;
+  }
+  body.page-spoken-materials .wf143-answer-panel label {
+    margin-bottom: 7px !important;
+    font-size: 11px !important;
+  }
+  body.page-spoken-materials .wf143-answer-panel label small { font-size: 9px !important; }
+  body.page-spoken-materials #practiceAnswer {
+    min-height: 92px !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-spoken-materials .wf143-answer-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) 52px !important;
+    gap: 7px !important;
+    margin-top: 8px !important;
+  }
+  body.page-spoken-materials .wf143-result {
+    margin-top: 9px !important;
+    padding: 11px !important;
+    border-radius: 13px !important;
+  }
+  body.page-spoken-materials .wf143-result strong { font-size: 12px !important; }
+  body.page-spoken-materials .wf143-result p { font-size: 10px !important; }
+  body.page-spoken-materials .wf143-navigation {
+    display: grid !important;
+    grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr) !important;
+    gap: 7px !important;
+    margin-top: 9px !important;
+  }
+
+  /* ---------------- Practice Materials ---------------- */
+  body.page-free-ai-english-practice .wf130-page-hero,
+  body.page-free-ai-english-practice .wf-page-hero {
+    margin-top: 0 !important;
+  }
+  body.page-free-ai-english-practice .wf127-tool-stats-section {
+    padding: 10px 0 !important;
+  }
+  body.page-free-ai-english-practice .wf127-tool-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    gap: 7px !important;
+  }
+  body.page-free-ai-english-practice .wf127-tool-stats > div,
+  body.page-free-ai-english-practice .wf127-tool-stats .stat {
+    min-width: 0 !important;
+    padding: 10px 6px !important;
+    border-radius: 13px !important;
+  }
+  body.page-free-ai-english-practice .wf127-tool-stats strong { font-size: 17px !important; }
+  body.page-free-ai-english-practice .wf127-tool-stats span { font-size: 9px !important; }
+  body.page-free-ai-english-practice .section {
+    padding: 20px 0 !important;
+  }
+  body.page-free-ai-english-practice .container {
+    width: min(100% - 18px,680px) !important;
+  }
+  body.page-free-ai-english-practice .section-head {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    margin-bottom: 12px !important;
+  }
+  body.page-free-ai-english-practice .section-head h2 {
+    margin-bottom: 5px !important;
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+  }
+  body.page-free-ai-english-practice .section-head p {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-free-ai-english-practice .section-head .btn {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+  body.page-free-ai-english-practice .ai-simple-tool {
+    padding: 13px !important;
+    border-radius: 18px !important;
+  }
+  body.page-free-ai-english-practice .ai-tool-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  body.page-free-ai-english-practice .ai-tool-box {
+    padding: 13px !important;
+    border-radius: 15px !important;
+  }
+  body.page-free-ai-english-practice .mode-pill-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+  }
+  body.page-free-ai-english-practice .mode-pill-row label {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 9px 10px !important;
+    border: 1px solid #dbe5f0 !important;
+    border-radius: 11px !important;
+    background: #fff !important;
+    font-size: 11px !important;
+  }
+  body.page-free-ai-english-practice .quick-input-shell {
+    align-items: stretch !important;
+    gap: 7px !important;
+  }
+  body.page-free-ai-english-practice #quickInputText {
+    min-height: 96px !important;
+    padding: 12px !important;
+    font-size: 16px !important;
+  }
+  body.page-free-ai-english-practice .quick-mic-btn {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: auto !important;
+    min-height: 48px !important;
+    border-radius: 13px !important;
+  }
+  body.page-free-ai-english-practice .quick-action-row {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(100px,.45fr) !important;
+    gap: 7px !important;
+  }
+  body.page-free-ai-english-practice .quick-action-row .btn {
+    min-height: 46px !important;
+  }
+  body.page-free-ai-english-practice .help {
+    font-size: 9.5px !important;
+    line-height: 1.4 !important;
+  }
+  body.page-free-ai-english-practice .practice-app-shell {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  body.page-free-ai-english-practice .practice-lesson-panel {
+    margin-top: 0 !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+    border: 1px solid #dbe5f0 !important;
+    border-radius: 17px !important;
+    background: #fff !important;
+    box-shadow: 0 8px 20px rgba(7,29,62,.06) !important;
+  }
+  body.page-free-ai-english-practice .practice-step-title {
+    margin-bottom: 10px !important;
+    font-size: 14px !important;
+  }
+  body.page-free-ai-english-practice .lesson-group {
+    display: flex !important;
+    gap: 7px !important;
+    overflow-x: auto !important;
+    padding: 0 0 8px !important;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  body.page-free-ai-english-practice .lesson-group + .lesson-group { margin-top: 7px !important; }
+  body.page-free-ai-english-practice .lesson-group h3 {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    flex: 0 0 112px !important;
+    width: 112px !important;
+    min-height: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    background: #071d3e !important;
+    color: #fff !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+  body.page-free-ai-english-practice .lesson-pick-btn {
+    flex: 0 0 178px !important;
+    width: 178px !important;
+    min-height: 70px !important;
+    padding: 9px 10px !important;
+    border-radius: 12px !important;
+    scroll-snap-align: start;
+    white-space: normal !important;
+  }
+  body.page-free-ai-english-practice .lesson-pick-btn span {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+  }
+  body.page-free-ai-english-practice .lesson-pick-btn strong {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+  body.page-free-ai-english-practice .practice-workspace {
+    margin-top: 0 !important;
+    padding: 12px !important;
+    border: 1px solid #dbe5f0 !important;
+    border-radius: 17px !important;
+    background: #fff !important;
+    box-shadow: 0 8px 20px rgba(7,29,62,.06) !important;
+  }
+  body.page-free-ai-english-practice .practice-work-head {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    align-items: start !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+  body.page-free-ai-english-practice .practice-work-head h2 {
+    margin: 3px 0 !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+  }
+  body.page-free-ai-english-practice .practice-work-head p {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+  }
+  body.page-free-ai-english-practice .practice-progress-card {
+    position: static !important;
+    min-width: 78px !important;
+    padding: 8px !important;
+    border-radius: 11px !important;
+  }
+  body.page-free-ai-english-practice .practice-progress-card span,
+  body.page-free-ai-english-practice .practice-progress-card small {
+    font-size: 9px !important;
+  }
+  body.page-free-ai-english-practice .practice-question-stage,
+  body.page-free-ai-english-practice .practice-result-stage,
+  body.page-free-ai-english-practice .practice-single-card {
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+  body.page-free-ai-english-practice .practice-empty-state {
+    padding: 18px 12px !important;
+    border-radius: 13px !important;
+  }
+  body.page-free-ai-english-practice .practice-empty-state h3,
+  body.page-free-ai-english-practice .practice-single-card h3 {
+    font-size: 17px !important;
+    line-height: 1.25 !important;
+  }
+  body.page-free-ai-english-practice .practice-empty-state p,
+  body.page-free-ai-english-practice .practice-single-card p {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-free-ai-english-practice .student-answer-area textarea,
+  body.page-free-ai-english-practice .student-answer-area input {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+  body.page-free-ai-english-practice .option-stack,
+  body.page-free-ai-english-practice .app-options {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+  }
+  body.page-free-ai-english-practice .app-options button,
+  body.page-free-ai-english-practice .option-stack button {
+    min-height: 44px !important;
+    text-align: left !important;
+  }
+  body.page-free-ai-english-practice .practice-controls {
+    display: grid !important;
+    grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.8fr) !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+  body.page-free-ai-english-practice .practice-controls .btn {
+    min-width: 0 !important;
+    min-height: 46px !important;
+    padding: 7px 5px !important;
+    font-size: 10px !important;
+  }
+
+  /* ---------------- Learning Roadmap ---------------- */
+  body.page-learning-roadmap .rm126-page {
+    padding: 14px 0 24px !important;
+    background: #f3f6fa !important;
+  }
+  body.page-learning-roadmap .rm126-shell {
+    width: min(100% - 18px,680px) !important;
+    gap: 12px !important;
+  }
+  body.page-learning-roadmap .rm126-hero {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    border-radius: 19px !important;
+  }
+  body.page-learning-roadmap .rm126-back {
+    margin-bottom: 10px !important;
+    font-size: 10px !important;
+  }
+  body.page-learning-roadmap .rm126-eyebrow {
+    padding: 6px 8px !important;
+    font-size: 9px !important;
+  }
+  body.page-learning-roadmap .rm126-hero h1 {
+    margin: 10px 0 7px !important;
+    color: #fff !important;
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+  }
+  body.page-learning-roadmap .rm126-hero-copy > p {
+    color: rgba(255,255,255,.76) !important;
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-learning-roadmap .rm126-how {
+    gap: 6px !important;
+    margin-top: 12px !important;
+  }
+  body.page-learning-roadmap .rm126-how span { font-size: 9px !important; }
+  body.page-learning-roadmap .rm126-progress-card {
+    grid-template-columns: 82px minmax(0,1fr) !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    border-radius: 15px !important;
+  }
+  body.page-learning-roadmap .rm126-progress-ring {
+    width: 78px !important;
+    height: 78px !important;
+  }
+  body.page-learning-roadmap .rm126-progress-ring strong { font-size: 19px !important; }
+  body.page-learning-roadmap .rm126-progress-copy b { font-size: 14px !important; }
+  body.page-learning-roadmap .rm126-progress-copy a {
+    min-height: 42px !important;
+    margin-top: 9px !important;
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+  }
+  body.page-learning-roadmap .rm126-summary {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 1px !important;
+    border-radius: 15px !important;
+  }
+  body.page-learning-roadmap .rm126-summary article {
+    min-height: 68px !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  body.page-learning-roadmap .rm126-summary article > i {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  body.page-learning-roadmap .rm126-summary b { font-size: 15px !important; }
+  body.page-learning-roadmap .rm126-summary small { font-size: 9px !important; }
+  body.page-learning-roadmap .rm126-stages {
+    gap: 12px !important;
+  }
+  body.page-learning-roadmap .rm126-stage {
+    border-radius: 18px !important;
+  }
+  body.page-learning-roadmap .rm126-stage-head {
+    grid-template-columns: 42px minmax(0,1fr) auto !important;
+    gap: 9px !important;
+    padding: 12px !important;
+  }
+  body.page-learning-roadmap .rm126-stage-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+  }
+  body.page-learning-roadmap .rm126-stage-head h2 { font-size: 16px !important; }
+  body.page-learning-roadmap .rm126-stage-count { font-size: 9px !important; }
+  body.page-learning-roadmap .rm126-path {
+    padding: 16px 10px 18px 42px !important;
+  }
+  body.page-learning-roadmap .rm126-path:before {
+    left: 22px !important;
+    top: 18px !important;
+    bottom: 18px !important;
+    width: 3px !important;
+    transform: none !important;
+  }
+  body.page-learning-roadmap .rm126-step {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    min-height: 0 !important;
+    margin: 0 0 10px !important;
+  }
+  body.page-learning-roadmap .rm126-step + .rm126-step { margin-top: 0 !important; }
+  body.page-learning-roadmap .rm126-node {
+    position: absolute !important;
+    left: -37px !important;
+    top: 16px !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-width: 4px !important;
+  }
+  body.page-learning-roadmap .rm126-node-number {
+    width: 19px !important;
+    height: 19px !important;
+    top: -7px !important;
+    right: -8px !important;
+    border-width: 2px !important;
+    font-size: 7px !important;
+  }
+  body.page-learning-roadmap .rm126-node-main { font-size: 13px !important; }
+  body.page-learning-roadmap .rm126-step.is-left:after,
+  body.page-learning-roadmap .rm126-step.is-right:after { display: none !important; }
+  body.page-learning-roadmap .rm126-step.is-left .rm126-level-card,
+  body.page-learning-roadmap .rm126-step.is-right .rm126-level-card {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: stretch !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  body.page-learning-roadmap .rm126-level-card {
+    padding: 13px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 7px 18px rgba(7,29,62,.06) !important;
+    transition: border-color .12s ease, background .12s ease !important;
+  }
+  body.page-learning-roadmap .rm126-level-card:hover { transform: none !important; }
+  body.page-learning-roadmap .rm126-level-top > span:first-child { font-size: 9px !important; }
+  body.page-learning-roadmap .rm126-status { font-size: 8.5px !important; }
+  body.page-learning-roadmap .rm126-level-card h3 {
+    margin: 8px 0 5px !important;
+    font-size: 16px !important;
+  }
+  body.page-learning-roadmap .rm126-level-card p {
+    min-height: 0 !important;
+    font-size: 10.5px !important;
+    line-height: 1.45 !important;
+  }
+  body.page-learning-roadmap .rm126-meta {
+    gap: 5px !important;
+    margin-top: 9px !important;
+  }
+  body.page-learning-roadmap .rm126-meta span {
+    padding: 5px 7px !important;
+    font-size: 8.5px !important;
+  }
+  body.page-learning-roadmap .rm126-level-action { margin-top: 10px !important; }
+  body.page-learning-roadmap .rm126-open,
+  body.page-learning-roadmap .rm126-locked {
+    min-height: 44px !important;
+    padding: 0 11px !important;
+    border-radius: 11px !important;
+    font-size: 10px !important;
+  }
+  body.page-learning-roadmap .rm126-tools {
+    width: 100% !important;
+    border-radius: 14px !important;
+  }
+  body.page-learning-roadmap .rm126-tools summary {
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+    font-size: 10px !important;
+  }
+  body.page-learning-roadmap .rm126-tools button,
+  body.page-learning-roadmap .rm126-tools a {
+    min-height: 42px !important;
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.page-spoken-materials .wf143-practice-heading {
+    grid-template-columns: 1fr !important;
+  }
+  body.page-spoken-materials .wf143-practice-history {
+    width: 100% !important;
+  }
+  body.page-spoken-materials .wf143-mode-card {
+    min-height: 94px !important;
+    padding: 10px !important;
+  }
+  body.page-spoken-materials .wf143-mode-copy b { font-size: 12px !important; }
+  body.page-spoken-materials .wf143-mode-copy small { font-size: 10px !important; }
+  body.page-free-ai-english-practice .practice-controls {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  body.page-free-ai-english-practice .practice-controls #checkAnswerBtn {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+  }
+  body.page-free-ai-english-practice .practice-controls #prevQuestionBtn { grid-column: 1 !important; }
+  body.page-free-ai-english-practice .practice-controls #nextQuestionBtn { grid-column: 2 !important; }
+}
+
+@media (max-width: 760px) and (max-height: 600px) {
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) #mainContent {
+    padding-bottom: 20px !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-mobile-bottom {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: calc(100% - 16px) !important;
+    margin: 10px auto max(8px,env(safe-area-inset-bottom)) !important;
+  }
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) .wf127-contact-dock {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) *,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) *::before,
+  body:is(.page-spoken-materials,.page-free-ai-english-practice,.page-learning-roadmap) *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

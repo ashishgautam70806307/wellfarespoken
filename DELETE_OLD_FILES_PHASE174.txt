@@ -1,0 +1,7 @@
+Phase 174 security cleanup (delete these if they still exist on the live server from an older full upload):
+
+spoken_phase167_replace_only.zip
+spoken_phase121_materials_icon_table_ui_fix.zip
+storage/rate-limits/*.json   (runtime counters may be recreated automatically)
+
+For the production-clean package, development-only tests/, tools/, old PHASE/README reports and static prototype *.html files are intentionally excluded.

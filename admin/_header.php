@@ -11,7 +11,9 @@ $canLearningMenu = admin_can('materials.manage') || admin_can('roadmap.manage') 
 $canWebsiteMenu = admin_can('content.manage') || admin_can('settings.manage');
 $phase148SchemaReady = function_exists('phase148_schema_ready') ? phase148_schema_ready() : true;
 $adminPasswordGate = function_exists('admin_password_gate_active') ? admin_password_gate_active() : false;
-if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWebsiteMenu = false; }
+$adminMfaGate = function_exists('admin_mfa_gate_active') ? admin_mfa_gate_active() : false;
+$adminSecurityGate = $adminPasswordGate || $adminMfaGate;
+if ($adminSecurityGate) { $canMainMenu = false; $canLearningMenu = false; $canWebsiteMenu = false; }
 ?>
 <!doctype html>
 <html lang="en">
@@ -53,18 +55,18 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
 <div class="admin-shell">
     <aside class="admin-side" id="adminSide">
         <div class="admin-side-top">
-            <a href="<?= $adminPasswordGate ? 'password.php?required=1' : 'dashboard.php' ?>" class="brand admin-brand admin-logo-only" aria-label="<?= $adminPasswordGate ? 'Account security' : 'Admin dashboard' ?>">
+            <a href="<?= $adminSecurityGate ? 'password.php' : 'dashboard.php' ?>" class="brand admin-brand admin-logo-only" aria-label="<?= $adminSecurityGate ? 'Account security' : 'Admin dashboard' ?>">
                 <?php $adminLogo = site_asset_url(app_setting('site_logo', '')); ?>
                 <?php if ($adminLogo !== ''): ?><span class="brand-logo-wrap"><img src="../<?= e($adminLogo) ?>" decoding="async" alt="<?= e(app_setting('brand_logo_alt', 'Logo')) ?>"></span><?php else: ?><span class="brand-mark"><?= e(app_setting('brand_short', 'WF')) ?></span><?php endif; ?>
             </a>
             <button class="admin-menu-close" type="button" data-admin-menu-close>×</button>
         </div>
         <div class="admin-menu-scroll">
-            <?php if ($adminPasswordGate): ?>
+            <?php if ($adminSecurityGate): ?>
             <div class="admin-menu-title">Account Setup</div>
-            <a class="<?= active_nav('password.php') ?>" href="password.php?required=1"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password & MFA</span></a>
+            <a class="<?= active_nav('password.php') ?>" href="<?= $adminPasswordGate ? 'password.php?required=1' : 'password.php?mfa_required=1#mfa' ?>"><span class="menu-ico"><i class="fa-solid fa-lock"></i></span><span>Password & MFA</span></a>
             <a href="logout.php"><span class="menu-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
-            <div class="wf153-password-gate-note"><i class="fa-solid fa-shield-halved"></i><span>Finish the temporary password change to unlock assigned modules.</span></div>
+            <div class="wf153-password-gate-note"><i class="fa-solid fa-shield-halved"></i><span><?= $adminMfaGate ? 'Enable Authenticator MFA to unlock assigned modules.' : 'Finish the temporary password change to unlock assigned modules.' ?></span></div>
             <?php else: ?>
             <?php if ($canMainMenu): ?><div class="admin-menu-title">Main</div><?php endif; ?>
             <?php if (admin_can('dashboard.view')): ?><a class="<?= active_nav('dashboard.php') ?>" href="dashboard.php"><span class="menu-ico"><i class="fa-solid fa-gauge-high"></i></span><span>Dashboard</span></a><?php endif; ?>
@@ -82,6 +84,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             <?php if (admin_can('materials.manage')): ?><a class="<?= active_nav('materials.php') ?>" href="materials.php"><span class="menu-ico"><i class="fa-solid fa-folder-open"></i></span><span>Study Materials</span></a><?php endif; ?>
             <?php if (admin_can('roadmap.manage')): ?><a class="<?= active_nav('roadmap.php') ?>" href="roadmap.php"><span class="menu-ico"><i class="fa-solid fa-route"></i></span><span>Learning Roadmap</span></a><?php endif; ?>
             <?php if (admin_can('tests.manage')): ?><a class="<?= active_nav('weekly-tests.php') ?>" href="weekly-tests.php"><span class="menu-ico"><i class="fa-solid fa-clipboard-check"></i></span><span>Weekly Tests</span></a><?php endif; ?>
+            <?php if (admin_can('tests.manage')): ?><a class="<?= active_nav('weekly-live-students.php') ?>" href="weekly-live-students.php"><span class="menu-ico"><i class="fa-solid fa-user-clock"></i></span><span>Live Test Students</span></a><?php endif; ?>
             <?php if (admin_can('content.manage')): ?><a class="<?= active_nav('faqs.php') ?>" href="faqs.php"><span class="menu-ico"><i class="fa-solid fa-circle-question"></i></span><span>FAQs</span></a><?php endif; ?>
 
             <?php if ($canWebsiteMenu): ?><div class="admin-menu-title">Website Control</div><?php endif; ?>
@@ -127,6 +130,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             ['Learning Roadmap', 'roadmap.php', 'Learning CMS', 'fa-solid fa-route'],
             ['Weekly Tests', 'weekly-tests.php', 'Learning CMS', 'fa-solid fa-clipboard-check'],
             ['Upcoming Test Performance', 'upcoming-test-performance.php', 'Learning CMS', 'fa-solid fa-ranking-star'],
+            ['Live Test Students', 'weekly-live-students.php', 'Learning CMS', 'fa-solid fa-user-clock'],
             ['FAQs', 'faqs.php', 'Learning CMS', 'fa-solid fa-circle-question'],
             ['Content Blocks', 'content.php', 'Website Control', 'fa-solid fa-table-cells-large'],
             ['Hero Banners', 'hero-banners.php', 'Website Control', 'fa-solid fa-image'],
@@ -140,7 +144,7 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
             ['Password & MFA', 'password.php', 'System', 'fa-solid fa-lock'],
             ['System Check', 'system-check.php', 'System', 'fa-solid fa-screwdriver-wrench'],
         ];
-        if ($adminPasswordGate) {
+        if ($adminSecurityGate) {
             $adminQuickLinks = array_values(array_filter($adminQuickLinks, static fn(array $link): bool => (string)$link[1] === 'password.php'));
         } else {
             $adminQuickLinks = array_values(array_filter($adminQuickLinks, static function(array $link) use ($phase148SchemaReady): bool {
@@ -153,9 +157,9 @@ if ($adminPasswordGate) { $canMainMenu = false; $canLearningMenu = false; $canWe
         ?>
         <div class="admin-topbar">
             <button class="admin-drawer-btn" type="button" data-admin-menu-open aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-            <div class="admin-search-wrap <?= $adminPasswordGate ? 'is-password-gated' : '' ?>">
-                <span class="admin-search-icon"><i class="fa-solid <?= $adminPasswordGate ? 'fa-lock' : 'fa-magnifying-glass' ?>"></i></span>
-                <input type="search" id="adminMenuSearch" placeholder="<?= $adminPasswordGate ? 'Complete password setup to unlock modules' : 'Search menu, page or module...' ?>" autocomplete="off" <?= $adminPasswordGate ? 'disabled' : '' ?>>
+            <div class="admin-search-wrap <?= $adminSecurityGate ? 'is-password-gated' : '' ?>">
+                <span class="admin-search-icon"><i class="fa-solid <?= $adminSecurityGate ? 'fa-lock' : 'fa-magnifying-glass' ?>"></i></span>
+                <input type="search" id="adminMenuSearch" placeholder="<?= $adminSecurityGate ? ($adminMfaGate ? 'Enable Authenticator MFA to unlock modules' : 'Complete password setup to unlock modules') : 'Search menu, page or module...' ?>" autocomplete="off" <?= $adminSecurityGate ? 'disabled' : '' ?>>
                 <div class="admin-search-results" id="adminMenuResults" aria-live="polite">
                     <?php foreach ($adminQuickLinks as $link): ?>
                         <a href="<?= e($link[1]) ?>" data-menu-search-item data-search-text="<?= e(strtolower($link[0] . ' ' . $link[2] . ' ' . $link[1])) ?>">

@@ -59,6 +59,10 @@ try {
         if (!csrf_validate($_POST['csrf_token'] ?? '')) {
             api_out(['success' => false, 'message' => 'Session expired. Refresh once and try again.'], 419);
         }
+        $rateIdentity = !empty($_SESSION['student_id']) ? 'student:' . (int)$_SESSION['student_id'] : 'session:' . session_id();
+        if (!security_rate_limit('practice-session-check:' . $rateIdentity, !empty($_SESSION['student_id']) ? 300 : 150, 600)) {
+            api_out(['success' => false, 'message' => 'Practice is moving too fast. Wait a moment and continue.'], 429);
+        }
         $questionId = (int)($_POST['question_id'] ?? 0);
         $answer = trim($_POST['answer'] ?? '');
         if ($questionId <= 0) {

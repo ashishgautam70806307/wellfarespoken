@@ -1,0 +1,28 @@
+{
+  "phase": 176,
+  "base": "spoken_phase175_mobile_learning_full.zip",
+  "scope": "mobile reference-match correction for spoken-materials.php, free-ai-english-practice.php and learning-roadmap.php",
+  "php_lint": {"files": 133, "passed": true},
+  "javascript_syntax": {"files": 37, "passed": true},
+  "css_integrity": {"files": 146, "brace_errors": 0, "passed": true},
+  "service_worker": {"cache": "wellfare-spoken-static-v176", "precache_assets": 63, "missing": 0, "passed": true},
+  "regression": {
+    "phase174_security": "19/19 passed",
+    "phase170_continuous_voice": "13/13 passed",
+    "phase175_mobile_learning": "12/12 passed",
+    "phase176_mobile_reference": "17/17 passed"
+  },
+  "visual_qa": {
+    "browser": "Chromium",
+    "viewports": ["320x455", "390x844"],
+    "screens": ["Spoken Materials browse", "Spoken Materials active practice", "Practice Materials", "Learning Roadmap"],
+    "passed": true,
+    "notes": "Actual browser fixture rendering used real Phase 176 CSS and page class/DOM patterns. Visual QA caught and corrected a Practice Materials selector mismatch before packaging. Short-height navigation was changed to normal-flow so it cannot cover answer controls."
+  },
+  "database_schema_change": false,
+  "live_device_pending": [
+    "authenticated Android/iPhone render with live MySQL content",
+    "physical-device microphone/SpeechRecognition permission and recovery",
+    "physical iOS safe-area verification"
+  ]
+}

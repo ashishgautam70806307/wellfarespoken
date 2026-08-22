@@ -1,0 +1,17 @@
+{
+  "phase": 174,
+  "php_lint_files": 131,
+  "javascript_syntax_files": 35,
+  "css_files_checked": 144,
+  "css_brace_errors": 0,
+  "service_worker_assets": 59,
+  "service_worker_missing_assets": 0,
+  "phase174_static_checks": 19,
+  "phase174_static_failures": 0,
+  "config_model_cases": 8,
+  "config_model_failures": 0,
+  "source_secret_scan": "PASS",
+  "nested_archive_scan": "PASS",
+  "runtime_rate_limit_artifacts_packaged": false,
+  "database_schema_change_required": false
+}

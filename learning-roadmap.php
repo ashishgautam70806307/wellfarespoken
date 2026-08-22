@@ -7,6 +7,7 @@ $page_title = 'Learning Roadmap | Spoken English App';
 $meta_description = 'Follow a clear spoken English learning path with unlocked levels, practice items and progress tracking.';
 $page_styles = ['assets/css/phase126-roadmap.css'];
 $lightweight_layout = true;
+$page_final_styles = ['assets/css/phase180-old-design-mobile-fix.css'];
 
 $groups = roadmap_fetch_groups_with_units();
 $unitsFlat = [];

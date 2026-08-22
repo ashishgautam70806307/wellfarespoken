@@ -29,6 +29,16 @@ if ($isGuestAttempt) {
     }
 }
 
+// If Admin reopened an accidental Final Submit, the old result URL must not behave like a final result.
+// Send the same logged-in student straight back to the preserved attempt/question snapshot.
+if (strtolower(trim((string)($attempt['status'] ?? ''))) === 'started') {
+    $resumeToken = trim((string)($attempt['access_token'] ?? ''));
+    if ($resumeToken !== '') {
+        header('Location: weekly-exam-room.php?attempt_id=' . (int)$attempt['id'] . '&token=' . rawurlencode($resumeToken), true, 303);
+        exit;
+    }
+}
+
 $score = $attempt['admin_score'] !== null ? $attempt['admin_score'] : $attempt['auto_score'];
 $totalMarks = (float)($attempt['total_marks'] ?? 0);
 $percentage = ($score !== null && $totalMarks > 0)
@@ -58,6 +68,14 @@ $submittedTimestamp = !empty($attempt['submitted_at']) ? strtotime((string)$atte
 $durationSeconds = ($startedTimestamp && $submittedTimestamp && $submittedTimestamp >= $startedTimestamp)
     ? ($submittedTimestamp - $startedTimestamp)
     : 0;
+if ((int)($attempt['reopen_count'] ?? 0) > 0 && !empty($attempt['first_submitted_at']) && !empty($attempt['reopened_at'])) {
+    $firstSubmittedTs = strtotime((string)$attempt['first_submitted_at']);
+    $reopenedTs = strtotime((string)$attempt['reopened_at']);
+    if ($startedTimestamp && $firstSubmittedTs && $reopenedTs && $submittedTimestamp
+        && $firstSubmittedTs >= $startedTimestamp && $submittedTimestamp >= $reopenedTs) {
+        $durationSeconds = ($firstSubmittedTs - $startedTimestamp) + ($submittedTimestamp - $reopenedTs);
+    }
+}
 $durationText = $durationSeconds > 0
     ? ((int)floor($durationSeconds / 60) . 'm ' . ($durationSeconds % 60) . 's')
     : 'Not available';

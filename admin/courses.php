@@ -12,10 +12,14 @@ if (isset($_GET['edit'])) {
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
     $action = $_POST['action'] ?? 'add';
+    $newUploadedImage = '';
     try {
         if ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
             if ($id <= 0) throw new RuntimeException('Invalid course record.');
+            $oldImageStmt = db()->prepare('SELECT course_image FROM courses WHERE id=? LIMIT 1');
+            $oldImageStmt->execute([$id]);
+            $oldImage = (string)($oldImageStmt->fetchColumn() ?: '');
             $pdo = db();
             $pdo->beginTransaction();
             try {
@@ -28,12 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 throw $e;
             }
+            managed_upload_cleanup($oldImage);
             flash('success', 'Course deleted.'); redirect('courses.php');
         }
         if ($action === 'save') {
-            $imagePath = trim($_POST['existing_course_image'] ?? '');
+            $id = (int)($_POST['id'] ?? 0);
+            $oldImage = '';
+            if ($id > 0) {
+                $oldImageStmt = db()->prepare('SELECT course_image FROM courses WHERE id=? LIMIT 1');
+                $oldImageStmt->execute([$id]);
+                $oldImage = (string)($oldImageStmt->fetchColumn() ?: '');
+            }
+            $imagePath = (($_POST['remove_course_image'] ?? 'No') === 'Yes') ? '' : $oldImage;
             if (!empty($_FILES['course_image']['name'])) {
-                $imagePath = upload_course_image($_FILES['course_image']);
+                $uploaded = upload_course_image($_FILES['course_image']);
+                if ($uploaded) { $imagePath = $uploaded; $newUploadedImage = $uploaded; }
             }
             $data = [
                 trim($_POST['title'] ?? ''),
@@ -56,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             $pdo = db();
             $pdo->beginTransaction();
             try {
-                $wasUpdate = !empty($_POST['id']);
+                $wasUpdate = $id > 0;
                 if ($wasUpdate) {
-                    $courseId = (int)$_POST['id'];
+                    $courseId = $id;
                     if ($courseId <= 0) throw new RuntimeException('Invalid course record.');
                     $data[] = $courseId;
                     $stmt = $pdo->prepare('UPDATE courses SET title=?, short_description=?, duration=?, level=?, price=?, pay_url=?, course_image=?, class_time=?, class_days=?, total_tests=?, lessons_count=?, course_details=?, outcomes=?, includes_text=?, sort_order=?, published=? WHERE id=?');
@@ -88,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
                     ]);
                 }
                 $pdo->commit();
+                if ($oldImage !== '' && $oldImage !== $imagePath) managed_upload_cleanup($oldImage);
                 flash('success', $wasUpdate ? 'Course updated.' : 'Course added.');
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
@@ -96,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] 
             redirect('courses.php');
         }
     } catch (Throwable $e) {
+        if ($newUploadedImage !== '') managed_upload_cleanup($newUploadedImage);
         error_log('[admin-courses] ' . $e->__toString());
         flash('error', 'Course could not be saved. Check the fields, upload and database setup.');
     }
@@ -126,7 +141,7 @@ $stmt = db()->prepare($sql);$stmt->execute($params);$rows=$stmt->fetchAll();
         <div class="field"><label>Lessons / Classes</label><input type="number" name="lessons_count" value="<?= e((string)($edit['lessons_count'] ?? 0)) ?>"></div>
         <div class="field"><label>Sort Order</label><input type="number" name="sort_order" value="<?= e((string)($edit['sort_order'] ?? 0)) ?>"></div>
         <div class="field"><label>Published</label><select name="published"><option <?= (($edit['published'] ?? 'Yes')==='Yes')?'selected':'' ?>>Yes</option><option <?= (($edit['published'] ?? '')==='No')?'selected':'' ?>>No</option></select></div>
-        <div class="field"><label>Course Image</label><input type="file" name="course_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><?php if (!empty($edit['course_image'])): ?><small class="help">Current: <?= e($edit['course_image']) ?></small><?php endif; ?></div>
+        <div class="field"><label>Course Image</label><input type="file" name="course_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><?php if (!empty($edit['course_image'])): ?><small class="help">Current: <?= e($edit['course_image']) ?></small><label class="help"><input type="checkbox" name="remove_course_image" value="Yes"> Remove current image</label><?php endif; ?></div>
         <div class="field full"><label>Short Description</label><textarea name="short_description" placeholder="Explain the result students will get."><?= e($edit['short_description'] ?? '') ?></textarea></div>
         <div class="field full"><label>Detailed Description</label><textarea name="course_details" placeholder="Full details for course detail page."><?= e($edit['course_details'] ?? '') ?></textarea></div>
         <div class="field full"><label>Learning Outcomes</label><textarea name="outcomes" placeholder="One point per line. Example: Speak daily sentences confidently"><?= e($edit['outcomes'] ?? '') ?></textarea></div>

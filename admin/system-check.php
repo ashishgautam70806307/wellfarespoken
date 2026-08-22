@@ -5,6 +5,23 @@ material_ensure_schema();
 weekly_test_ensure_schema();
 batch_ensure_schema();
 student_account_ensure_schema();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cleanup_orphan_uploads') {
+    if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+        flash('error', 'Security token expired. Refresh and try again.');
+    } else {
+        $cleanup = managed_upload_cleanup_orphans(48 * 3600, 500);
+        if (!($cleanup['safe'] ?? false)) {
+            flash('error', 'Orphan upload cleanup stopped safely because database references could not be verified.');
+        } else {
+            $deleted = (int)($cleanup['deleted'] ?? 0);
+            $found = (int)($cleanup['found'] ?? 0);
+            admin_audit_log('uploads.orphan_cleanup', 'system', 0, 'Found ' . $found . ' stale orphan upload(s); deleted ' . $deleted . '.');
+            flash('success', 'Orphan upload cleanup complete: ' . $deleted . ' file(s) deleted from ' . $found . ' safe candidate(s).');
+        }
+    }
+    redirect('system-check.php');
+}
 $checks = [];
 $schemaUpdatesEnabled = defined('APP_ALLOW_SCHEMA_UPDATES') ? APP_ALLOW_SCHEMA_UPDATES : true;
 $addCheck = function(string $label, bool $ok, string $note = '') use (&$checks) {
@@ -26,11 +43,15 @@ foreach (['schema_migrations','admins','admin_roles','admin_permissions','admin_
 }
 $addCheck('PHP cURL extension', function_exists('curl_init'), 'Required for optional AI/OpenAI and online translator calls. Local practice works without it.');
 $addCheck('File uploads enabled', (bool)ini_get('file_uploads'), 'Required for dynamic logo, favicon, gallery and material uploads.');
+$orphanUploadReport = managed_upload_scan_orphans(48 * 3600, 500);
+$orphanUploadCount = (int)($orphanUploadReport['count'] ?? 0);
+$orphanUploadSafe = (bool)($orphanUploadReport['safe'] ?? false);
+$addCheck('Managed upload lifecycle', $orphanUploadSafe && $orphanUploadCount === 0, !$orphanUploadSafe ? 'Reference scan could not complete safely; no file will be deleted.' : ($orphanUploadCount === 0 ? 'No stale generated orphan uploads found. Replace/delete cleanup is active.' : ($orphanUploadCount . ' stale generated orphan upload(s) found. Use Clean Orphan Uploads below.')));
 $addCheck('Student practice tracking column: student_id', column_exists('material_practice_attempts', 'student_id'), 'Required for student dashboard progress and revision history.');
 $addCheck('Student account session version', column_exists('students', 'auth_version'), 'Recommended for immediate force sign-out after password or access changes. Fallback protection remains available.');
 $addCheck('Student password change timestamp', column_exists('students', 'password_changed_at'), 'Required for accurate password reset history on the account screen.');
 $addCheck('Student account audit table', table_exists('student_account_events'), 'Stores admin password resets, access changes and force sign-out events.');
-foreach (['access_token','result_token','question_snapshot','submission_reason','last_saved_at'] as $column) {
+foreach (['access_token','result_token','question_snapshot','submission_reason','last_saved_at','reopen_count','reopened_at','reopened_by_admin_id','reopen_reason','reopen_time_mode','reopen_seconds_granted','first_submitted_at'] as $column) {
     $addCheck('Weekly attempt security column: ' . $column, column_exists('weekly_test_attempts', $column), 'Required for secure results, stable questions and server-side submissions.');
 }
 $addCheck('Student mobile identity marker', column_exists('students', 'identity_status'), 'Self-registration without OTP is supported as an Unverified learning account; staff may verify the mobile later.');
@@ -55,6 +76,14 @@ try {
 $addCheck('Admin-management permission owner-only', admin_rbac_ready() && $ownerOnlyAdminPermissionLeaks === 0, $ownerOnlyAdminPermissionLeaks === 0 ? 'No staff/custom role can manage administrator accounts.' : ($ownerOnlyAdminPermissionLeaks . ' non-owner role assignment(s) must be removed by the Phase 150 migration.'));
 $addCheck('Admin audit log', table_exists('admin_audit_events'), 'Sensitive and generic admin POST activity is recorded append-only.');
 $addCheck('Database-backed rate limits', table_exists('security_rate_limits'), 'Authentication rate limiting uses the database with a fail-closed file fallback.');
+$addCheck('No live DB credential fallback in source', APP_RUNTIME_ENV !== 'live' || (trim((string)app_env('DB_LIVE_NAME','')) !== '' && trim((string)app_env('DB_LIVE_USER','')) !== ''), 'Live database name/user must come from the server .env; source-code fallbacks are blank.');
+$addCheck('Production PHP errors hidden', APP_RUNTIME_ENV !== 'live' || ini_get('display_errors') === '0' || ini_get('display_errors') === '', 'Production visitors must never see PHP warnings, stack traces or filesystem paths.');
+practice_purge_legacy_ai_secret();
+$addCheck('AI secret stored in environment', practice_setting('openai_api_key','') === '', 'Legacy database API-key values are not allowed; configure OPENAI_API_KEY in the server .env.');
+$addCheck('AI endpoint allowlist', practice_ai_api_key() === '' || practice_ai_endpoint() !== '', 'OPENAI_API_ENDPOINT must be HTTPS and its host must be listed in OPENAI_ALLOWED_HOSTS.');
+$addCheck('Persistent encryption key', APP_SECRET_KEY !== '' || (is_dir(PRIVATE_STORAGE_PATH) && is_writable(PRIVATE_STORAGE_PATH)), 'Set APP_SECRET_KEY in .env on production; writable private storage is only a compatibility fallback.');
+$addCheck('Owner MFA policy', !ADMIN_REQUIRE_OWNER_MFA || !admin_is_primary_owner() || !admin_mfa_gate_active(), 'On production the protected Super Admin should use Authenticator MFA.');
+
 $addCheck('Payment ledger', table_exists('admission_payments'), 'Admission totals and payment status are derived from immutable ledger entries.');
 $addCheck('Enrollment lifecycle', table_exists('student_enrollments') && table_exists('student_batch_memberships'), 'Links Student → Admission → Course → Batch without overwriting history.');
 $privateStorage = material_private_root() . '/materials';
@@ -77,5 +106,8 @@ $addCheck('Brand logo dynamic setting', app_setting('site_logo', '') !== '' || a
 <div class="admin-top"><div><h1>System Check & Repair</h1><p>This page verifies the unified database and checks whether the project is ready on XAMPP/server.</p></div><div class="admin-actions"><a class="btn btn-soft" href="../admission.php" target="_blank">Test Admission</a><a class="btn btn-soft" href="../spoken-materials.php" target="_blank">Test Spoken Practice</a></div></div>
 <?php if ($schemaUpdatesEnabled): ?><div class="alert alert-success">Upgrade mode is enabled. Prefer importing sql/wellfare_english_complete.sql; after every check is green, set <code>APP_ALLOW_SCHEMA_UPDATES=false</code> in <code>.env</code>.</div><?php else: ?><div class="alert alert-info">Production mode is active. Runtime database changes are disabled.</div><?php endif; ?>
 <div class="panel-card table-wrap"><table><thead><tr><th>Check</th><th>Status</th><th>Note</th></tr></thead><tbody><?php foreach($checks as $check): ?><tr><td><?= e($check['label']) ?></td><td><span class="badge <?= $check['ok'] ? 'badge-yes' : 'badge-no' ?>"><?= $check['ok'] ? 'OK' : 'Needs attention' ?></span></td><td><?= e($check['note']) ?></td></tr><?php endforeach; ?></tbody></table></div>
+<?php if ($msg = flash('success')): ?><div class="alert alert-success"><?= e($msg) ?></div><?php endif; ?>
+<?php if ($msg = flash('error')): ?><div class="alert alert-error"><?= e($msg) ?></div><?php endif; ?>
+<div class="panel-card"><h2>Managed Upload Cleanup</h2><p>Safely removes only system-generated upload files older than 48 hours that are no longer referenced by any current image/file database field. Static/default assets and referenced files are never removed.</p><form method="post" data-confirm="Clean stale orphan uploads now? Only unreferenced generated files older than 48 hours will be removed."><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="cleanup_orphan_uploads"><button class="btn btn-danger" type="submit">Clean Orphan Uploads</button></form></div>
 <div class="panel-card"><h2>Important</h2><p>For an existing pre-Phase-148 database, rerun the corrected <code>sql/phase148_critical_backend_hardening.sql</code> first, then run <code>sql/phase150_admin_owner_lock.sql</code>. Fresh installs may use <code>sql/wellfare_english_complete.sql</code>. New installations create the first admin securely through admin/setup.php. Keep <code>APP_ALLOW_SCHEMA_UPDATES=false</code> for normal production traffic. Always take a database backup before importing into an existing database.</p></div>
 <?php require_once __DIR__ . '/_footer.php'; ?>

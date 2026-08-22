@@ -92,6 +92,13 @@ try{
    aj(['success'=>true,'message'=>$closeType==='upcoming'?'Upcoming Test entry closed. No new student can start; students already inside keep their own exam timer. Review submitted copies, then Finalize Top 3.':'Set to Pending/Draft. Students cannot start this paper now.','test_id'=>$testId]);
  }
 
+ if($action==='force_close_test'){
+   $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
+   if($testId<=0) aj(['success'=>false,'message'=>'Select an Upcoming Test paper first.']);
+   $res=weekly_test_force_close_entry($testId);
+   aj($res, !empty($res['success']) ? 200 : 422);
+ }
+
  if($action==='release_answer_key'){
    $testId=(int)($_POST['test_id'] ?? $_POST['id'] ?? 0);
    if($testId<=0) aj(['success'=>false,'message'=>'Select an Upcoming Test paper first.']);
@@ -206,6 +213,8 @@ try{
  if($action==='grade_attempt'){
    $attemptId=(int)($_POST['attempt_id']??0);
    if($attemptId<=0) aj(['success'=>false,'message'=>'Invalid attempt']);
+   $gradeState=db()->prepare("SELECT status FROM weekly_test_attempts WHERE id=? AND COALESCE(status_deleted,0)=0 LIMIT 1"); $gradeState->execute([$attemptId]);
+   if(!in_array((string)($gradeState->fetchColumn()?:''),['submitted','checked'],true)) aj(['success'=>false,'message'=>'This attempt is still in progress. Wait for Final Submit before checking marks.'],409);
    $scores=is_array($_POST['marks']??null)?$_POST['marks']:[];
    $notes=is_array($_POST['notes']??null)?$_POST['notes']:[];
    $total=0.0;

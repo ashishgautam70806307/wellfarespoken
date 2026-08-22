@@ -4,40 +4,60 @@ $edit=null;
 if (isset($_GET['edit'])) { $stmt=db()->prepare('SELECT * FROM testimonials WHERE id=?');$stmt->execute([(int)$_GET['edit']]);$edit=$stmt->fetch(); }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate($_POST['csrf_token'] ?? '')) {
     $action=$_POST['action'] ?? 'save';
-    if ($action==='delete') { $stmt=db()->prepare('DELETE FROM testimonials WHERE id=?');$stmt->execute([(int)($_POST['id']??0)]);flash('success','Review deleted.');redirect('testimonials.php'); }
-    if ($action==='save') {
-        $id=(int)($_POST['id']??0);
-        $student=trim((string)($_POST['student_name']??''));
-        $role=trim((string)($_POST['reviewer_role']??'Student'));
-        $msg=trim((string)($_POST['message']??''));
-        $rating=max(1,min(5,(int)($_POST['rating']??5)));
-        $date=trim((string)($_POST['review_date']??''));
-        $source=trim((string)($_POST['source_label']??'Google'));
-        $initials=trim((string)($_POST['avatar_initials']??''));
-        $sort=(int)($_POST['sort_order']??0);
-        $published=$_POST['published']??'Yes';
-        $imagePath=trim((string)($edit['student_image']??''));
-        if (!empty($_FILES['student_image']['tmp_name'])) {
-            try {
-                $uploaded = secure_image_upload($_FILES['student_image'], 'reviews', 'review', 2 * 1024 * 1024);
-                if ($uploaded) $imagePath = $uploaded;
-            } catch (RuntimeException $e) {
-                error_log('[admin-testimonials] ' . $e->__toString());
-        flash('error', 'Student review could not be saved. Check the image and required fields.');
-                redirect('testimonials.php'.($id?'?edit='.$id:''));
+    $newUploadedImage = '';
+    try {
+        if ($action==='delete') {
+            $id=(int)($_POST['id']??0);
+            $oldStmt=db()->prepare('SELECT student_image FROM testimonials WHERE id=? LIMIT 1');
+            $oldStmt->execute([$id]);
+            $oldImage=(string)($oldStmt->fetchColumn()?:'');
+            $stmt=db()->prepare('DELETE FROM testimonials WHERE id=?');
+            $stmt->execute([$id]);
+            managed_upload_cleanup($oldImage);
+            flash('success','Review deleted.');
+            redirect('testimonials.php');
+        }
+        if ($action==='save') {
+            $id=(int)($_POST['id']??0);
+            $student=trim((string)($_POST['student_name']??''));
+            $role=trim((string)($_POST['reviewer_role']??'Student'));
+            $msg=trim((string)($_POST['message']??''));
+            if ($student==='' || $msg==='') throw new RuntimeException('Student name and review message are required.');
+            $rating=max(1,min(5,(int)($_POST['rating']??5)));
+            $date=trim((string)($_POST['review_date']??''));
+            $source=trim((string)($_POST['source_label']??'Google'));
+            $initials=trim((string)($_POST['avatar_initials']??''));
+            $sort=(int)($_POST['sort_order']??0);
+            $published=$_POST['published']??'Yes';
+            $oldImage='';
+            if ($id>0) {
+                $oldStmt=db()->prepare('SELECT student_image FROM testimonials WHERE id=? LIMIT 1');
+                $oldStmt->execute([$id]);
+                $oldImage=(string)($oldStmt->fetchColumn()?:'');
             }
+            $imagePath=(($_POST['remove_student_image']??'No')==='Yes') ? '' : $oldImage;
+            if (!empty($_FILES['student_image']['tmp_name'])) {
+                $uploaded=secure_image_upload($_FILES['student_image'],'reviews','review',2*1024*1024);
+                if ($uploaded) { $imagePath=$uploaded; $newUploadedImage=$uploaded; }
+            }
+            if ($id>0) {
+                $stmt=db()->prepare('UPDATE testimonials SET student_name=?, reviewer_role=?, message=?, rating=?, review_date=?, source_label=?, avatar_initials=?, student_image=?, sort_order=?, published=? WHERE id=?');
+                $stmt->execute([$student,$role,$msg,$rating,$date,$source,$initials,$imagePath,$sort,$published,$id]);
+                if ($oldImage!=='' && $oldImage!==$imagePath) managed_upload_cleanup($oldImage);
+                flash('success','Review updated.');
+            } else {
+                $stmt=db()->prepare('INSERT INTO testimonials (student_name, reviewer_role, message, rating, review_date, source_label, avatar_initials, student_image, sort_order, published, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([$student,$role,$msg,$rating,$date,$source,$initials,$imagePath,$sort,$published]);
+                flash('success','Review added.');
+            }
+            redirect('testimonials.php');
         }
-        if ($student==='' || $msg==='') { flash('error','Student name and review message are required.'); redirect('testimonials.php'.($id?'?edit='.$id:'')); }
-        if ($id>0) {
-            $stmt=db()->prepare('UPDATE testimonials SET student_name=?, reviewer_role=?, message=?, rating=?, review_date=?, source_label=?, avatar_initials=?, student_image=?, sort_order=?, published=? WHERE id=?');
-            $stmt->execute([$student,$role,$msg,$rating,$date,$source,$initials,$imagePath,$sort,$published,$id]);
-            flash('success','Review updated.');
-        } else {
-            $stmt=db()->prepare('INSERT INTO testimonials (student_name, reviewer_role, message, rating, review_date, source_label, avatar_initials, student_image, sort_order, published, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-            $stmt->execute([$student,$role,$msg,$rating,$date,$source,$initials,$imagePath,$sort,$published]);
-            flash('success','Review added.');
-        }
-        redirect('testimonials.php');
+    } catch (Throwable $e) {
+        if ($newUploadedImage!=='') managed_upload_cleanup($newUploadedImage);
+        error_log('[admin-testimonials] '.$e->__toString());
+        flash('error', $e instanceof RuntimeException ? $e->getMessage() : 'Student review could not be saved. Check the image and required fields.');
+        $id=(int)($_POST['id']??0);
+        redirect('testimonials.php'.($id?'?edit='.$id:''));
     }
 }
 $rows=db()->query('SELECT * FROM testimonials ORDER BY sort_order ASC, id DESC')->fetchAll();
@@ -58,7 +78,7 @@ $rows=db()->query('SELECT * FROM testimonials ORDER BY sort_order ASC, id DESC')
 <label>Sort Order <input name="sort_order" type="number" value="<?= e((string)($edit['sort_order']??0)) ?>"></label>
 <label>Review Date <input name="review_date" value="<?= e($edit['review_date']??'') ?>" placeholder="11 months ago"></label>
 <label>Status <select name="published"><option <?= (($edit['published']??'Yes')==='Yes')?'selected':'' ?>>Yes</option><option <?= (($edit['published']??'Yes')==='No')?'selected':'' ?>>No</option></select></label>
-<label class="full">Student Photo optional <input type="file" name="student_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"></label>
+<label class="full">Student Photo optional <input type="file" name="student_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"><?php if (!empty($edit['student_image'])): ?><small class="help">Current: <?= e($edit['student_image']) ?></small><span class="help"><input type="checkbox" name="remove_student_image" value="Yes"> Remove current photo</span><?php endif; ?></label>
 <label class="full">Review Message <textarea name="message" rows="5" required placeholder="Write student feedback..."><?= e($edit['message']??'') ?></textarea></label>
 </div>
 <button class="btn btn-primary">Save Review</button>

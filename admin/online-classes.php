@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($action === 'update' ? 'online-classes.php?edit=' . (int)($_POST['id'] ?? 0) : 'online-classes.php');
     }
     foreach ([$meetingUrl, $recordingUrl] as $urlValue) {
-        if ($urlValue !== '' && !filter_var($urlValue, FILTER_VALIDATE_URL)) {
-            flash('error', 'Meeting and recording links must be valid URLs.');
+        if ($urlValue !== '' && app_safe_https_url($urlValue, '') === '') {
+            flash('error', 'Meeting and recording links must use a valid HTTPS URL.');
             redirect($action === 'update' ? 'online-classes.php?edit=' . (int)($_POST['id'] ?? 0) : 'online-classes.php');
         }
     }
@@ -135,7 +135,7 @@ $batches = db()->query('SELECT batch_name FROM batch_timings WHERE published = "
         <tr>
             <td data-label="Class"><strong><?= e($row['class_title']) ?></strong><br><span class="help"><?= e(trim(($row['course_name'] ?? '') . (($row['course_name'] ?? '') && ($row['batch_name'] ?? '') ? ' • ' : '') . ($row['batch_name'] ?? ''))) ?></span><?php if (!empty($row['teacher_name'])): ?><br><small>Teacher: <?= e($row['teacher_name']) ?></small><?php endif; ?></td>
             <td data-label="Schedule"><?= e(online_class_display_date($row)) ?><br><small><?= e((string)$row['duration_minutes']) ?> minutes</small></td>
-            <td data-label="Platform"><?= e($row['platform']) ?><?php if (!empty($row['meeting_url'])): ?><br><a href="<?= e($row['meeting_url']) ?>" target="_blank" rel="noopener">Open meeting</a><?php endif; ?></td>
+            <td data-label="Platform"><?= e($row['platform']) ?><?php $safeMeetingUrl=app_safe_https_url($row['meeting_url'] ?? '', ''); if ($safeMeetingUrl !== ''): ?><br><a href="<?= e($safeMeetingUrl) ?>" target="_blank" rel="noopener noreferrer">Open meeting</a><?php endif; ?></td>
             <td data-label="Status"><span class="badge online-admin-status <?= e(online_class_status_class((string)$row['class_status'])) ?>"><?= e($row['class_status']) ?></span></td>
             <td data-label="Published"><span class="badge <?= $row['published'] === 'Yes' ? 'badge-converted' : 'badge-not' ?>"><?= e($row['published']) ?></span></td>
             <td data-label="Actions"><div class="table-actions"><a class="btn btn-sm btn-soft" href="online-classes.php?edit=<?= e((string)$row['id']) ?>">Edit</a><form method="post" data-confirm="Delete this online class and its attendance records?"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= e((string)$row['id']) ?>"><button class="btn btn-sm btn-danger" type="submit">Delete</button></form></div></td>

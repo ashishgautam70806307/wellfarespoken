@@ -1,0 +1,25 @@
+Phase 177 changed/restored files relative to Phase 176:
+
+RESTORED TO ORIGINAL FEATURE IMPLEMENTATION:
+- includes/header.php
+- includes/footer.php
+- spoken-materials.php (plus Phase177 CSS include)
+- free-ai-english-practice.php (plus Phase177 CSS include)
+- learning-roadmap.php (plus Phase177 CSS include)
+- assets/js/phase170-spoken-practice.js
+
+NEW:
+- assets/css/phase177-mobile-learning-ui.css
+- tests/run_phase177_static.php
+- README_PHASE177_FEATURE_RESTORE_MOBILE_UI.md
+- PHASE177_VISUAL_QA.md
+- PHASE177_CHANGED_FILES.txt
+
+UPDATED:
+- sw.js (cache v177, Phase177 CSS precache, Phase175/176 mobile assets removed from precache)
+
+UNUSED PHASE175/176 FILES REMOVED FROM FULL ZIP:
+- assets/css/phase175-mobile-learning.css
+- assets/css/phase176-mobile-reference-match.css
+- assets/js/phase175-mobile-learning.js
+- assets/js/phase176-mobile-reference-match.js

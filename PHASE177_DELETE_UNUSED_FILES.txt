@@ -1,0 +1,9 @@
+Optional cleanup after applying the replace-only ZIP:
+
+These Phase175/176 mobile-redesign files are no longer referenced by Phase177 and may be deleted from the server:
+- assets/css/phase175-mobile-learning.css
+- assets/css/phase176-mobile-reference-match.css
+- assets/js/phase175-mobile-learning.js
+- assets/js/phase176-mobile-reference-match.js
+
+The full cumulative Phase177 ZIP already excludes them.

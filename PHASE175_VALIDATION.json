@@ -1,0 +1,16 @@
+{
+  "phase": 175,
+  "php_files_linted": 132,
+  "js_files_checked": 36,
+  "css_files_checked": 145,
+  "css_brace_errors": 0,
+  "service_worker_cache": "v175",
+  "service_worker_assets": 61,
+  "service_worker_missing_assets": 0,
+  "phase174_security_regression": "19/19 PASS",
+  "phase175_static": "12/12 PASS",
+  "duplicate_literal_ids": 0,
+  "phase170_voice_js_unchanged": true,
+  "database_schema_change": false,
+  "live_device_test": "pending on authenticated real deployment/device"
+}

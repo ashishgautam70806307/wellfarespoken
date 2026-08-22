@@ -819,7 +819,7 @@ INSERT INTO `practice_settings` (`id`, `setting_key`, `setting_value`, `updated_
 (3, 'ai_provider', 'openai', '2026-06-20 06:23:11'),
 (4, 'openai_api_key', '', '2026-06-20 06:23:11'),
 (5, 'openai_model', 'gpt-4o-mini', '2026-06-20 06:23:11'),
-(6, 'openai_endpoint', 'https://api.openai.com/v1/chat/completions', '2026-06-20 06:23:11'),
+(6, 'openai_endpoint', '', '2026-06-20 06:23:11'),
 (7, 'ai_daily_limit', '10', '2026-06-20 06:23:11'),
 (8, 'ai_timeout_seconds', '18', '2026-06-20 06:23:11'),
 (9, 'ai_temperature', '0.2', '2026-06-20 06:23:11'),

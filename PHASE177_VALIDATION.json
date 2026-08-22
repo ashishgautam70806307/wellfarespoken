@@ -1,0 +1,25 @@
+{
+  "phase": 177,
+  "scope": "restore original learning-page features and apply mobile-only UI polish",
+  "php_files_linted": 134,
+  "javascript_checks": 35,
+  "css_files_checked": 145,
+  "service_worker_assets": 60,
+  "service_worker_missing": 0,
+  "phase170_voice_checks": "13/13 PASS",
+  "phase174_security_checks": "19/19 PASS",
+  "phase177_feature_restore_checks": "23/23 PASS",
+  "common_header_restored": true,
+  "common_footer_restored": true,
+  "phase170_voice_controller_restored": true,
+  "phase175_176_alternate_mobile_shell_removed": true,
+  "database_schema_change": false,
+  "visual_qa": [
+    "spoken browse 390x844",
+    "spoken active 390x844",
+    "spoken active 320x455",
+    "practice materials 390x844",
+    "learning roadmap 390x844"
+  ],
+  "live_device_mysql_microphone_test": "pending in deployment environment"
+}
